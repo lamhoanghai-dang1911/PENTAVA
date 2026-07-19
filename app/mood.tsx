@@ -1,4 +1,3 @@
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-awesome-slider'; // Hoặc tự chế Slider bằng PanGesture
@@ -149,7 +148,6 @@ export default function MoodScreen() {
           multiline
           value={comment}
           onChangeText={setComment}
-          onPress={() => router.push('/task2/page1')} 
         />
         <TouchableOpacity style={styles.submitBtn} activeOpacity={0.8}>
           <Text style={[styles.submitText, { color: MOODS[currentIdx].color }]}>Submit</Text>
