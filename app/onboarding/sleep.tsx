@@ -14,7 +14,7 @@ export default function SleepScreen() {
   const canContinue = Boolean(data.sleepHours);
 
   const handleContinue = () => {
-    router.replace('/(tabs)');
+    router.push('/onboarding/exercise');
   };
 
   return (
