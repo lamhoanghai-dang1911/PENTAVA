@@ -4,7 +4,7 @@ import { PillTextInput } from '@/components/ui/pill-text-input';
 import { ScreenContainer } from '@/components/ui/screen-container';
 import { Design, FontFamily } from '@/constants/design';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
+import { router, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
@@ -20,6 +20,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const router = useRouter();
 
   const handleLogin = () => {
     if (!email.trim() || !password.trim()) {
@@ -27,7 +28,7 @@ export default function LoginScreen() {
       return;
     }
 
-    router.replace('/(tabs)');
+    router.replace('/mood'); 
   };
 
   const handleSocialLogin = (provider: string) => {
