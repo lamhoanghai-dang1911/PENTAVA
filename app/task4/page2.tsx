@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Switch, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Dimensions, Image, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -21,7 +21,7 @@ export default function Task4Page2() {
         <View style={styles.container}>
             <Image
                 source={require('../../assets/images/onboarding/meo_task4_2.png')}
-                style={styles.topImage}
+                style={{ width: '100%', height: '100%' }}
                 resizeMode="cover"
             />
 

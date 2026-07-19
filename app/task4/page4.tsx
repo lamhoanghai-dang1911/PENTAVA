@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -9,22 +9,25 @@ export default function Task4Page4() {
 
   return (
     <View style={styles.container}>
-      <Image 
-        source={require('../../assets/images/onboarding/meo_task4_4.png')} 
-        style={styles.topImage} 
+      <Image
+        source={require('../../assets/images/onboarding/meo_task4_4.png')}
+        style={styles.topImage}
         resizeMode="cover"
       />
       <View style={[styles.bottomCard, { height: height * 0.44, alignItems: 'center' }]}>
         <Text style={styles.celebrateTitle}>Tuyệt vời</Text>
         <Text style={styles.celebrateSub}>Bạn đã hoàn thành bước chuẩn bị cho một{"\n"}giấc ngủ ngon. Chúc bạn ngủ thật sâu nhé!</Text>
-        
+
         <View style={styles.statsRow}>
           <View style={styles.statBox}><Text style={styles.statIcon}>📋</Text><Text style={styles.statVal}>4/5</Text><Text style={styles.statLbl}>Task hôm nay</Text></View>
           <View style={styles.statBox}><Text style={styles.statIcon}>🏅</Text><Text style={styles.statVal}>+6</Text><Text style={styles.statLbl}>Nhận thưởng</Text></View>
           <View style={styles.statBox}><Text style={styles.statIcon}>🔥</Text><Text style={styles.statVal}>03</Text><Text style={styles.statLbl}>Streak</Text></View>
         </View>
 
-        <TouchableOpacity style={[styles.primaryButton, { width: '100%' }]} onPress={() => { alert('Hoàn thành trọn vẹn Task 4!'); router.dismissAll(); }}>
+        <TouchableOpacity style={[styles.primaryButton, { width: '100%' }]} onPress={() => {
+          alert('Hoàn thành trọn vẹn Task 4!'); 
+          router.replace('/daily-tasks');
+        }}>
           <Text style={styles.primaryButtonText}>Tiếp tục</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} onPress={() => alert('Đã lưu tiến độ')}>

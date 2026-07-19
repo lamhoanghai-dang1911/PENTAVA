@@ -113,7 +113,7 @@ export default function HomeScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Ngôn ngữ"
-          onPress={() => Alert.alert('Tính năng', 'Sẽ được cập nhật sau.')}
+          onPress={() => router.push('/community')}
           style={[styles.roundButton, styles.roundButtonOutline]}>
           <Ionicons color={Design.colors.black} name="globe-outline" size={22} />
         </Pressable>

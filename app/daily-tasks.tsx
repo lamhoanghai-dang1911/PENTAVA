@@ -73,7 +73,7 @@ export default function DailyTasksScreen() {
                         accessibilityRole="button"
                         accessibilityLabel="Quay lại"
                         hitSlop={8}
-                        onPress={() => router.back()}
+                        onPress={() => router.replace('/(tabs)')}
                         style={styles.backButton}>
                         <Ionicons color={Design.colors.black} name="chevron-back" size={24} />
                     </Pressable>

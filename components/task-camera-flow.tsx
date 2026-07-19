@@ -1,4 +1,4 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
+import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { ReactNode, useEffect, useRef } from 'react';
 import {
@@ -17,10 +17,11 @@ const { width, height } = Dimensions.get('window');
 type TaskCameraScaffoldProps = {
   background: ReactNode;
   footer: ReactNode;
+  headerRight?: ReactNode;
   onBack: () => void;
 };
 
-type ReviewPathname = '/task1/page5' | '/task2/page5' | '/task5/page4';
+type ReviewPathname = '/task1/page5' | '/task2/page5' | '/task3/page7' | '/task5/page4';
 
 type TaskCameraCaptureScreenProps = {
   reviewPathname: ReviewPathname;
@@ -29,6 +30,7 @@ type TaskCameraCaptureScreenProps = {
 function TaskCameraScaffold({
   background,
   footer,
+  headerRight,
   onBack,
 }: TaskCameraScaffoldProps) {
   return (
@@ -36,9 +38,12 @@ function TaskCameraScaffold({
       {background}
 
       <SafeAreaView style={styles.overlay}>
-        <TouchableOpacity style={styles.camBack} onPress={onBack}>
-          <Text style={styles.camBackText}>❮</Text>
-        </TouchableOpacity>
+        <View style={styles.headerRow}>
+          <TouchableOpacity style={styles.camBack} onPress={onBack}>
+            <Text style={styles.camBackText}>❮</Text>
+          </TouchableOpacity>
+          {headerRight ?? <View style={styles.headerSpacer} />}
+        </View>
 
         <View style={styles.cameraOverlayContainer}>
           <View style={styles.cameraFrame} />
@@ -70,6 +75,7 @@ export function TaskCameraCaptureScreen({
 }: TaskCameraCaptureScreenProps) {
   const router = useRouter();
   const [permission, requestPermission] = useCameraPermissions();
+  const [facing, setFacing] = React.useState<CameraType>('back');
   const cameraRef = useRef<CameraView>(null);
   const hasRequestedPermission = useRef(false);
 
@@ -106,9 +112,18 @@ export function TaskCameraCaptureScreen({
     return <CameraPermissionFallback onRequestPermission={requestPermission} />;
   }
 
+  const toggleCameraFacing = () => {
+    setFacing((current) => (current === 'back' ? 'front' : 'back'));
+  };
+
   return (
     <TaskCameraScaffold
-      background={<CameraView style={StyleSheet.absoluteFillObject} facing="front" ref={cameraRef} />}
+      background={<CameraView style={StyleSheet.absoluteFillObject} facing={facing} ref={cameraRef} />}
+      headerRight={
+        <TouchableOpacity style={styles.flipButton} onPress={toggleCameraFacing}>
+          <Text style={styles.flipButtonText}>↻</Text>
+        </TouchableOpacity>
+      }
       onBack={() => router.back()}
       footer={
         <View style={styles.cameraActions}>
@@ -160,12 +175,16 @@ export function TaskPhotoReviewScreen() {
 const styles = StyleSheet.create({
   cameraContainer: { flex: 1, backgroundColor: '#000' },
   overlay: { flex: 1, justifyContent: 'space-between' },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 20 },
+  headerSpacer: { width: 40, height: 40 },
   centerFallback: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24 },
   permissionText: { textAlign: 'center', marginBottom: 16 },
   reqBtn: { backgroundColor: '#2E7D32', padding: 16, borderRadius: 12 },
   reqBtnText: { color: '#fff' },
-  camBack: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center', marginLeft: 20, marginTop: 20 },
+  camBack: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
   camBackText: { color: '#FFF', fontSize: 18 },
+  flipButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center' },
+  flipButtonText: { color: '#FFF', fontSize: 22, fontWeight: '700' },
   cameraOverlayContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   cameraFrame: { width: width * 0.75, height: height * 0.45, borderWidth: 4, borderColor: '#FFFFFF', borderRadius: 24 },
   cameraActions: { paddingBottom: 40, alignItems: 'center' },

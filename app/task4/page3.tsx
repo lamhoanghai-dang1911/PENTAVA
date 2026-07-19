@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,12 +23,12 @@ export default function Task4Page3() {
 
   return (
     <View style={styles.container}>
-      <Image 
-        source={require('../../assets/images/onboarding/meo_task4_1.png')} 
-        style={StyleSheet.absoluteFillObject} 
+      <Image
+        source={require('../../assets/images/onboarding/meo_task4_1.png')}
+        style={{ width: '100%', height: '100%' }}
         resizeMode="cover"
       />
-      
+
       {/* Khung Text Chữ Lớn Figma Ở Giữa */}
       <View style={styles.countdownCenterWrapper}>
         <Text style={styles.countdownHeaderLabel}>SẼ BẮT ĐẦU SAU</Text>
@@ -38,11 +38,11 @@ export default function Task4Page3() {
       <View style={styles.bottomCard}>
         <View style={styles.moonBadge}><Text style={{ fontSize: 22 }}>🌙</Text></View>
         <Text style={styles.bottomStatusText}>Hẹn gặp bạn vào một ngày mới{"\n"}tràn đầy năng lượng.</Text>
-        
+
         <TouchableOpacity style={styles.yellowButton} onPress={() => router.push('/task4/page4')}>
           <Text style={styles.yellowButtonText}>Bắt đầu ngay</Text>
         </TouchableOpacity>
-        
+
         <TouchableOpacity style={styles.outlineButton} onPress={() => router.back()}>
           <Text style={styles.outlineButtonText}>Rời khỏi</Text>
         </TouchableOpacity>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -9,15 +9,15 @@ export default function Task3Page5() {
 
   return (
     <View style={styles.container}>
-      <Image 
-        source={require('../../assets/images/onboarding/meo_task3_5.png')} 
-        style={styles.topImage} 
+      <Image
+        source={require('../../assets/images/onboarding/meo_task3_5.png')}
+        style={{ width: '100%', height: '80%' }}
         resizeMode="cover"
       />
       <View style={[styles.bottomCard, { height: height * 0.45, alignItems: 'center' }]}>
         <Text style={styles.celebrateTitle}>Quá giỏi luôn!</Text>
         <Text style={styles.celebrateSub}>Một bước nhỏ hôm nay, một cơ thể{"\n"}khỏe hơn mỗi ngày.</Text>
-        
+
         <View style={styles.statsRow}>
           <View style={styles.statBox}><Text style={styles.statIcon}>📋</Text><Text style={styles.statVal}>4/5</Text><Text style={styles.statLbl}>Task hôm nay</Text></View>
           <View style={styles.statBox}><Text style={styles.statIcon}>🏅</Text><Text style={styles.statVal}>+6</Text><Text style={styles.statLbl}>Nhận thưởng</Text></View>

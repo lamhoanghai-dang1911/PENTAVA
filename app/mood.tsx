@@ -1,30 +1,39 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { Slider } from 'react-native-awesome-slider'; // Hoặc tự chế Slider bằng PanGesture
+import {
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+} from 'react-native';
+import { Slider } from 'react-native-awesome-slider';
 import Animated, {
   interpolate,
   interpolateColor,
   useAnimatedStyle,
   useSharedValue,
-  withTiming
+  withTiming,
 } from 'react-native-reanimated';
 
-// Định nghĩa dữ liệu 3 trạng thái Mood tương ứng Figma
 const MOODS = [
-  { label: 'TỆ', color: '#FFC145' },       // Vàng cam
-  { label: 'BÌNH THƯỜNG', color: '#4EA3F7' }, // Xanh dương
-  { label: 'TỐT', color: '#4CD080' }       // Xanh lá
+  { label: 'TỆ', color: '#FFC145' },
+  { label: 'BÌNH THƯỜNG', color: '#4EA3F7' },
+  { label: 'TỐT', color: '#4CD080' },
 ];
 
 export default function MoodScreen() {
-  const progress = useSharedValue(0); // Giá trị từ 0 đến 2 tương ứng 3 mood
+  const progress = useSharedValue(0);
   const [comment, setComment] = useState('');
+  const [currentIdx, setCurrentIdx] = useState(0);
   const min = useSharedValue(0);
   const max = useSharedValue(2);
   const router = useRouter();
 
-  // 1. Hiệu ứng mượt mà chuyển đổi màu nền theo vị trí trượt
   const animatedBackgroundStyle = useAnimatedStyle(() => {
     const backgroundColor = interpolateColor(
       progress.value,
@@ -34,19 +43,13 @@ export default function MoodScreen() {
     return { backgroundColor };
   });
 
-  // Tìm index hiện tại để hiển thị Text Text phù hợp
-  const [currentIdx, setCurrentIdx] = useState(0);
-
-  // 2. Tạo hình dáng hoạt họa cho từng nét mặt (Motion biến hình)
-  // --- Mắt Trái & Phải ---
   const animatedEyeStyle = useAnimatedStyle(() => {
-    const scaleY = interpolate(progress.value, [0, 1, 2], [1, 1, 1]); 
+    const scaleY = interpolate(progress.value, [0, 1, 2], [1, 1, 1]);
     return { transform: [{ scaleY }] };
   });
 
-  // --- Chân mày (Ngoác lên, nằm ngang, cong xuống) ---
   const animatedLeftBrow = useAnimatedStyle(() => {
-    const rotate = interpolate(progress.value, [0, 1, 2], [-15, 0, 0]); // Tệ: xếch ngược lên
+    const rotate = interpolate(progress.value, [0, 1, 2], [-15, 0, 0]);
     const translateY = interpolate(progress.value, [0, 1, 2], [5, 0, 0]);
     return { transform: [{ rotate: `${rotate}deg` }, { translateY }] };
   });
@@ -57,12 +60,11 @@ export default function MoodScreen() {
     return { transform: [{ rotate: `${rotate}deg` }, { translateY }] };
   });
 
-  // --- Cái Miệng (Há hốc to -> Dẹt phẳng -> Cười cong) ---
   const animatedMouthStyle = useAnimatedStyle(() => {
-    const height = interpolate(progress.value, [0, 1, 2], [45, 8, 30]); // Tệ: Tròn to, Bình thường: Dẹt, Tốt: Bán nguyệt
+    const height = interpolate(progress.value, [0, 1, 2], [45, 8, 30]);
     const widthMouth = interpolate(progress.value, [0, 1, 2], [45, 45, 45]);
-    const borderRadius = interpolate(progress.value, [0, 1, 2], [22, 4, 0]); // Tốt sẽ không dùng tròn đều mà bo đáy
-    
+    const borderRadius = interpolate(progress.value, [0, 1, 2], [22, 4, 0]);
+
     return {
       height,
       width: widthMouth,
@@ -74,92 +76,94 @@ export default function MoodScreen() {
     };
   });
 
+  const handleSubmit = () => {
+    Keyboard.dismiss();
+    router.replace('/(tabs)');
+  };
+
   return (
-    <Animated.View style={[styles.container, animatedBackgroundStyle]}>
-      {/* Header */}
-      <Text style={styles.headerTitle}>Hôm nay bạn thế nào?</Text>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <Animated.View style={[styles.container, animatedBackgroundStyle]}>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+          style={styles.keyboardAvoiding}>
+          <Text style={styles.headerTitle}>Hôm nay bạn thế nào?</Text>
 
-      {/* Vùng vẽ khuôn mặt hoạt hình Mascot */}
-      <View style={styles.mascotContainer}>
-        {/* Chân mày */}
-        <View style={styles.row}>
-          <Animated.View style={[styles.eyebrow, animatedLeftBrow]} />
-          <Animated.View style={[styles.eyebrow, animatedRightBrow]} />
-        </View>
+          <View style={styles.mascotContainer}>
+            <View style={styles.row}>
+              <Animated.View style={[styles.eyebrow, animatedLeftBrow]} />
+              <Animated.View style={[styles.eyebrow, animatedRightBrow]} />
+            </View>
 
-        {/* Cặp mắt */}
-        <View style={[styles.row, { marginTop: 15 }]}>
-          <Animated.View style={[styles.eye, animatedEyeStyle]} />
-          <Animated.View style={[styles.eye, animatedEyeStyle]} />
-        </View>
+            <View style={[styles.row, styles.eyeRow]}>
+              <Animated.View style={[styles.eye, animatedEyeStyle]} />
+              <Animated.View style={[styles.eye, animatedEyeStyle]} />
+            </View>
 
-        {/* Cái miệng chuyển động linh hoạt */}
-        <View style={styles.mouthWrapper}>
-          <Animated.View style={[styles.mouth, animatedMouthStyle]} />
-        </View>
-      </View>
+            <View style={styles.mouthWrapper}>
+              <Animated.View style={[styles.mouth, animatedMouthStyle]} />
+            </View>
+          </View>
 
-      {/* Nhãn chữ hiển thị Mood lớn */}
-      <Text style={styles.moodLabel}>{MOODS[currentIdx].label}</Text>
+          <Text style={styles.moodLabel}>{MOODS[currentIdx].label}</Text>
 
-      {/* Thanh Slider Custom trượt qua lại giữa 3 điểm chấm tròn */}
-      <View style={styles.sliderWrapper}>
-        <View style={styles.sliderTrackLine} />
-        {/* 3 Nút chấm định vị nền trắng */}
-        <View style={styles.dotsRow}>
-          <View style={styles.dotNode} />
-          <View style={styles.dotNode} />
-          <View style={styles.dotNode} />
-        </View>
+          <View style={styles.sliderWrapper}>
+            <View style={styles.sliderTrackLine} />
+            <View style={styles.dotsRow}>
+              <View style={styles.dotNode} />
+              <View style={styles.dotNode} />
+              <View style={styles.dotNode} />
+            </View>
 
-        {/* Nút kéo tương tác thực tế */}
-        <Slider
-          style={styles.actualSlider}
-          progress={progress}
-          minimumValue={min}
-          maximumValue={max}
-          step={2}
-          onSlidingComplete={(v) => {
-            const rounded = Math.round(v);
-            progress.value = withTiming(rounded); // Nhảy mượt vào điểm khấc
-            setCurrentIdx(rounded);
-          }}
-          thumbWidth={26}
-          theme={{
-            disableMinTrackTintColor: 'transparent',
-            maximumTrackTintColor: 'transparent',
-            minimumTrackTintColor: 'transparent',
-            cacheTrackTintColor: 'transparent',
-            bubbleBackgroundColor: 'transparent',
-            heartbeatColor: 'transparent',
-          }}
-          renderThumb={() => <View style={styles.customThumb} />}
-        />
-      </View>
+            <Slider
+              style={styles.actualSlider}
+              progress={progress}
+              minimumValue={min}
+              maximumValue={max}
+              step={2}
+              onSlidingComplete={(v) => {
+                const rounded = Math.round(v);
+                progress.value = withTiming(rounded);
+                setCurrentIdx(rounded);
+              }}
+              thumbWidth={26}
+              theme={{
+                disableMinTrackTintColor: 'transparent',
+                maximumTrackTintColor: 'transparent',
+                minimumTrackTintColor: 'transparent',
+                cacheTrackTintColor: 'transparent',
+                bubbleBackgroundColor: 'transparent',
+                heartbeatColor: 'transparent',
+              }}
+              renderThumb={() => <View style={styles.customThumb} />}
+            />
+          </View>
 
-      {/* Hộp nhập Comment và Nút Submit dưới đáy */}
-      <View style={styles.commentBox}>
-        <TextInput
-          style={styles.input}
-          placeholder="Comment...."
-          placeholderTextColor="rgba(255,255,255,0.6)"
-          multiline
-          value={comment}
-          onChangeText={setComment}
-        />
-        <TouchableOpacity
-          style={styles.submitBtn}
-          activeOpacity={0.8}
-          onPress={() => router.replace('/(tabs)')}>
-          <Text style={[styles.submitText, { color: MOODS[currentIdx].color }]}>Submit</Text>
-        </TouchableOpacity>
-      </View>
-    </Animated.View>
+          <View style={styles.commentBox}>
+            <TextInput
+              style={styles.input}
+              placeholder="Comment...."
+              placeholderTextColor="rgba(255,255,255,0.6)"
+              multiline
+              value={comment}
+              onChangeText={setComment}
+            />
+            <TouchableOpacity style={styles.submitBtn} activeOpacity={0.8} onPress={handleSubmit}>
+              <Text style={[styles.submitText, { color: MOODS[currentIdx].color }]}>Submit</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Animated.View>
+    </TouchableWithoutFeedback>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  keyboardAvoiding: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -183,6 +187,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: 140,
+  },
+  eyeRow: {
+    marginTop: 15,
   },
   eyebrow: {
     width: 50,
