@@ -43,6 +43,14 @@ const TASKS = [
     },
 ] as const;
 
+const TASK_DETAIL_ROUTES = {
+    '01': '/task1/page1',
+    '02': '/task2/page1',
+    '03': '/task3/page1',
+    '04': '/task4/page1',
+    '05': '/task5/page1',
+} as const;
+
 function buildDateStrip() {
     const today = new Date();
     // 8 ngày: 3 ngày trước → 4 ngày sau, hôm nay được tô đậm
@@ -106,7 +114,7 @@ export default function DailyTasksScreen() {
                         <Text style={styles.taskDescription}>{task.description}</Text>
                         <Pressable
                             accessibilityRole="button"
-                            onPress={() => Alert.alert(`Nhiệm vụ ${task.id}`, task.description)}
+                            onPress={() => router.push(TASK_DETAIL_ROUTES[task.id])}
                             style={styles.taskDetailButton}>
                             <Text style={styles.taskDetailText}>Xem chi tiết</Text>
                         </Pressable>

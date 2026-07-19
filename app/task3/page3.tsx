@@ -10,7 +10,7 @@ import {
 import { useRouter } from 'expo-router';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 const TOTAL_SECONDS = 30 * 60;
 
@@ -20,7 +20,7 @@ export default function Task3Page3() {
     const [seconds, setSeconds] = useState(0);
     const [isRunning, setIsRunning] = useState(true);
 
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         if (isRunning) {
@@ -76,7 +76,7 @@ export default function Task3Page3() {
                                     style={styles.skipTickButton}
                                     onPress={() => {
                                         if (timerRef.current) clearInterval(timerRef.current);
-                                        router.push('/(task3)/page4');
+                                        router.push('/task3/page4');
                                     }}
                                 >
                                     <Text style={styles.skipTickIcon}>✓</Text>

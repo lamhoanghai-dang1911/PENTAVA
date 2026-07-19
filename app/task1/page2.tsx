@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView, Dimensions } from 'react-native';
+import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 
-const { width } = Dimensions.get('window');
 const FOOD_ITEMS = ['Thức ăn nhanh', 'Nước ngọt có ga', 'Kẹo ngọt', 'Khoai tây chiên', 'Thịt chế biến sẵn', 'Bánh ngọt'];
 
 export default function Page2() {
@@ -40,7 +39,7 @@ export default function Page2() {
         ))}
       </ScrollView>
       <View style={styles.bottomFixedBtn}>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/page3')}>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/task1/page3')}>
           <Text style={styles.primaryButtonText}>Tiếp tục</Text>
         </TouchableOpacity>
       </View>

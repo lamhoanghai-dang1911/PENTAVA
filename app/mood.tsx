@@ -1,5 +1,6 @@
+import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Dimensions, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-awesome-slider'; // Hoặc tự chế Slider bằng PanGesture
 import Animated, {
   interpolate,
@@ -8,9 +9,6 @@ import Animated, {
   useSharedValue,
   withTiming
 } from 'react-native-reanimated';
-
-const { width } = Dimensions.get('window');
-
 
 // Định nghĩa dữ liệu 3 trạng thái Mood tương ứng Figma
 const MOODS = [
@@ -149,7 +147,10 @@ export default function MoodScreen() {
           value={comment}
           onChangeText={setComment}
         />
-        <TouchableOpacity style={styles.submitBtn} activeOpacity={0.8}>
+        <TouchableOpacity
+          style={styles.submitBtn}
+          activeOpacity={0.8}
+          onPress={() => router.replace('/(tabs)')}>
           <Text style={[styles.submitText, { color: MOODS[currentIdx].color }]}>Submit</Text>
         </TouchableOpacity>
       </View>

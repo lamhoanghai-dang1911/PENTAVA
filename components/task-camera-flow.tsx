@@ -20,7 +20,7 @@ type TaskCameraScaffoldProps = {
   onBack: () => void;
 };
 
-type ReviewPathname = '/page5' | '/task2/page5';
+type ReviewPathname = '/task1/page5' | '/task2/page5' | '/task5/page4';
 
 type TaskCameraCaptureScreenProps = {
   reviewPathname: ReviewPathname;
@@ -130,7 +130,7 @@ export function TaskPhotoReviewScreen() {
 
   const completeTask = () => {
     Alert.alert('Hoàn thành nhiệm vụ!');
-    router.dismissAll();
+    router.replace('/daily-tasks');
   };
 
   return (

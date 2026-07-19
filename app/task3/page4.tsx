@@ -23,7 +23,7 @@ export default function Task3Page4() {
 
             <View style={styles.timerBottomCard}>
                 <View style={styles.orangeIconBadge}><Text style={{ fontSize: 20 }}>🚶</Text></View>
-                <TouchableOpacity style={[styles.yellowButton, { backgroundColor: '#EAB308', marginTop: 16 }]} onPress={() => router.push('/(task3)/page5')}>
+                <TouchableOpacity style={[styles.yellowButton, { backgroundColor: '#EAB308', marginTop: 16 }]} onPress={() => router.push('/task3/page5')}>
                     <Text style={styles.yellowButtonText}>Hoàn thành</Text>
                 </TouchableOpacity>
             </View>

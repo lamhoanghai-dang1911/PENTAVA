@@ -59,7 +59,7 @@ export default function Task4Page2() {
                     />
                 </View>
 
-                <TouchableOpacity style={styles.yellowButton} onPress={() => router.push('/(task4)/page3')}>
+                <TouchableOpacity style={styles.yellowButton} onPress={() => router.push('/task4/page3')}>
                     <Text style={styles.yellowButtonText}>Tạm dừng</Text>
                 </TouchableOpacity>
 

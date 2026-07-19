@@ -39,7 +39,7 @@ export default function Task4Page3() {
         <View style={styles.moonBadge}><Text style={{ fontSize: 22 }}>🌙</Text></View>
         <Text style={styles.bottomStatusText}>Hẹn gặp bạn vào một ngày mới{"\n"}tràn đầy năng lượng.</Text>
         
-        <TouchableOpacity style={styles.yellowButton} onPress={() => router.push('/(task4)/page4')}>
+        <TouchableOpacity style={styles.yellowButton} onPress={() => router.push('/task4/page4')}>
           <Text style={styles.yellowButtonText}>Bắt đầu ngay</Text>
         </TouchableOpacity>
         

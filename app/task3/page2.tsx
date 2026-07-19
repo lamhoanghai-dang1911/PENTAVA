@@ -32,7 +32,7 @@ export default function Task3Page2() {
           </TouchableOpacity>
         ))}
 
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/(task3)/page3')}>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/task3/page3')}>
           <Text style={styles.primaryButtonText}>Tiếp tục</Text>
         </TouchableOpacity>
       </View>

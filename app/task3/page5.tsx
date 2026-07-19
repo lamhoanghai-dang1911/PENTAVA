@@ -24,7 +24,7 @@ export default function Task3Page5() {
           <View style={styles.statBox}><Text style={styles.statIcon}>🔥</Text><Text style={styles.statVal}>03</Text><Text style={styles.statLbl}>Streak</Text></View>
         </View>
 
-        <TouchableOpacity style={[styles.primaryButton, { width: '100%' }]} onPress={() => router.push('/(task3)/page6')}>
+        <TouchableOpacity style={[styles.primaryButton, { width: '100%' }]} onPress={() => router.push('/task3/page6')}>
           <Text style={styles.primaryButtonText}>Chụp ảnh check-in</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.secondaryButton} onPress={() => alert('Đã lưu tiến trình')}>
