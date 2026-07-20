@@ -50,9 +50,9 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
-          <View style={styles.avatar}>
+          <Pressable onPress={() => router.push('/settings' as any)} style={styles.avatar}>
             <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
-          </View>
+          </Pressable>
         </View>
 
         <View style={styles.mascotCard}>

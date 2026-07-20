@@ -1,8 +1,14 @@
 {
   "expo": {
     "name": "pentava",
-    "slug": "pentava",
+    "slug": "pentava-6jlvcpng3erd8joudc77c",
     "version": "1.0.0",
+    "owner": "dannylams-team",
+    "extra": {
+      "eas": {
+        "projectId": "8518779e-047c-455f-bc0d-6aa8bd92a561"
+      }
+    },
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "pentava",
@@ -19,7 +25,8 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.pentava"
     },
     "web": {
       "output": "static",
@@ -45,6 +52,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/8518779e-047c-455f-bc0d-6aa8bd92a561"
     }
   }
 }
