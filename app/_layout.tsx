@@ -1,5 +1,5 @@
 import { useAppFonts } from '@/hooks/use-app-fonts';
-import { OnboardingProvider } from '@/context/onboarding-context';
+import { OnboardingProvider } from '@/src/context/onboarding-context';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';

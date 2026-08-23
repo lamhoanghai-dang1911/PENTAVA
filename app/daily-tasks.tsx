@@ -44,11 +44,11 @@ const TASKS = [
 ] as const;
 
 const TASK_DETAIL_ROUTES = {
-    '01': '/task1/page1',
-    '02': '/task2/page1',
-    '03': '/task3/page1',
-    '04': '/task4/page1',
-    '05': '/task5/page1',
+    '01': '/(exercises)/avoid-food/page1',
+    '02': '/(exercises)/fruit-veg/page1',
+    '03': '/(exercises)/workout/page1',
+    '04': '/(exercises)/bedtime-routine/page1',
+    '05': '/(exercises)/sleep-time/page1',
 } as const;
 
 function buildDateStrip() {

@@ -1,38 +1,64 @@
-import { PrimaryButton } from '@/components/ui/primary-button';
 import { DividerWithText } from '@/components/ui/divider-with-text';
 import { PillTextInput } from '@/components/ui/pill-text-input';
+import { PrimaryButton } from '@/components/ui/primary-button';
 import { ScreenContainer } from '@/components/ui/screen-container';
 import { Design, FontFamily } from '@/constants/design';
 import { Image } from 'expo-image';
-import { router, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   Alert,
-  Image as RNImage,
   Pressable,
+  Image as RNImage,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { authService } from './services/authService';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+  const [loading, setLoading] = useState(false); // Thêm trạng thái loading nếu cần
   const router = useRouter();
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert('Thiếu thông tin', 'Vui lòng nhập email và mật khẩu.');
       return;
     }
 
-    router.replace('/mood'); 
+    try {
+      setLoading(true);
+      // Gọi API đăng nhập thật
+      const response = await authService.login({ email, password });
+
+      // Thành công -> Lưu token (ví dụ dùng AsyncStorage hoặc Context) và chuyển màn hình
+      console.log('Login Token:', response.accessToken);
+
+      router.replace('/mood');
+    } catch (error: any) {
+      Alert.alert('Đăng nhập thất bại', error.message || 'Đã có lỗi xảy ra.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSocialLogin = (provider: string) => {
-    Alert.alert('Đăng nhập', `Tính năng đăng nhập ${provider} sẽ được cập nhật sau.`);
+  const handleSocialLogin = async (provider: string) => {
+    if (provider === 'Google') {
+      try {
+        // Ví dụ gọi Google Login với idToken giả lập hoặc lấy từ Expo AuthSession
+        const response = await authService.googleLogin('mock-google-id-token');
+        console.log('Google Token:', response.accessToken);
+        router.replace('/mood');
+      } catch (error: any) {
+        Alert.alert('Lỗi', error.message);
+      }
+    } else {
+      Alert.alert('Đăng nhập', `Tính năng đăng nhập ${provider} sẽ được cập nhật sau.`);
+    }
   };
 
   return (

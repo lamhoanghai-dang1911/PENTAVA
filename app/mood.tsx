@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect } from 'react';
 import {
   Keyboard,
   KeyboardAvoidingView,
@@ -12,69 +12,21 @@ import {
   View,
 } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
-import Animated, {
-  interpolate,
-  interpolateColor,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useSharedValue, withTiming } from 'react-native-reanimated';
 
-const MOODS = [
-  { label: 'TỆ', color: '#FFC145' },
-  { label: 'BÌNH THƯỜNG', color: '#4EA3F7' },
-  { label: 'TỐT', color: '#4CD080' },
-];
+import { MoodMascot } from '@/src/features/mood/components/MoodMascot';
+import { MOOD_OPTIONS, useMoodSelector } from '@/src/features/mood/hooks/useMoodSelector';
 
 export default function MoodScreen() {
+  const router = useRouter();
   const progress = useSharedValue(0);
-  const [comment, setComment] = useState('');
-  const [currentIdx, setCurrentIdx] = useState(0);
   const min = useSharedValue(0);
   const max = useSharedValue(2);
-  const router = useRouter();
+  const { comment, setComment, currentIndex, selectedMood, setMoodBySlider } = useMoodSelector();
 
-  const animatedBackgroundStyle = useAnimatedStyle(() => {
-    const backgroundColor = interpolateColor(
-      progress.value,
-      [0, 1, 2],
-      [MOODS[0].color, MOODS[1].color, MOODS[2].color]
-    );
-    return { backgroundColor };
-  });
-
-  const animatedEyeStyle = useAnimatedStyle(() => {
-    const scaleY = interpolate(progress.value, [0, 1, 2], [1, 1, 1]);
-    return { transform: [{ scaleY }] };
-  });
-
-  const animatedLeftBrow = useAnimatedStyle(() => {
-    const rotate = interpolate(progress.value, [0, 1, 2], [-15, 0, 0]);
-    const translateY = interpolate(progress.value, [0, 1, 2], [5, 0, 0]);
-    return { transform: [{ rotate: `${rotate}deg` }, { translateY }] };
-  });
-
-  const animatedRightBrow = useAnimatedStyle(() => {
-    const rotate = interpolate(progress.value, [0, 1, 2], [15, 0, 0]);
-    const translateY = interpolate(progress.value, [0, 1, 2], [5, 0, 0]);
-    return { transform: [{ rotate: `${rotate}deg` }, { translateY }] };
-  });
-
-  const animatedMouthStyle = useAnimatedStyle(() => {
-    const height = interpolate(progress.value, [0, 1, 2], [45, 8, 30]);
-    const widthMouth = interpolate(progress.value, [0, 1, 2], [45, 45, 45]);
-    const borderRadius = interpolate(progress.value, [0, 1, 2], [22, 4, 0]);
-
-    return {
-      height,
-      width: widthMouth,
-      borderRadius,
-      borderBottomLeftRadius: interpolate(progress.value, [0, 1, 2], [22, 4, 25]),
-      borderBottomRightRadius: interpolate(progress.value, [0, 1, 2], [22, 4, 25]),
-      borderTopLeftRadius: interpolate(progress.value, [0, 1, 2], [22, 4, 5]),
-      borderTopRightRadius: interpolate(progress.value, [0, 1, 2], [22, 4, 5]),
-    };
-  });
+  useEffect(() => {
+    progress.value = withTiming(currentIndex, { duration: 200 });
+  }, [currentIndex, progress]);
 
   const handleSubmit = () => {
     Keyboard.dismiss();
@@ -83,37 +35,24 @@ export default function MoodScreen() {
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-      <Animated.View style={[styles.container, animatedBackgroundStyle]}>
+      <Animated.View style={[styles.container, { backgroundColor: selectedMood.color }]}>
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
-          style={styles.keyboardAvoiding}>
+          style={styles.keyboardAvoiding}
+        >
           <Text style={styles.headerTitle}>Hôm nay bạn thế nào?</Text>
 
-          <View style={styles.mascotContainer}>
-            <View style={styles.row}>
-              <Animated.View style={[styles.eyebrow, animatedLeftBrow]} />
-              <Animated.View style={[styles.eyebrow, animatedRightBrow]} />
-            </View>
+          <MoodMascot progress={progress} currentIndex={currentIndex} />
 
-            <View style={[styles.row, styles.eyeRow]}>
-              <Animated.View style={[styles.eye, animatedEyeStyle]} />
-              <Animated.View style={[styles.eye, animatedEyeStyle]} />
-            </View>
-
-            <View style={styles.mouthWrapper}>
-              <Animated.View style={[styles.mouth, animatedMouthStyle]} />
-            </View>
-          </View>
-
-          <Text style={styles.moodLabel}>{MOODS[currentIdx].label}</Text>
+          <Text style={styles.moodLabel}>{selectedMood.label}</Text>
 
           <View style={styles.sliderWrapper}>
             <View style={styles.sliderTrackLine} />
             <View style={styles.dotsRow}>
-              <View style={styles.dotNode} />
-              <View style={styles.dotNode} />
-              <View style={styles.dotNode} />
+              {MOOD_OPTIONS.map((mood) => (
+                <View key={mood.label} style={[styles.dotNode, { backgroundColor: mood.color }]} />
+              ))}
             </View>
 
             <Slider
@@ -122,10 +61,8 @@ export default function MoodScreen() {
               minimumValue={min}
               maximumValue={max}
               step={2}
-              onSlidingComplete={(v) => {
-                const rounded = Math.round(v);
-                progress.value = withTiming(rounded);
-                setCurrentIdx(rounded);
+              onSlidingComplete={(value) => {
+                setMoodBySlider(value);
               }}
               thumbWidth={26}
               theme={{
@@ -150,7 +87,7 @@ export default function MoodScreen() {
               onChangeText={setComment}
             />
             <TouchableOpacity style={styles.submitBtn} activeOpacity={0.8} onPress={handleSubmit}>
-              <Text style={[styles.submitText, { color: MOODS[currentIdx].color }]}>Submit</Text>
+              <Text style={[styles.submitText, { color: selectedMood.color }]}>Submit</Text>
             </TouchableOpacity>
           </View>
         </KeyboardAvoidingView>
@@ -160,9 +97,7 @@ export default function MoodScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: { flex: 1 },
   keyboardAvoiding: {
     flex: 1,
     alignItems: 'center',
@@ -176,41 +111,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#FFF',
     textAlign: 'center',
-  },
-  mascotContainer: {
-    height: 180,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-  },
-  row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: 140,
-  },
-  eyeRow: {
-    marginTop: 15,
-  },
-  eyebrow: {
-    width: 50,
-    height: 6,
-    backgroundColor: '#FFF',
-    borderRadius: 3,
-  },
-  eye: {
-    width: 32,
-    height: 32,
-    backgroundColor: '#FFF',
-    borderRadius: 16,
-  },
-  mouthWrapper: {
-    marginTop: 25,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  mouth: {
-    backgroundColor: '#FFF',
   },
   moodLabel: {
     fontSize: 32,
@@ -242,7 +142,6 @@ const styles = StyleSheet.create({
     width: 12,
     height: 12,
     borderRadius: 6,
-    backgroundColor: '#FFF',
   },
   actualSlider: {
     position: 'absolute',
@@ -259,27 +158,27 @@ const styles = StyleSheet.create({
   },
   commentBox: {
     width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 20,
-    padding: 16,
-    height: 160,
-    justifyContent: 'space-between',
+    paddingHorizontal: 8,
   },
   input: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
     color: '#FFF',
-    fontSize: 16,
+    minHeight: 110,
     textAlignVertical: 'top',
-    height: 90,
+    marginBottom: 18,
   },
   submitBtn: {
-    alignSelf: 'flex-end',
     backgroundColor: '#FFF',
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    borderRadius: 15,
+    borderRadius: 24,
+    paddingVertical: 16,
+    alignItems: 'center',
   },
   submitText: {
-    fontWeight: 'bold',
-    fontSize: 14,
+    fontWeight: '700',
+    fontSize: 16,
   },
 });
+
