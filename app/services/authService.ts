@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://192.168.1.9:8081/api/auth';
+const API_BASE_URL = 'http://192.168.1.9:8080/api/auth';
 export const authService = {
     // 1. Đăng ký
     async register(data: { email: string; password: string; name: string }) {
@@ -24,6 +24,18 @@ export const authService = {
         return result;
     },
 
+    // 2.1. Gửi lại mã OTP
+    async resendOtp(email: string) {
+        const response = await fetch(`${API_BASE_URL}/resend-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Không thể gửi lại mã OTP');
+        return result;
+    },
+
     // 3. Đăng nhập
     async login(data: { email: string; password: string }) {
         const response = await fetch(`${API_BASE_URL}/login`, {
@@ -33,7 +45,7 @@ export const authService = {
         });
         const result = await response.json();
         if (!response.ok) throw new Error(result.message || 'Đăng nhập thất bại');
-        return result; // Trả về accessToken
+        return result;
     },
 
     // 4. Đăng nhập Google

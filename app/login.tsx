@@ -3,9 +3,11 @@ import { PillTextInput } from '@/components/ui/pill-text-input';
 import { PrimaryButton } from '@/components/ui/primary-button';
 import { ScreenContainer } from '@/components/ui/screen-container';
 import { Design, FontFamily } from '@/constants/design';
+import * as Google from 'expo-auth-session/providers/google';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -17,12 +19,53 @@ import {
 } from 'react-native';
 import { authService } from './services/authService';
 
+WebBrowser.maybeCompleteAuthSession();
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [loading, setLoading] = useState(false); // Thêm trạng thái loading nếu cần
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+
+  // Cấu hình Google Auth Request với Client ID thực tế
+  // const [request, response, promptAsync] = AuthSession.useAuthRequest({
+  //   clientId: '957094127060-01oacpn01pt6s25iu541q9il6tn90b4j.apps.googleusercontent.com',
+  //   scopes: ['profile', 'email'],
+  //   redirectUri: AuthSession.makeRedirectUri({ scheme: 'your-app-scheme' }),
+  // });
+
+  // Bên trong component LoginScreen:
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    clientId: '957094127060-01oacpn01pt6s25iu541q9il6tn90b4j.apps.googleusercontent.com',
+  });
+
+  // Xử lý kết quả trả về từ Google Login
+  useEffect(() => {
+    if (response?.type === 'success') {
+      const { authentication, params } = response;
+      const idToken = authentication?.idToken || params?.id_token;
+
+      if (idToken) {
+        handleBackendGoogleLogin(idToken);
+      } else {
+        Alert.alert('Đăng nhập Google', 'Không nhận được mã xác thực từ Google.');
+      }
+    }
+  }, [response]);
+
+  const handleBackendGoogleLogin = async (idToken: string) => {
+    try {
+      setLoading(true);
+      const res = await authService.googleLogin(idToken);
+      console.log('Google Token:', res.accessToken);
+      router.replace('/mood');
+    } catch (error: any) {
+      Alert.alert('Đăng nhập Google thất bại', error.message || 'Đã có lỗi xảy ra.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
@@ -32,12 +75,8 @@ export default function LoginScreen() {
 
     try {
       setLoading(true);
-      // Gọi API đăng nhập thật
       const response = await authService.login({ email, password });
-
-      // Thành công -> Lưu token (ví dụ dùng AsyncStorage hoặc Context) và chuyển màn hình
       console.log('Login Token:', response.accessToken);
-
       router.replace('/mood');
     } catch (error: any) {
       Alert.alert('Đăng nhập thất bại', error.message || 'Đã có lỗi xảy ra.');
@@ -48,14 +87,7 @@ export default function LoginScreen() {
 
   const handleSocialLogin = async (provider: string) => {
     if (provider === 'Google') {
-      try {
-        // Ví dụ gọi Google Login với idToken giả lập hoặc lấy từ Expo AuthSession
-        const response = await authService.googleLogin('mock-google-id-token');
-        console.log('Google Token:', response.accessToken);
-        router.replace('/mood');
-      } catch (error: any) {
-        Alert.alert('Lỗi', error.message);
-      }
+      promptAsync();
     } else {
       Alert.alert('Đăng nhập', `Tính năng đăng nhập ${provider} sẽ được cập nhật sau.`);
     }
@@ -105,7 +137,7 @@ export default function LoginScreen() {
           <Pressable accessibilityRole="link" onPress={() => Alert.alert('Quên mật khẩu', 'Tính năng sẽ được cập nhật sau.')}>
             <Text style={styles.linkText}>Quên mật khẩu?</Text>
           </Pressable>
-          <Pressable accessibilityRole="link" onPress={() => router.push('/onboarding/name')}>
+          <Pressable accessibilityRole="link" onPress={() => router.push('/register')}>
             <Text style={styles.linkText}>
               Chưa có tài khoản? <Text style={styles.linkAccent}>Đăng ký</Text>
             </Text>
