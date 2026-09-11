@@ -1,4 +1,4 @@
-import { Design, FontFamily } from '@/constants/design';
+import { Design, FontFamily } from '@/src/constants/design';
 import { StyleSheet, Text, TextInput, TextInputProps, View } from 'react-native';
 
 type LabeledTextInputProps = TextInputProps & {

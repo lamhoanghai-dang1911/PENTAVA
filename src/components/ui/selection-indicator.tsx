@@ -1,4 +1,4 @@
-import { Design } from '@/constants/design';
+import { Design } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { Image, StyleSheet, View } from 'react-native';
 

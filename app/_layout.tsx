@@ -1,7 +1,11 @@
-import { useAppFonts } from '@/hooks/use-app-fonts';
 import { OnboardingProvider } from '@/src/context/onboarding-context';
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { useAppFonts } from '@/src/hooks/use-app-fonts';
 import { Stack } from 'expo-router';
+import {
+  DarkTheme,
+  DefaultTheme,
+  ThemeProvider,
+} from 'expo-router/react-navigation';
 import { StatusBar } from 'expo-status-bar';
 import { ActivityIndicator, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';

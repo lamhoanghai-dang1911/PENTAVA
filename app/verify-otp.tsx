@@ -1,7 +1,7 @@
-import { PillTextInput } from '@/components/ui/pill-text-input';
-import { PrimaryButton } from '@/components/ui/primary-button';
-import { ScreenContainer } from '@/components/ui/screen-container';
-import { Design, FontFamily } from '@/constants/design';
+import { PillTextInput } from '@/src/components/ui/pill-text-input';
+import { PrimaryButton } from '@/src/components/ui/primary-button';
+import { ScreenContainer } from '@/src/components/ui/screen-container';
+import { Design, FontFamily } from '@/src/constants/design';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -12,7 +12,7 @@ import {
     Text,
     View,
 } from 'react-native';
-import { authService } from './services/authService';
+import { authService } from '@/src/services/authService';
 
 export default function VerifyOtpScreen() {
     const { email } = useLocalSearchParams<{ email: string }>();

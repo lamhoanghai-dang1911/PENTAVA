@@ -1,9 +1,9 @@
-import { Design, FontFamily } from '@/constants/design';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { PrimaryButton } from '@/components/ui/primary-button';
-import { ScreenContainer } from '@/components/ui/screen-container';
+import { PrimaryButton } from '@/src/components/ui/primary-button';
+import { ScreenContainer } from '@/src/components/ui/screen-container';
 
 export default function PaymentSuccessScreen() {
     const router = useRouter();

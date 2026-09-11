@@ -1,8 +1,8 @@
-import { DividerWithText } from '@/components/ui/divider-with-text';
-import { PillTextInput } from '@/components/ui/pill-text-input';
-import { PrimaryButton } from '@/components/ui/primary-button';
-import { ScreenContainer } from '@/components/ui/screen-container';
-import { Design, FontFamily } from '@/constants/design';
+import { DividerWithText } from '@/src/components/ui/divider-with-text';
+import { PillTextInput } from '@/src/components/ui/pill-text-input';
+import { PrimaryButton } from '@/src/components/ui/primary-button';
+import { ScreenContainer } from '@/src/components/ui/screen-container';
+import { Design, FontFamily } from '@/src/constants/design';
 import * as Google from 'expo-auth-session/providers/google';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -17,7 +17,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { authService } from './services/authService';
+import { authService } from '@/src/services/authService';
 
 WebBrowser.maybeCompleteAuthSession();
 

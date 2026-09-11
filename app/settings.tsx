@@ -1,8 +1,8 @@
-import { Design, FontFamily } from '@/constants/design';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ScreenContainer } from '@/components/ui/screen-container';
+import { ScreenContainer } from '@/src/components/ui/screen-container';
 
 type MenuItem = {
     label: string;

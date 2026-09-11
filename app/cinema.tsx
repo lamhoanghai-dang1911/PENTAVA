@@ -1,5 +1,5 @@
-import { SectionTabs } from '@/components/home/section-tabs';
-import { Design, FontFamily } from '@/constants/design';
+import { SectionTabs } from '@/src/components/home/section-tabs';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useState } from 'react';

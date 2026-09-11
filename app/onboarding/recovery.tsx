@@ -1,5 +1,5 @@
-import { ScreenContainer } from '@/components/ui/screen-container';
-import { Design, FontFamily } from '@/constants/design';
+import { ScreenContainer } from '@/src/components/ui/screen-container';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';

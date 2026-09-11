@@ -1,7 +1,7 @@
-import { PurchaseSuccessModal } from '@/components/home/purchase-success-modal';
-import { ShopSheet, type ShopProduct } from '@/components/home/shop-sheet';
-import { Design, FontFamily } from '@/constants/design';
-import { useOnboarding } from '@/context/onboarding-context';
+import { PurchaseSuccessModal } from '@/src/components/home/purchase-success-modal';
+import { ShopSheet, type ShopProduct } from '@/src/components/home/shop-sheet';
+import { Design, FontFamily } from '@/src/constants/design';
+import { useOnboarding } from '@/src/context/onboarding-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';

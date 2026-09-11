@@ -1,4 +1,4 @@
-import { Design, FontFamily } from '@/constants/design';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Image, Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
 
 type PillTextInputProps = TextInputProps & {

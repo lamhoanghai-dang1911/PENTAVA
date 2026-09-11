@@ -1,5 +1,5 @@
-import type { ShopProduct } from '@/components/home/shop-sheet';
-import { Design, FontFamily } from '@/constants/design';
+import type { ShopProduct } from '@/src/components/home/shop-sheet';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 

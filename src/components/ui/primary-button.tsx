@@ -1,4 +1,4 @@
-import { Design, FontFamily } from '@/constants/design';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
 type PrimaryButtonProps = {

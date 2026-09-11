@@ -1,4 +1,4 @@
-import { Design } from '@/constants/design';
+import { Design } from '@/src/constants/design';
 import { StyleSheet, View } from 'react-native';
 
 type ProgressBarProps = {

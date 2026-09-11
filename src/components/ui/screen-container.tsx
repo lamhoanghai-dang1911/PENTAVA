@@ -1,4 +1,4 @@
-import { Design } from '@/constants/design';
+import { Design } from '@/src/constants/design';
 import { ReactNode } from 'react';
 import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';

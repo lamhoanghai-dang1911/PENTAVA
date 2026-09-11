@@ -1,7 +1,7 @@
-import { Design, FontFamily } from '@/constants/design';
+import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { PurchaseSuccessModal } from '@/components/home/purchase-success-modal';
+import { PurchaseSuccessModal } from '@/src/components/home/purchase-success-modal';
 
 
 export type ShopProduct = {

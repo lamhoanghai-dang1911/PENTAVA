@@ -1,5 +1,5 @@
-import { Design, FontFamily } from '@/constants/design';
-import { useOnboarding } from '@/context/onboarding-context';
+import { Design, FontFamily } from '@/src/constants/design';
+import { useOnboarding } from '@/src/context/onboarding-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
