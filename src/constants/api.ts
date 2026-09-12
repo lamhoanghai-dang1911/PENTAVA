@@ -9,4 +9,12 @@ export const API_ENDPOINTS = {
     LOGIN: "/api/auth/login",
     GOOGLE_LOGIN: "/api/auth/google",
   },
+  TASK: {
+    GET_BY_WEEK: "/api/onboarding/tasks",
+    GET_PROGRESS: (taskId: number) =>
+      `/api/onboarding/tasks/${taskId}/progress`,
+    SAVE_PROGRESS_ITEMS: (taskId: number) =>
+      `/api/onboarding/tasks/${taskId}/progress/items`,
+    COMPLETE: (taskId: number) => `/api/onboarding/tasks/${taskId}/complete`,
+  },
 };
