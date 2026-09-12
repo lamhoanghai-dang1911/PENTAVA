@@ -24,66 +24,66 @@ export default function RegisterScreen() {
     const router = useRouter();
 
     const handleRegister = async () => {
-    const trimmedName = name.trim();
-    const trimmedEmail = email.trim().toLowerCase();
-    const trimmedPassword = password.trim();
+        const trimmedName = name.trim();
+        const trimmedEmail = email.trim().toLowerCase();
+        const trimmedPassword = password.trim();
 
-    if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-        Alert.alert(
-            'Thiếu thông tin',
-            'Vui lòng điền đầy đủ họ tên, email và mật khẩu.'
-        );
-        return;
-    }
+        if (!trimmedName || !trimmedEmail || !trimmedPassword) {
+            Alert.alert(
+                'Thiếu thông tin',
+                'Vui lòng điền đầy đủ họ tên, email và mật khẩu.'
+            );
+            return;
+        }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!emailRegex.test(trimmedEmail)) {
-        Alert.alert(
-            'Email không hợp lệ',
-            'Vui lòng nhập đúng định dạng email.'
-        );
-        return;
-    }
+        if (!emailRegex.test(trimmedEmail)) {
+            Alert.alert(
+                'Email không hợp lệ',
+                'Vui lòng nhập đúng định dạng email.'
+            );
+            return;
+        }
 
-    if (trimmedPassword.length < 6) {
-        Alert.alert(
-            'Mật khẩu không hợp lệ',
-            'Mật khẩu phải có ít nhất 6 ký tự.'
-        );
-        return;
-    }
+        if (trimmedPassword.length < 6) {
+            Alert.alert(
+                'Mật khẩu không hợp lệ',
+                'Mật khẩu phải có ít nhất 6 ký tự.'
+            );
+            return;
+        }
 
-    try {
-        setLoading(true);
+        try {
+            setLoading(true);
 
-        const result = await authService.register({
-            name: trimmedName,
-            email: trimmedEmail,
-            password: trimmedPassword,
-        });
-
-        console.log('REGISTER SUCCESS:', result);
-
-        router.push({
-            pathname: '/verify-otp',
-            params: {
+            const result = await authService.register({
+                name: trimmedName,
                 email: trimmedEmail,
-            },
-        });
-    } catch (error) {
-        console.log('REGISTER ERROR:', error);
+                password: trimmedPassword,
+            });
 
-        Alert.alert(
-            'Đăng ký thất bại',
-            error instanceof Error
-                ? error.message
-                : 'Đã có lỗi xảy ra.'
-        );
-    } finally {
-        setLoading(false);
-    }
-};
+            console.log('REGISTER SUCCESS:', result);
+
+            router.push({
+                pathname: '/verify-otp',
+                params: {
+                    email: trimmedEmail,
+                },
+            });
+        } catch (error) {
+            console.log('REGISTER ERROR:', error);
+
+            Alert.alert(
+                'Đăng ký thất bại',
+                error instanceof Error
+                    ? error.message
+                    : 'Đã có lỗi xảy ra.'
+            );
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <ScreenContainer>

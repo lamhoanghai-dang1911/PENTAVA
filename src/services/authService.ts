@@ -30,11 +30,11 @@ export const authService = {
   // Đăng ký
   async register(data: RegisterData) {
     try {
-      const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
-        email: data.email,
-        password: data.password,
-        name: data.name,
-      });
+        const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
+          email: data.email,
+          password: data.password,
+          name: data.name,
+        });
 
       return response.data;
     } catch (error: any) {
