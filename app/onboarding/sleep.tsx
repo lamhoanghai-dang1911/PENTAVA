@@ -24,7 +24,6 @@ export default function SleepScreen() {
           currentStep={5}
           showBack
           showForward
-          onBack={() => router.back()}
           onForward={() => {
             if (canContinue) {
               handleContinue();

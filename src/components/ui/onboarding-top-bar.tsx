@@ -1,5 +1,6 @@
 import { Design } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 
 type OnboardingTopBarProps = {
@@ -12,6 +13,18 @@ type OnboardingTopBarProps = {
   onClose?: () => void;
 };
 
+const PREVIOUS_STEP_ROUTES = {
+  2: '/onboarding/name',
+  3: '/onboarding/gender-age',
+  4: '/onboarding/goals',
+  5: '/onboarding/routine',
+  6: '/onboarding/sleep',
+  7: '/onboarding/exercise',
+  8: '/onboarding/stress',
+  9: '/onboarding/screen-time',
+  10: '/onboarding/habit',
+} as const;
+
 export function OnboardingTopBar({
   currentStep,
   showBack = false,
@@ -21,6 +34,18 @@ export function OnboardingTopBar({
   onForward,
   onClose,
 }: OnboardingTopBarProps) {
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+
+    const previousRoute = PREVIOUS_STEP_ROUTES[currentStep as keyof typeof PREVIOUS_STEP_ROUTES];
+    if (previousRoute) {
+      router.replace(previousRoute);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.navRow}>
@@ -36,7 +61,7 @@ export function OnboardingTopBar({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Quay lại"
-            onPress={onBack}
+            onPress={handleBack}
             style={styles.navButton}>
             <Ionicons color={Design.colors.black} name="chevron-back" size={20} />
           </Pressable>

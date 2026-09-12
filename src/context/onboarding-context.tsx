@@ -1,4 +1,6 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import type { OnboardingSubmitResponse } from '@/src/types/api/onboarding';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 export type OnboardingData = {
   name: string;
@@ -16,6 +18,8 @@ export type OnboardingData = {
 
 type OnboardingContextValue = {
   data: OnboardingData;
+  submitResponse: OnboardingSubmitResponse | null;
+  setSubmitResponse: (response: OnboardingSubmitResponse | null) => void;
   setName: (name: string) => void;
   setGender: (gender: string | null) => void;
   setAge: (age: string | null) => void;
@@ -44,14 +48,65 @@ const initialData: OnboardingData = {
   freeTimes: [],
 };
 
+const ONBOARDING_STORAGE_KEY = '@pentava/onboarding-data';
+const ONBOARDING_RESPONSE_STORAGE_KEY = '@pentava/onboarding-response';
+
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function OnboardingProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState<OnboardingData>(initialData);
+  const [submitResponse, setSubmitResponse] = useState<OnboardingSubmitResponse | null>(null);
+  const [hasLoadedStorage, setHasLoadedStorage] = useState(false);
+
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const storedData = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
+        if (storedData) {
+          setData({ ...initialData, ...JSON.parse(storedData) });
+        }
+        const storedResponse = await AsyncStorage.getItem(ONBOARDING_RESPONSE_STORAGE_KEY);
+        if (storedResponse) {
+          setSubmitResponse(JSON.parse(storedResponse));
+        }
+      } catch (error) {
+        console.warn('Không thể đọc dữ liệu onboarding trên thiết bị.', error);
+      } finally {
+        setHasLoadedStorage(true);
+      }
+    };
+
+    void loadData();
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedStorage) {
+      return;
+    }
+
+    AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(data)).catch((error) => {
+      console.warn('Không thể lưu dữ liệu onboarding trên thiết bị.', error);
+    });
+  }, [data, hasLoadedStorage]);
+
+  useEffect(() => {
+    if (!hasLoadedStorage || !submitResponse) {
+      return;
+    }
+
+    AsyncStorage.setItem(
+      ONBOARDING_RESPONSE_STORAGE_KEY,
+      JSON.stringify(submitResponse),
+    ).catch((error) => {
+      console.warn('Không thể lưu kết quả onboarding trên thiết bị.', error);
+    });
+  }, [submitResponse, hasLoadedStorage]);
 
   const value = useMemo<OnboardingContextValue>(
     () => ({
       data,
+      submitResponse,
+      setSubmitResponse,
       setName: (name) => setData((prev) => ({ ...prev, name })),
       setGender: (gender) => setData((prev) => ({ ...prev, gender })),
       setAge: (age) => setData((prev) => ({ ...prev, age })),
@@ -77,9 +132,18 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
             ? prev.freeTimes.filter((item) => item !== freeTime)
             : [...prev.freeTimes, freeTime],
         })),
-      reset: () => setData(initialData),
+      reset: () => {
+        setData(initialData);
+        setSubmitResponse(null);
+        AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY).catch((error) => {
+          console.warn('Không thể xóa dữ liệu onboarding trên thiết bị.', error);
+        });
+        AsyncStorage.removeItem(ONBOARDING_RESPONSE_STORAGE_KEY).catch((error) => {
+          console.warn('Không thể xóa kết quả onboarding trên thiết bị.', error);
+        });
+      },
     }),
-    [data],
+    [data, submitResponse],
   );
 
   return <OnboardingContext.Provider value={value}>{children}</OnboardingContext.Provider>;

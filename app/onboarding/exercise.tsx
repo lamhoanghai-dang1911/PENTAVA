@@ -24,13 +24,6 @@ export default function ExerciseScreen() {
                 <OnboardingTopBar
                     currentStep={6}
                     showBack
-                    showForward
-                    onBack={() => router.back()}
-                    onForward={() => {
-                        if (canContinue) {
-                            router.push('/onboarding/stress');
-                        }
-                    }}
                 />
 
                 <Text style={styles.title}>

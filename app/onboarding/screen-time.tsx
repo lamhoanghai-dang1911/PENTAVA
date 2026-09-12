@@ -24,13 +24,7 @@ export default function ScreenTimeScreen() {
                 <OnboardingTopBar
                     currentStep={8}
                     showBack
-                    showForward
-                    onBack={() => router.back()}
-                    onForward={() => {
-                        if (canContinue) {
-                            router.push('/onboarding/habit');
-                        }
-                    }}
+                    
                 />
 
                 <Text style={styles.title}>

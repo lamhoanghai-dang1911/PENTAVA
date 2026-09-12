@@ -21,7 +21,7 @@ export default function FreeTimeScreen() {
     return (
         <ScreenContainer>
             <View style={styles.container}>
-                <OnboardingTopBar currentStep={10} showBack onBack={() => router.back()} />
+                <OnboardingTopBar currentStep={10} showBack />
 
                 <Text style={styles.title}>
                     Bạn thường có thời gian{'\n'}rảnh nhất vào lúc nào?
@@ -39,7 +39,11 @@ export default function FreeTimeScreen() {
                 </View>
 
                 <View style={styles.footer}>
-                    <PrimaryButton disabled={!canContinue} label="Hoàn Thành" onPress={handleFinish} />
+                    <PrimaryButton
+                        disabled={!canContinue}
+                        label="Hoàn Thành"
+                        onPress={handleFinish}
+                    />
                 </View>
             </View>
         </ScreenContainer>
