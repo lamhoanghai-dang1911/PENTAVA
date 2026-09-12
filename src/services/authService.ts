@@ -1,62 +1,190 @@
-const API_BASE_URL = 'http://192.168.1.9:8080/api/auth';
+import { API_BASE_URL, API_ENDPOINTS } from "../constants/api";
+
+type RegisterData = {
+  email: string;
+  password: string;
+  name: string;
+};
+
+type LoginData = {
+  email: string;
+  password: string;
+};
+
+type VerifyOtpData = {
+  email: string;
+  otpCode: string;
+};
+
+async function parseResponse(response: Response) {
+  const text = await response.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return {
+      message: text,
+    };
+  }
+}
+
 export const authService = {
-    // 1. Đăng ký
-    async register(data: { email: string; password: string; name: string }) {
-        const response = await fetch(`${API_BASE_URL}/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Đăng ký thất bại');
-        return result;
-    },
+  // Đăng ký
+  async register(data: RegisterData) {
+    const url = `${API_BASE_URL}${API_ENDPOINTS.AUTH.REGISTER}`;
 
-    // 2. Xác thực OTP
-    async verifyOtp(data: { email: string; otpCode: string }) {
-        const response = await fetch(`${API_BASE_URL}/verify-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Xác thực OTP thất bại');
-        return result;
-    },
+    console.log("API_BASE_URL:", API_BASE_URL);
+    console.log("REGISTER URL:", url);
+    console.log("REGISTER BODY:", {
+      email: data.email,
+      password: "******",
+      name: data.name,
+    });
 
-    // 2.1. Gửi lại mã OTP
-    async resendOtp(email: string) {
-        const response = await fetch(`${API_BASE_URL}/resend-otp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email }),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Không thể gửi lại mã OTP');
-        return result;
-    },
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        email: data.email,
+        password: data.password,
+        name: data.name,
+      }),
+    });
 
-    // 3. Đăng nhập
-    async login(data: { email: string; password: string }) {
-        const response = await fetch(`${API_BASE_URL}/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Đăng nhập thất bại');
-        return result;
-    },
+    const result = await parseResponse(response);
 
-    // 4. Đăng nhập Google
-    async googleLogin(idToken: string) {
-        const response = await fetch(`${API_BASE_URL}/google`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
-        });
-        const result = await response.json();
-        if (!response.ok) throw new Error(result.message || 'Đăng nhập Google thất bại');
-        return result;
-    },
+    console.log("REGISTER STATUS:", response.status);
+    console.log("REGISTER RESPONSE:", result);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+        result?.error ||
+        `Đăng ký thất bại (${response.status})`
+      );
+    }
+
+    return result;
+  },
+
+  // Xác thực OTP
+  async verifyOtp(data: VerifyOtpData) {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.AUTH.VERIFY_OTP}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          otpCode: data.otpCode,
+        }),
+      }
+    );
+
+    const result = await parseResponse(response);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+        result?.error ||
+        `Xác thực OTP thất bại (${response.status})`
+      );
+    }
+
+    return result;
+  },
+
+  // Gửi lại OTP
+  async resendOtp(email: string) {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.AUTH.RESEND_OTP}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email,
+        }),
+      }
+    );
+
+    const result = await parseResponse(response);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+        result?.error ||
+        `Không thể gửi lại mã OTP (${response.status})`
+      );
+    }
+
+    return result;
+  },
+
+  // Đăng nhập
+  async login(data: LoginData) {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.AUTH.LOGIN}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({
+          email: data.email,
+          password: data.password,
+        }),
+      }
+    );
+
+    const result = await parseResponse(response);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message ||
+        result?.error ||
+        `Đăng nhập thất bại (${response.status})`
+      );
+    }
+
+    return result;
+  },
+
+  // Google Login
+  async googleLogin(idToken: string) {
+    const response = await fetch(
+      `${API_BASE_URL}${API_ENDPOINTS.AUTH.GOOGLE_LOGIN}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: JSON.stringify({ idToken }),
+      }
+    );
+
+    const result = await parseResponse(response);
+
+    if (!response.ok) {
+      throw new Error(
+        result?.message || "Đăng nhập Google thất bại"
+      );
+    }
+
+    return result;
+  },
 };

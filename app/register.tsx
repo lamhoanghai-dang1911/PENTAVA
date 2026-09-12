@@ -24,28 +24,66 @@ export default function RegisterScreen() {
     const router = useRouter();
 
     const handleRegister = async () => {
-        if (!name.trim() || !email.trim() || !password.trim()) {
-            Alert.alert('Thiếu thông tin', 'Vui lòng điền đầy đủ họ tên, email và mật khẩu.');
-            return;
-        }
+    const trimmedName = name.trim();
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
 
-        try {
-            setLoading(true);
-            // Gọi API đăng ký khớp với RegisterRequestDTO
-            await authService.register({ name, email, password });
+    if (!trimmedName || !trimmedEmail || !trimmedPassword) {
+        Alert.alert(
+            'Thiếu thông tin',
+            'Vui lòng điền đầy đủ họ tên, email và mật khẩu.'
+        );
+        return;
+    }
 
-            Alert.alert('Thành công', 'Mã OTP xác thực đã được gửi về email của bạn.');
-            // Chuyển sang màn hình xác thực OTP và truyền kèm email
-            router.push({
-                pathname: '/verify-otp',
-                params: { email },
-            });
-        } catch (error: any) {
-            Alert.alert('Đăng ký thất bại', error.message || 'Đã có lỗi xảy ra.');
-        } finally {
-            setLoading(false);
-        }
-    };
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!emailRegex.test(trimmedEmail)) {
+        Alert.alert(
+            'Email không hợp lệ',
+            'Vui lòng nhập đúng định dạng email.'
+        );
+        return;
+    }
+
+    if (trimmedPassword.length < 6) {
+        Alert.alert(
+            'Mật khẩu không hợp lệ',
+            'Mật khẩu phải có ít nhất 6 ký tự.'
+        );
+        return;
+    }
+
+    try {
+        setLoading(true);
+
+        const result = await authService.register({
+            name: trimmedName,
+            email: trimmedEmail,
+            password: trimmedPassword,
+        });
+
+        console.log('REGISTER SUCCESS:', result);
+
+        router.push({
+            pathname: '/verify-otp',
+            params: {
+                email: trimmedEmail,
+            },
+        });
+    } catch (error) {
+        console.log('REGISTER ERROR:', error);
+
+        Alert.alert(
+            'Đăng ký thất bại',
+            error instanceof Error
+                ? error.message
+                : 'Đã có lỗi xảy ra.'
+        );
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <ScreenContainer>

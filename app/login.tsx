@@ -68,18 +68,40 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Thiếu thông tin', 'Vui lòng nhập email và mật khẩu.');
+    const trimmedEmail = email.trim().toLowerCase();
+
+    if (!trimmedEmail || !password) {
+      Alert.alert(
+        'Thiếu thông tin',
+        'Vui lòng nhập email và mật khẩu.'
+      );
       return;
     }
 
     try {
       setLoading(true);
-      const response = await authService.login({ email, password });
-      console.log('Login Token:', response.accessToken);
+
+      console.log('LOGIN REQUEST:', {
+        email: trimmedEmail,
+        password: '******',
+      });
+
+      const result = await authService.login({
+        email: trimmedEmail,
+        password: password,
+      });
+
+      console.log('LOGIN SUCCESS:', result);
+
       router.replace('/mood');
     } catch (error: any) {
-      Alert.alert('Đăng nhập thất bại', error.message || 'Đã có lỗi xảy ra.');
+      console.log('LOGIN ERROR:', error);
+
+      Alert.alert(
+        'Đăng nhập thất bại',
+        error?.message ||
+        'Email hoặc mật khẩu không đúng.'
+      );
     } finally {
       setLoading(false);
     }
@@ -131,7 +153,11 @@ export default function LoginScreen() {
           />
         </View>
 
-        <PrimaryButton label="Đăng nhập" onPress={handleLogin} style={styles.loginButton} />
+        <PrimaryButton
+          label={loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          onPress={handleLogin}
+          style={styles.loginButton}
+        />
 
         <View style={styles.linksRow}>
           <Pressable accessibilityRole="link" onPress={() => Alert.alert('Quên mật khẩu', 'Tính năng sẽ được cập nhật sau.')}>
