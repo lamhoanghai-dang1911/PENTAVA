@@ -16,7 +16,7 @@ export default function GenderAgeScreen() {
 
   return (
     <ScreenContainer scrollable contentStyle={styles.scrollContent}>
-      <OnboardingTopBar currentStep={2} showBack onBack={() => router.back()} />
+      <OnboardingTopBar currentStep={2} showBack />
 
       <Text style={styles.sectionTitle}>Giới tính của bạn là gì?</Text>
       <View style={styles.optionGroup}>
@@ -57,7 +57,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 8,
     paddingHorizontal: Design.spacing.screenHorizontal,
-    paddingBottom: 36,
   },
   sectionTitle: {
     marginTop: 36,
@@ -75,6 +74,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
   },
   footer: {
-    marginTop: 48,
+    marginTop: 'auto',
+    paddingBottom: 36,
   },
 });

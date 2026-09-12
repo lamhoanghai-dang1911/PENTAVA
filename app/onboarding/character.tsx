@@ -20,9 +20,6 @@ export default function CharacterScreen() {
     };
 
     const handleStart = () => {
-        // TODO: đây là màn cuối cùng của onboarding — lưu dữ liệu phỏng vấn
-        // (useOnboarding().data) lên server/AsyncStorage trước khi rời flow,
-        // vì sau router.replace thì OnboardingProvider unmount và data sẽ mất.
         router.replace('/(tabs)');
     };
 

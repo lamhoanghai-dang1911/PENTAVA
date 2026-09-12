@@ -1,27 +1,40 @@
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
+import { useOnboarding } from '@/src/context/onboarding-context';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
-// TODO: về sau tiêu đề và lời nhắn nên được cá nhân hóa dựa trên
-// câu trả lời phỏng vấn (useOnboarding().data) hoặc trả về từ server.
-const PLAN_TITLE = 'Tuần hồi phục';
-const PLAN_MESSAGE =
-    '"Gửi bạn, mình nhận thấy dạo gần đây bạn đã rất cố gắng, nhưng cơ thể và tâm trí có vẻ đang hơi quá tải. Hôm nay có thể không cần làm quá nhiều, chỉ cần nghỉ ngơi và hồi phục một chút cũng đã rất tốt rồi. Hãy dành nhiều thời gian hơn cho chính mình. Mình sẽ luôn ở đây đồng hành cùng bạn, không cần vội đâu."';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export default function RecoveryScreen() {
+    const { submitResponse } = useOnboarding();
+    const diagnostic = submitResponse?.diagnostic;
+    const firstPlan = diagnostic?.actionPlans[0];
+
     return (
         <ScreenContainer>
-            <View style={styles.container}>
+            <ScrollView contentContainerStyle={styles.container}>
                 <View style={styles.content}>
                     <Image
                         contentFit="contain"
                         source={require('@/assets/images/onboarding/cat-sparkle.png')}
                         style={styles.mascot}
                     />
-                    <Text style={styles.title}>{PLAN_TITLE}</Text>
-                    <Text style={styles.message}>{PLAN_MESSAGE}</Text>
+                    <Text style={styles.title}>Chuẩn đoán</Text>
+                    <Text style={styles.message}>
+                        {diagnostic?.summary || 'Đang tải kế hoạch hồi phục của bạn...'}
+                    </Text>
+                    {diagnostic?.topIssues.map((issue) => (
+                        <Text key={issue} style={styles.issue}>• {issue}</Text>
+                    ))}
+                    {firstPlan && (
+                        <View style={styles.plan}>
+                            <Text style={styles.planTitle}>{firstPlan.goal}</Text>
+                            <Text style={styles.planDescription}>{firstPlan.description}</Text>
+                            {firstPlan.actions.map((action) => (
+                                <Text key={action} style={styles.action}>• {action}</Text>
+                            ))}
+                        </View>
+                    )}
                 </View>
 
                 <View style={styles.footer}>
@@ -32,7 +45,7 @@ export default function RecoveryScreen() {
                         <Text style={styles.ctaLabel}>Bắt đầu hành trình</Text>
                     </Pressable>
                 </View>
-            </View>
+            </ScrollView>
         </ScreenContainer>
     );
 }
@@ -67,6 +80,40 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 21,
         paddingHorizontal: 6,
+    },
+    issue: {
+        alignSelf: 'stretch',
+        marginTop: 8,
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: Design.fontSize.caption,
+        color: Design.colors.mutedText,
+    },
+    plan: {
+        alignSelf: 'stretch',
+        marginTop: 20,
+        padding: 16,
+        borderRadius: Design.borderRadius.button,
+        backgroundColor: '#F3F7F4',
+    },
+    planTitle: {
+        marginBottom: 6,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: Design.fontSize.body,
+        color: Design.colors.primaryGreen,
+    },
+    planDescription: {
+        marginBottom: 10,
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: Design.fontSize.caption,
+        color: Design.colors.mutedText,
+        lineHeight: 19,
+    },
+    action: {
+        marginTop: 5,
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: Design.fontSize.caption,
+        color: Design.colors.black,
+        lineHeight: 19,
     },
     footer: {
         paddingBottom: 36,

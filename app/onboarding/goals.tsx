@@ -25,8 +25,6 @@ export default function GoalsScreen() {
       <OnboardingTopBar
         currentStep={3}
         showBack
-        showForward
-        onBack={() => router.back()}
         onForward={() => {
           if (canContinue) {
             router.push('/onboarding/routine');
@@ -37,6 +35,7 @@ export default function GoalsScreen() {
       <Text style={styles.title}>
         Bạn muốn cải thiện điều gì{'\n'}nhất lúc này?
       </Text>
+        <Text style={styles.helperText}>Có thể chọn nhiều đáp án</Text>
 
       <View style={styles.optionGroup}>
         {GOAL_OPTIONS.map((option) => (
@@ -60,11 +59,12 @@ export default function GoalsScreen() {
   );
 }
 
+//khúc này nếu có file css thì bỏ vào.
+
 const styles = StyleSheet.create({
   scrollContent: {
     paddingTop: 8,
     paddingHorizontal: Design.spacing.screenHorizontal,
-    paddingBottom: 36,
   },
   title: {
     marginTop: 36,
@@ -75,11 +75,20 @@ const styles = StyleSheet.create({
     color: Design.colors.black,
     lineHeight: 26,
   },
+    helperText: {
+      marginTop: -14,
+      marginBottom: 20,
+      textAlign: 'center',
+      fontFamily: FontFamily.beVietnamRegular,
+      fontSize: Design.fontSize.caption,
+      color: Design.colors.disabled,
+    },
   optionGroup: {
     gap: 13,
     paddingHorizontal: 10,
   },
   footer: {
-    marginTop: 40,
+    marginTop: 'auto',
+    paddingBottom: 36,
   },
 });

@@ -19,13 +19,6 @@ export default function RoutineScreen() {
         <OnboardingTopBar
           currentStep={4}
           showBack
-          showForward
-          onBack={() => router.back()}
-          onForward={() => {
-            if (canContinue) {
-              router.push('/onboarding/sleep');
-            }
-          }}
         />
 
         <Text style={styles.title}>

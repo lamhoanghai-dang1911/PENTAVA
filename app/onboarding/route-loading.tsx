@@ -1,22 +1,53 @@
 import { Design, FontFamily } from '@/src/constants/design';
+import { useOnboarding } from '@/src/context/onboarding-context';
+import { onboardingService } from '@/src/services/onboardingService';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const LOADING_DURATION_MS = 2500;
+const PREVIOUS_STEP_ROUTE = '/onboarding/free-time';
 
 export default function RouteLoadingScreen() {
-    useEffect(() => {
-        // TODO: sau này thay setTimeout bằng lời gọi API thật để tính lộ trình
-        // từ dữ liệu phỏng vấn (useOnboarding().data), xong thì mới điều hướng.
-        const timer = setTimeout(() => {
-            router.replace('/onboarding/recovery');
-        }, LOADING_DURATION_MS);
+    const { data, setSubmitResponse } = useOnboarding();
 
-        return () => clearTimeout(timer);
-    }, []);
+    useEffect(() => {
+        let isActive = true;
+
+        const submitOnboarding = async () => {
+            try {
+                const result = await onboardingService.submitFromContext(data);
+                if (!isActive) return;
+
+                if (!result) {
+                    Alert.alert(
+                        'Thiếu thông tin',
+                        'Vui lòng hoàn thành tất cả câu hỏi onboarding.',
+                        [{ text: 'OK', onPress: () => router.replace(PREVIOUS_STEP_ROUTE) }],
+                    );
+                    return;
+                }
+
+                setSubmitResponse(result);
+                router.replace('/onboarding/recovery');
+            } catch (error: any) {
+                if (!isActive) return;
+
+                Alert.alert(
+                    'Không thể lưu onboarding',
+                    error?.response?.data?.message || error.message || 'Đã có lỗi xảy ra.',
+                    [{ text: 'Thử lại', onPress: () => router.replace(PREVIOUS_STEP_ROUTE) }],
+                );
+            }
+        };
+
+        void submitOnboarding();
+
+        return () => {
+            isActive = false;
+        };
+    }, [data, setSubmitResponse]);
 
     return (
         <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>

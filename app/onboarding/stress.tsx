@@ -24,13 +24,6 @@ export default function StressScreen() {
                 <OnboardingTopBar
                     currentStep={7}
                     showBack
-                    showForward
-                    onBack={() => router.back()}
-                    onForward={() => {
-                        if (canContinue) {
-                            router.push('/onboarding/screen-time');
-                        }
-                    }}
                 />
 
                 <Text style={styles.title}>

@@ -27,13 +27,7 @@ export default function HabitScreen() {
                 <OnboardingTopBar
                     currentStep={9}
                     showBack
-                    showForward
-                    onBack={() => router.back()}
-                    onForward={() => {
-                        if (canContinue) {
-                            router.push('/onboarding/free-time');
-                        }
-                    }}
+                    
                 />
 
                 <Text style={styles.title}>
