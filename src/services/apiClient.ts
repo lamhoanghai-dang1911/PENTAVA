@@ -7,8 +7,7 @@ const apiClient = axios.create({
   },
 });
 
-let accessToken: string | null =
-  "eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJoYWl0aGFuaHZ1MDUwMUBnbWFpbC5jb20iLCJpYXQiOjE3ODkxOTI1MjMsImV4cCI6MTc4OTI3ODkyM30.eiP3aKbap4MWJHIyqw5Cxe3p1rpwmFs2KUob5BSc1WGvAXaaGEBRnfIU0w2Bz2JQ";
+let accessToken: string | null = null;
 
 export function setAccessToken(token: string | null) {
   accessToken = token;
