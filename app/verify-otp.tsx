@@ -1,14 +1,16 @@
+import { NotificationModal } from '@/src/components/ui/notification-modal';
 import { PillTextInput } from '@/src/components/ui/pill-text-input';
 import { PrimaryButton } from '@/src/components/ui/primary-button';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
+import { setAccessToken } from '@/src/services/apiClient';
 import { authService } from '@/src/services/authService';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 
 import {
-    Alert,
+    ActivityIndicator,
     Pressable,
     ScrollView,
     StyleSheet,
@@ -22,6 +24,12 @@ export default function VerifyOtpScreen() {
     const [otpCode, setOtpCode] = useState('');
     const [loading, setLoading] = useState(false);
     const [resending, setResending] = useState(false);
+    const [modal, setModal] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        logoutAfterConfirm: false,
+    });
 
     const router = useRouter();
 
@@ -30,22 +38,30 @@ export default function VerifyOtpScreen() {
             ? email
             : '';
 
+    const showModal = (title: string, message: string, logoutAfterConfirm = false) => {
+        setModal({ visible: true, title, message, logoutAfterConfirm });
+    };
+
+    const handleModalConfirm = () => {
+        const logoutAfterConfirm = modal.logoutAfterConfirm;
+        setModal((current) => ({ ...current, visible: false }));
+
+        if (logoutAfterConfirm) {
+            setAccessToken(null);
+            router.replace('/login');
+        }
+    };
+
     const handleVerifyOtp = async () => {
         const cleanOtp = otpCode.trim();
 
         if (!emailValue) {
-            Alert.alert(
-                'Lỗi',
-                'Không tìm thấy email cần xác thực.'
-            );
+            showModal('Lỗi', 'Không tìm thấy email cần xác thực.');
             return;
         }
 
         if (!/^\d{6}$/.test(cleanOtp)) {
-            Alert.alert(
-                'Lỗi',
-                'Vui lòng nhập chính xác mã OTP gồm 6 chữ số.'
-            );
+            showModal('Lỗi', 'Vui lòng nhập chính xác mã OTP gồm 6 chữ số.');
             return;
         }
 
@@ -63,26 +79,16 @@ export default function VerifyOtpScreen() {
             });
 
             console.log('VERIFY OTP SUCCESS:', result);
-
-            Alert.alert(
-                'Thành công',
-                'Tài khoản của bạn đã được xác thực!',
-                [
-                    {
-                        text: 'OK',
-                        onPress: () => {
-                            router.replace('/login');
-                        },
-                    },
-                ]
+            showModal(
+                'Xác thực thành công',
+                'Vui lòng đăng nhập lại để tiếp tục.',
+                true
             );
         } catch (error: any) {
             console.log('VERIFY OTP ERROR:', error);
-
-            Alert.alert(
+            showModal(
                 'Xác thực thất bại',
-                error?.message ||
-                    'Mã OTP không hợp lệ hoặc đã hết hạn.'
+                error?.message || 'Mã OTP không hợp lệ hoặc đã hết hạn.'
             );
         } finally {
             setLoading(false);
@@ -91,10 +97,7 @@ export default function VerifyOtpScreen() {
 
     const handleResendOtp = async () => {
         if (!emailValue) {
-            Alert.alert(
-                'Lỗi',
-                'Không tìm thấy thông tin email.'
-            );
+            showModal('Lỗi', 'Không tìm thấy thông tin email.');
             return;
         }
 
@@ -110,18 +113,17 @@ export default function VerifyOtpScreen() {
             );
 
             console.log('RESEND OTP SUCCESS:', result);
-
-            Alert.alert(
-                'Thành công',
+            showModal(
+                'Gửi lại mã thành công',
+                result.data?.message ||
+                result.message ||
                 'Mã OTP mới đã được gửi lại vào email của bạn.'
             );
         } catch (error: any) {
             console.log('RESEND OTP ERROR:', error);
-
-            Alert.alert(
-                'Thất bại',
-                error?.message ||
-                    'Không thể gửi lại mã OTP lúc này.'
+            showModal(
+                'Gửi lại mã thất bại',
+                error?.message || 'Không thể gửi lại mã OTP lúc này.'
             );
         } finally {
             setResending(false);
@@ -165,11 +167,8 @@ export default function VerifyOtpScreen() {
                 </View>
 
                 <PrimaryButton
-                    label={
-                        loading
-                            ? 'Đang xác thực...'
-                            : 'Xác nhận OTP'
-                    }
+                    label="Xác nhận OTP"
+                    loading={loading}
                     onPress={handleVerifyOtp}
                     style={styles.verifyButton}
                 />
@@ -180,17 +179,25 @@ export default function VerifyOtpScreen() {
                     </Text>
 
                     <Pressable
+                        accessibilityRole="button"
+                        accessibilityState={{ busy: resending, disabled: resending }}
                         onPress={handleResendOtp}
                         disabled={resending}
                     >
-                        <Text style={styles.resendLink}>
-                            {resending
-                                ? 'Đang gửi...'
-                                : 'Gửi lại mã'}
-                        </Text>
+                        {resending ? (
+                            <ActivityIndicator color={Design.colors.primaryGreen} size="small" />
+                        ) : (
+                            <Text style={styles.resendLink}>Gửi lại mã</Text>
+                        )}
                     </Pressable>
                 </View>
             </ScrollView>
+            <NotificationModal
+                message={modal.message}
+                onConfirm={handleModalConfirm}
+                title={modal.title}
+                visible={modal.visible}
+            />
         </ScreenContainer>
     );
 }

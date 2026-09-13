@@ -1,5 +1,5 @@
-import apiClient from "./apiClient";
 import { API_ENDPOINTS } from "../constants/api";
+import apiClient, { setAccessToken } from "./apiClient";
 
 type RegisterData = {
   email: string;
@@ -18,9 +18,19 @@ type VerifyOtpData = {
 };
 
 function getErrorMessage(error: any, fallback: string) {
+  const responseData = error?.response?.data;
+  const validationErrors = responseData?.errors;
+
+  if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+    return validationErrors
+      .map((item) => (typeof item === "string" ? item : item?.message))
+      .filter(Boolean)
+      .join("\n");
+  }
+
   return (
-    error?.response?.data?.message ||
-    error?.response?.data?.error ||
+    responseData?.message ||
+    responseData?.error ||
     error?.message ||
     fallback
   );
@@ -30,11 +40,11 @@ export const authService = {
   // Đăng ký
   async register(data: RegisterData) {
     try {
-        const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
-          email: data.email,
-          password: data.password,
-          name: data.name,
-        });
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
+        email: data.email,
+        password: data.password,
+        name: data.name,
+      });
 
       return response.data;
     } catch (error: any) {
@@ -83,6 +93,7 @@ export const authService = {
         password: data.password,
       });
 
+      setAccessToken(response.data?.data?.accessToken ?? null);
       return response.data;
     } catch (error: any) {
       throw new Error(

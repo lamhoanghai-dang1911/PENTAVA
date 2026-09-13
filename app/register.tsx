@@ -1,19 +1,19 @@
+import { NotificationModal } from '@/src/components/ui/notification-modal';
 import { PillTextInput } from '@/src/components/ui/pill-text-input';
 import { PrimaryButton } from '@/src/components/ui/primary-button';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
+import { authService } from '@/src/services/authService';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    Alert,
     Pressable,
     ScrollView,
     StyleSheet,
     Text,
     View,
 } from 'react-native';
-import { authService } from '@/src/services/authService';
 
 export default function RegisterScreen() {
     const [name, setName] = useState('');
@@ -21,7 +21,27 @@ export default function RegisterScreen() {
     const [password, setPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [registeredEmail, setRegisteredEmail] = useState('');
+    const [modal, setModal] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        continueToOtp: false,
+    });
     const router = useRouter();
+
+    const showModal = (title: string, message: string, continueToOtp = false) => {
+        setModal({ visible: true, title, message, continueToOtp });
+    };
+
+    const handleModalConfirm = () => {
+        const continueToOtp = modal.continueToOtp;
+        setModal((current) => ({ ...current, visible: false }));
+
+        if (continueToOtp) {
+            handleContinueToOtp();
+        }
+    };
 
     const handleRegister = async () => {
         const trimmedName = name.trim();
@@ -29,28 +49,19 @@ export default function RegisterScreen() {
         const trimmedPassword = password.trim();
 
         if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-            Alert.alert(
-                'Thiếu thông tin',
-                'Vui lòng điền đầy đủ họ tên, email và mật khẩu.'
-            );
+            showModal('Thiếu thông tin', 'Vui lòng điền đầy đủ họ tên, email và mật khẩu.');
             return;
         }
 
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
         if (!emailRegex.test(trimmedEmail)) {
-            Alert.alert(
-                'Email không hợp lệ',
-                'Vui lòng nhập đúng định dạng email.'
-            );
+            showModal('Email không hợp lệ', 'Vui lòng nhập đúng định dạng email.');
             return;
         }
 
         if (trimmedPassword.length < 6) {
-            Alert.alert(
-                'Mật khẩu không hợp lệ',
-                'Mật khẩu phải có ít nhất 6 ký tự.'
-            );
+            showModal('Mật khẩu không hợp lệ', 'Mật khẩu phải có ít nhất 6 ký tự.');
             return;
         }
 
@@ -64,25 +75,30 @@ export default function RegisterScreen() {
             });
 
             console.log('REGISTER SUCCESS:', result);
-
-            router.push({
-                pathname: '/verify-otp',
-                params: {
-                    email: trimmedEmail,
-                },
-            });
+            setRegisteredEmail(result.data?.email || trimmedEmail);
+            showModal(
+                'Đăng ký thành công',
+                result.data?.message ||
+                result.message ||
+                'Vui lòng kiểm tra email để nhận mã OTP xác thực.',
+                true
+            );
         } catch (error) {
             console.log('REGISTER ERROR:', error);
-
-            Alert.alert(
+            showModal(
                 'Đăng ký thất bại',
-                error instanceof Error
-                    ? error.message
-                    : 'Đã có lỗi xảy ra.'
+                error instanceof Error ? error.message : 'Đã có lỗi xảy ra.'
             );
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleContinueToOtp = () => {
+        router.push({
+            pathname: '/verify-otp',
+            params: { email: registeredEmail },
+        });
     };
 
     return (
@@ -130,7 +146,8 @@ export default function RegisterScreen() {
                 </View>
 
                 <PrimaryButton
-                    label={loading ? "Đang xử lý..." : "Đăng ký"}
+                    label="Đăng ký"
+                    loading={loading}
                     onPress={handleRegister}
                     style={styles.registerButton}
                 />
@@ -143,6 +160,12 @@ export default function RegisterScreen() {
                     </Pressable>
                 </View>
             </ScrollView>
+            <NotificationModal
+                message={modal.message}
+                onConfirm={handleModalConfirm}
+                title={modal.title}
+                visible={modal.visible}
+            />
         </ScreenContainer>
     );
 }
@@ -177,6 +200,35 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 32,
         marginBottom: 24,
+    },
+    responseBox: {
+        width: '100%',
+        maxWidth: Design.spacing.contentWidth,
+        borderRadius: 10,
+        borderWidth: 1,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        marginBottom: 18,
+    },
+    successBox: {
+        backgroundColor: '#EAF8EF',
+        borderColor: Design.colors.primaryGreen,
+    },
+    errorBox: {
+        backgroundColor: '#FFF1F1',
+        borderColor: '#D64545',
+    },
+    responseText: {
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: Design.fontSize.caption,
+        lineHeight: 20,
+        textAlign: 'center',
+    },
+    successText: {
+        color: Design.colors.primaryGreen,
+    },
+    errorText: {
+        color: '#B42318',
     },
     form: {
         width: '100%',

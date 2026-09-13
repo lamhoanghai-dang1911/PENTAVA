@@ -1,26 +1,40 @@
 import { Design, FontFamily } from '@/src/constants/design';
-import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
 type PrimaryButtonProps = {
   label: string;
   onPress: () => void;
   disabled?: boolean;
+  loading?: boolean;
   style?: ViewStyle;
 };
 
-export function PrimaryButton({ label, onPress, disabled = false, style }: PrimaryButtonProps) {
+export function PrimaryButton({
+  label,
+  onPress,
+  disabled = false,
+  loading = false,
+  style,
+}: PrimaryButtonProps) {
+  const isDisabled = disabled || loading;
+
   return (
     <Pressable
       accessibilityRole="button"
-      disabled={disabled}
+      accessibilityState={{ busy: loading, disabled: isDisabled }}
+      disabled={isDisabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.button,
-        disabled && styles.buttonDisabled,
-        pressed && !disabled && styles.buttonPressed,
+        isDisabled && styles.buttonDisabled,
+        pressed && !isDisabled && styles.buttonPressed,
         style,
       ]}>
-      <Text style={[styles.label, disabled && styles.labelDisabled]}>{label}</Text>
+      {loading ? (
+        <ActivityIndicator color={Design.colors.primaryGreen} />
+      ) : (
+        <Text style={[styles.label, isDisabled && styles.labelDisabled]}>{label}</Text>
+      )}
     </Pressable>
   );
 }

@@ -1,15 +1,16 @@
 import { DividerWithText } from '@/src/components/ui/divider-with-text';
+import { NotificationModal } from '@/src/components/ui/notification-modal';
 import { PillTextInput } from '@/src/components/ui/pill-text-input';
 import { PrimaryButton } from '@/src/components/ui/primary-button';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
+import { authService } from '@/src/services/authService';
 import * as Google from 'expo-auth-session/providers/google';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useState } from 'react';
 import {
-  Alert,
   Pressable,
   Image as RNImage,
   ScrollView,
@@ -17,7 +18,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { authService } from '@/src/services/authService';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -26,7 +26,34 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [modal, setModal] = useState({
+    visible: false,
+    title: '',
+    message: '',
+    action: 'none' as 'none' | 'login' | 'google',
+    hasCompletedOnboarding: false,
+  });
   const router = useRouter();
+
+  const showModal = (
+    title: string,
+    message: string,
+    action: 'none' | 'login' | 'google' = 'none',
+    hasCompletedOnboarding = false,
+  ) => {
+    setModal({ visible: true, title, message, action, hasCompletedOnboarding });
+  };
+
+  const handleModalConfirm = () => {
+    const { action, hasCompletedOnboarding } = modal;
+    setModal((current) => ({ ...current, visible: false }));
+
+    if (action === 'google') {
+      router.replace('/mood');
+    } else if (action === 'login') {
+      router.replace(hasCompletedOnboarding ? '/(tabs)' : '/onboarding/name');
+    }
+  };
 
   // Cấu hình Google Auth Request với Client ID thực tế
   // const [request, response, promptAsync] = AuthSession.useAuthRequest({
@@ -49,7 +76,7 @@ export default function LoginScreen() {
       if (idToken) {
         handleBackendGoogleLogin(idToken);
       } else {
-        Alert.alert('Đăng nhập Google', 'Không nhận được mã xác thực từ Google.');
+        showModal('Đăng nhập Google', 'Không nhận được mã xác thực từ Google.');
       }
     }
   }, [response]);
@@ -59,9 +86,9 @@ export default function LoginScreen() {
       setLoading(true);
       const res = await authService.googleLogin(idToken);
       console.log('Google Token:', res.accessToken);
-      router.replace('/mood');
+      showModal('Đăng nhập thành công', res.data?.message || res.message || 'Chào mừng bạn quay trở lại.', 'google');
     } catch (error: any) {
-      Alert.alert('Đăng nhập Google thất bại', error.message || 'Đã có lỗi xảy ra.');
+      showModal('Đăng nhập Google thất bại', error.message || 'Đã có lỗi xảy ra.');
     } finally {
       setLoading(false);
     }
@@ -71,7 +98,7 @@ export default function LoginScreen() {
     const trimmedEmail = email.trim().toLowerCase();
 
     if (!trimmedEmail || !password) {
-      Alert.alert(
+      showModal(
         'Thiếu thông tin',
         'Vui lòng nhập email và mật khẩu.'
       );
@@ -93,11 +120,16 @@ export default function LoginScreen() {
 
       console.log('LOGIN SUCCESS:', result);
 
-      router.replace('/mood');
+      showModal(
+        'Đăng nhập thành công',
+        result.data?.message || result.message || 'Chào mừng bạn quay trở lại.',
+        'login',
+        Boolean(result.data?.hasCompletedOnboarding),
+      );
     } catch (error: any) {
       console.log('LOGIN ERROR:', error);
 
-      Alert.alert(
+      showModal(
         'Đăng nhập thất bại',
         error?.message ||
         'Email hoặc mật khẩu không đúng.'
@@ -111,7 +143,7 @@ export default function LoginScreen() {
     if (provider === 'Google') {
       promptAsync();
     } else {
-      Alert.alert('Đăng nhập', `Tính năng đăng nhập ${provider} sẽ được cập nhật sau.`);
+      showModal('Đăng nhập', `Tính năng đăng nhập ${provider} sẽ được cập nhật sau.`);
     }
   };
 
@@ -154,13 +186,14 @@ export default function LoginScreen() {
         </View>
 
         <PrimaryButton
-          label={loading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+          label="Đăng nhập"
+          loading={loading}
           onPress={handleLogin}
           style={styles.loginButton}
         />
 
         <View style={styles.linksRow}>
-          <Pressable accessibilityRole="link" onPress={() => Alert.alert('Quên mật khẩu', 'Tính năng sẽ được cập nhật sau.')}>
+          <Pressable accessibilityRole="link" onPress={() => showModal('Quên mật khẩu', 'Tính năng sẽ được cập nhật sau.')}>
             <Text style={styles.linkText}>Quên mật khẩu?</Text>
           </Pressable>
           <Pressable accessibilityRole="link" onPress={() => router.push('/register')}>
@@ -193,6 +226,12 @@ export default function LoginScreen() {
           </Pressable>
         </View>
       </ScrollView>
+      <NotificationModal
+        message={modal.message}
+        onConfirm={handleModalConfirm}
+        title={modal.title}
+        visible={modal.visible}
+      />
     </ScreenContainer>
   );
 }
