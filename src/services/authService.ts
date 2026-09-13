@@ -46,29 +46,41 @@ export const authService = {
         name: data.name,
       });
 
-      return response.data;
-    } catch (error: any) {
-      throw new Error(
-        getErrorMessage(error, `Đăng ký thất bại (${error?.response?.status || 500})`)
-      );
-    }
-  },
+    // 2. Xác thực OTP
+    async verifyOtp(data: { email: string; otpCode: string }) {
+        const response = await fetch(`${API_BASE_URL}/verify-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Xác thực OTP thất bại');
+        return result;
+    },
 
-  // Xác thực OTP
-  async verifyOtp(data: VerifyOtpData) {
-    try {
-      const response = await apiClient.post(API_ENDPOINTS.AUTH.VERIFY_OTP, {
-        email: data.email,
-        otpCode: data.otpCode,
-      });
+    // 2.1. Gửi lại mã OTP
+    async resendOtp(email: string) {
+        const response = await fetch(`${API_BASE_URL}/resend-otp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email }),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Không thể gửi lại mã OTP');
+        return result;
+    },
 
-      return response.data;
-    } catch (error: any) {
-      throw new Error(
-        getErrorMessage(error, `Xác thực OTP thất bại (${error?.response?.status || 500})`)
-      );
-    }
-  },
+    // 3. Đăng nhập
+    async login(data: { email: string; password: string }) {
+        const response = await fetch(`${API_BASE_URL}/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.message || 'Đăng nhập thất bại');
+        return result;
+    },
 
   // Gửi lại OTP
   async resendOtp(email: string) {

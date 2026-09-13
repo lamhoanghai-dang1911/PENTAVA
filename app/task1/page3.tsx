@@ -1,11 +1,51 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
-import { useRouter } from 'expo-router';
+import { taskService } from '@/src/services/taskService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { Alert, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
 export default function Page3() {
   const router = useRouter();
+  const { taskId: taskIdParam, week: weekParam, selectedItems: selectedItemsParam } = useLocalSearchParams<{
+    taskId?: string;
+    week?: string;
+    selectedItems?: string;
+  }>();
+  const [isCompleting, setIsCompleting] = useState(false);
+
+  const handleSkipPhoto = async () => {
+    const taskId = Number(taskIdParam);
+    let selectedItems: string[] = [];
+
+    try {
+      selectedItems = selectedItemsParam ? JSON.parse(selectedItemsParam) as string[] : [];
+    } catch {
+      Alert.alert('Dữ liệu không hợp lệ', 'Không thể đọc danh sách món ăn đã chọn.');
+      return;
+    }
+
+    if (!Number.isInteger(taskId) || taskId <= 0) {
+      Alert.alert('Thiếu mã nhiệm vụ', 'Vui lòng mở lại nhiệm vụ từ danh sách.');
+      return;
+    }
+
+    try {
+      setIsCompleting(true);
+      await taskService.completeTask(taskId, { selectedItems });
+      const week = Number(weekParam);
+      if (Number.isInteger(week) && week > 0) {
+        // TODO: Include userId in this key after the auth user session is merged.
+        await AsyncStorage.removeItem(`@pentava/tasks/week-${week}`);
+      }
+      router.replace('/daily-tasks');
+    } catch (error) {
+      Alert.alert('Không thể hoàn thành nhiệm vụ', error instanceof Error ? error.message : 'Đã có lỗi xảy ra.');
+    } finally {
+      setIsCompleting(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -27,8 +67,8 @@ export default function Page3() {
         <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/task1/page4')}>
           <Text style={styles.primaryButtonText}>Chụp ảnh check-in</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => alert('Đã lưu tiến độ!')}>
-          <Text style={styles.secondaryButtonText}>Để sau</Text>
+        <TouchableOpacity disabled={isCompleting} style={styles.secondaryButton} onPress={handleSkipPhoto}>
+          <Text style={styles.secondaryButtonText}>{isCompleting ? 'Đang lưu...' : 'Để sau'}</Text>
         </TouchableOpacity>
       </View>
     </View>

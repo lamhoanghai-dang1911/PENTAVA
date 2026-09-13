@@ -1,7 +1,3 @@
-export type TaskProgressRequestDTO = {
-  selectedItems: string[];
-};
-
 export type OnboardingRequestDTO = {
   name: string;
   gender: string;

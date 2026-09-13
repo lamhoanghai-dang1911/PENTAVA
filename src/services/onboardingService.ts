@@ -49,33 +49,4 @@ export const onboardingService = {
     return response.data;
   },
 
-  async getTasks(week: number) {
-    const response = await apiClient.get("/api/onboarding/tasks", {
-      params: { week },
-    });
-    return response.data;
-  },
-
-  async getProgress(taskId: number) {
-    const response = await apiClient.get(
-      `/api/onboarding/tasks/${taskId}/progress`,
-    );
-    return response.data;
-  },
-
-  async saveProgressItems(taskId: number, selectedItems: string[]) {
-    const response = await apiClient.post(
-      `/api/onboarding/tasks/${taskId}/progress/items`,
-      { selectedItems },
-    );
-    return response.data;
-  },
-
-  async completeTask(taskId: number, selectedItems: string[] = []) {
-    const response = await apiClient.post(
-      `/api/onboarding/tasks/${taskId}/complete`,
-      { selectedItems },
-    );
-    return response.data;
-  },
 };
