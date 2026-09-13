@@ -3,8 +3,8 @@ import { Design, FontFamily } from '@/src/constants/design';
 import { buildDateStrip, getTasksForDay } from '@/src/features/tasks/task-utils';
 import { taskService } from '@/src/services/taskService';
 import type { Task } from '@/src/types/api/task';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -20,6 +20,14 @@ const TASK_COLORS = {
 } as const;
 
 const TASK_COLORS_BY_INDEX = [TASK_COLORS.purple, TASK_COLORS.yellow, TASK_COLORS.red, TASK_COLORS.blue, TASK_COLORS.green];
+const TASK_ROUTES = [
+    '/task1/page1',
+    '/task2/page1',
+    '/task3/page1',
+    '/task4/page1',
+    '/task5/page1',
+] as const;
+// TODO: Add userId after the auth user session is merged into this branch.
 const TASK_CACHE_KEY = (week: number) => `@pentava/tasks/week-${week}`;
 
 export default function DailyTasksScreen() {
@@ -35,6 +43,7 @@ export default function DailyTasksScreen() {
         const loadTasks = async () => {
             setIsLoading(true);
             try {
+                // const userId = await getCurrentUserId();
                 const cachedTasks = await AsyncStorage.getItem(TASK_CACHE_KEY(weekNumber));
                 if (cachedTasks) {
                     const cachedResponse = JSON.parse(cachedTasks) as { tasks?: Task[] };
@@ -122,13 +131,20 @@ export default function DailyTasksScreen() {
                 {isLoading ? <ActivityIndicator color={Design.colors.primaryGreen} size="large" style={styles.loading} /> : null}
 
                 {!isLoading && selectedTasks.map((task, index) => (
-                    <View key={`${task.id}-${index}`} style={[styles.taskCard, { backgroundColor: TASK_COLORS_BY_INDEX[index] }]}>
+                    <Pressable
+                        key={`${task.id}-${index}`}
+                        accessibilityRole="button"
+                        onPress={() => router.push({
+                            pathname: TASK_ROUTES[index],
+                            params: { taskId: String(task.id), week: String(weekNumber) },
+                        })}
+                        style={[styles.taskCard, { backgroundColor: TASK_COLORS_BY_INDEX[index] }]}>
                         <View style={styles.taskHeader}>
                             <Text style={styles.taskTitle}>{task.title.toUpperCase()}</Text>
                             <Ionicons color={Design.colors.white} name={task.isCompleted ? 'checkmark-circle' : 'checkmark-circle-outline'} size={22} />
                         </View>
                         <Text style={styles.taskDescription}>{task.content}</Text>
-                    </View>
+                    </Pressable>
                 ))}
             </ScrollView>
         </SafeAreaView>

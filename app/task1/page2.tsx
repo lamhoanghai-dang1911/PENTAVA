@@ -1,18 +1,46 @@
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { taskService } from '@/src/services/taskService';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const FOOD_ITEMS = ['Thức ăn nhanh', 'Nước ngọt có ga', 'Kẹo ngọt', 'Khoai tây chiên', 'Thịt chế biến sẵn', 'Bánh ngọt'];
 
 export default function Page2() {
   const router = useRouter();
+  const { taskId: taskIdParam, week } = useLocalSearchParams<{ taskId?: string; week?: string }>();
   const [selectedFoods, setSelectedFoods] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const taskId = Number(taskIdParam);
 
   const toggleFood = (food: string) => {
     if (selectedFoods.includes(food)) {
       setSelectedFoods(selectedFoods.filter(item => item !== food));
     } else {
       setSelectedFoods([...selectedFoods, food]);
+    }
+  };
+
+  const handleContinue = async () => {
+    try {
+      setIsSaving(true);
+      if (!Number.isInteger(taskId) || taskId <= 0) {
+        alert('Không tìm thấy mã nhiệm vụ. Vui lòng mở lại nhiệm vụ từ danh sách.');
+        return;
+      }
+
+      await taskService.saveProgressItems(taskId, { selectedItems: selectedFoods });
+      router.push({
+        pathname: '/task1/page3',
+        params: {
+          taskId: String(taskId),
+          week,
+          selectedItems: JSON.stringify(selectedFoods),
+        },
+      });
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Không thể lưu tiến độ nhiệm vụ.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -39,8 +67,8 @@ export default function Page2() {
         ))}
       </ScrollView>
       <View style={styles.bottomFixedBtn}>
-        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/task1/page3')}>
-          <Text style={styles.primaryButtonText}>Tiếp tục</Text>
+        <TouchableOpacity disabled={isSaving} style={styles.primaryButton} onPress={handleContinue}>
+          <Text style={styles.primaryButtonText}>{isSaving ? 'Đang lưu...' : 'Tiếp tục'}</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

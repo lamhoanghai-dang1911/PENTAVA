@@ -1,5 +1,4 @@
 import { useRouter } from 'expo-router';
-import React from 'react';
 import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import type { ExerciseTask } from '@/src/features/exercises/types';
@@ -9,9 +8,10 @@ const { width, height } = Dimensions.get('window');
 type TaskInstructionScreenProps = {
   task: ExerciseTask;
   nextRoute: string;
+  nextRouteParams?: Record<string, string>;
 };
 
-export function TaskInstructionScreen({ task, nextRoute }: TaskInstructionScreenProps) {
+export function TaskInstructionScreen({ task, nextRoute, nextRouteParams }: TaskInstructionScreenProps) {
   const router = useRouter();
 
   return (
@@ -34,7 +34,7 @@ export function TaskInstructionScreen({ task, nextRoute }: TaskInstructionScreen
 
         <TouchableOpacity
           style={[styles.primaryButton, { backgroundColor: task.buttonColor }]}
-          onPress={() => router.push(nextRoute)}
+          onPress={() => router.push({ pathname: nextRoute as never, params: nextRouteParams })}
         >
           <Text style={styles.primaryButtonText}>Bắt đầu hành trình</Text>
         </TouchableOpacity>
