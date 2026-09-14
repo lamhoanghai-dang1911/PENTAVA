@@ -17,4 +17,8 @@ export const API_ENDPOINTS = {
       `/api/onboarding/tasks/${taskId}/progress/items`,
     COMPLETE: (taskId: number) => `/api/onboarding/tasks/${taskId}/complete`,
   },
+  CHECKIN: {
+    GET_IMAGE: (taskId: number) => `/api/checkin/tasks/${taskId}`,
+    SAVE_IMAGE: (taskId: number) => `/api/checkin/tasks/${taskId}`,
+  },
 };
