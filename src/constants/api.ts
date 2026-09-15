@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
     CURRENT_GOAL: "/api/onboarding/goals/current",
     CURRENT_STREAK: "/api/onboarding/streak/current",
     SELECT_MOOD: "/api/onboarding/mood/select",
+  },
   CHECKIN: {
     GET_IMAGE: (taskId: number) => `/api/checkin/tasks/${taskId}`,
     SAVE_IMAGE: (taskId: number) => `/api/checkin/tasks/${taskId}`,
