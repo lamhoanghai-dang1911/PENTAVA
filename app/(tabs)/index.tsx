@@ -2,24 +2,109 @@ import { PurchaseSuccessModal } from '@/src/components/home/purchase-success-mod
 import { ShopSheet, type ShopProduct } from '@/src/components/home/shop-sheet';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
+import { onboardingService } from '@/src/services/onboardingService';
+import { taskService } from '@/src/services/taskService';
+import type { DailyTaskStatus } from '@/src/types/api/task';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const { data } = useOnboarding();
   const displayName = data.name.trim() || 'bạn';
+  const [currentGoal, setCurrentGoal] = useState<string | null>(null);
+  const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [longestStreak, setLongestStreak] = useState(0);
+  const [dailyStatus, setDailyStatus] = useState<DailyTaskStatus | null>(null);
+  const [isDailyStatusVisible, setIsDailyStatusVisible] = useState(false);
+  const [isDailyStatusLoading, setIsDailyStatusLoading] = useState(false);
+  const [isConfirmingDailyTasks, setIsConfirmingDailyTasks] = useState(false);
 
-  // TODO: số dư tiền tệ nên lấy từ server/AsyncStorage — tạm dùng state cứng
-  const [coins] = useState(15);
   const [strawberries, setStrawberries] = useState(15);
-  const [stars] = useState(15);
 
   const [isShopVisible, setIsShopVisible] = useState(false);
   const [purchasedProduct, setPurchasedProduct] = useState<ShopProduct | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.all([onboardingService.getCurrentGoal(), onboardingService.getCurrentStreak()])
+      .then(([goalResponse, streakResponse]) => {
+        if (isMounted) {
+          setCurrentGoal(goalResponse.currentGoal?.goalName ?? null);
+          setCurrentGoalId(goalResponse.currentGoal?.goalId ?? null);
+          setCurrentStreak(streakResponse.streak?.currentStreak ?? 0);
+          setLongestStreak(streakResponse.streak?.longestStreak ?? 0);
+        }
+      })
+      .catch((error: Error) => {
+        if (isMounted) {
+          Alert.alert('Không thể tải mục tiêu', error.message);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleExecuteGoal = async () => {
+    if (!currentGoalId) {
+      Alert.alert('Không thể thực thi', 'Không tìm thấy mục tiêu hiện tại của bạn.');
+      return;
+    }
+
+    setIsDailyStatusLoading(true);
+    try {
+      const response = await taskService.getDailyTaskStatus(currentGoalId);
+      const status = response.dailyTaskStatus;
+
+      if (!status) {
+        throw new Error(response.message || 'Không nhận được trạng thái nhiệm vụ trong ngày.');
+      }
+
+      setDailyStatus(status);
+      setIsDailyStatusVisible(true);
+    } catch (error) {
+      Alert.alert(
+        'Không thể tải nhiệm vụ',
+        error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      );
+    } finally {
+      setIsDailyStatusLoading(false);
+    }
+  };
+
+  const handleKeepYesterdayTasks = async () => {
+    if (!currentGoalId || !dailyStatus?.yesterdayTasks.length) return;
+
+    setIsConfirmingDailyTasks(true);
+    try {
+      await taskService.confirmDailyTasks({
+        goalId: currentGoalId,
+        selectedTaskIds: dailyStatus.yesterdayTasks.map((task) => task.id),
+      });
+      setIsDailyStatusVisible(false);
+      router.push('/daily-tasks');
+    } catch (error) {
+      Alert.alert(
+        'Không thể giữ nhiệm vụ',
+        error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+      );
+    } finally {
+      setIsConfirmingDailyTasks(false);
+    }
+  };
+
+  const handleChooseNewTasks = () => {
+    if (!currentGoalId) return;
+    setIsDailyStatusVisible(false);
+    router.push({ pathname: '/mood', params: { goalId: String(currentGoalId) } } as any);
+  };
 
   const handleBuy = (product: ShopProduct) => {
     if (product.price > strawberries) {
@@ -38,15 +123,18 @@ export default function HomeScreen() {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.greeting}>Chào {displayName}</Text>
-            <View style={styles.currencyRow}>
-              <View style={styles.currencyChip}>
-                <Text style={styles.currencyText}>🪙 {coins}</Text>
+            <View style={styles.streakCard}>
+              <View style={styles.streakIconWrap}>
+                <Ionicons color="#F26A3D" name="flame" size={20} />
               </View>
-              <View style={styles.currencyChip}>
-                <Text style={styles.currencyText}>🍓 {strawberries}</Text>
+              <View style={styles.streakTextWrap}>
+                <Text style={styles.streakLabel}>Chuỗi hiện tại</Text>
+                <Text style={styles.streakValue}>{currentStreak} ngày</Text>
               </View>
-              <View style={styles.currencyChip}>
-                <Text style={styles.currencyText}>⭐ {stars}</Text>
+              <View style={styles.streakDivider} />
+              <View>
+                <Text style={styles.streakLabel}>Kỷ lục</Text>
+                <Text style={styles.streakBest}>{longestStreak} ngày</Text>
               </View>
             </View>
           </View>
@@ -63,25 +151,24 @@ export default function HomeScreen() {
           />
         </View>
 
-        <View style={styles.routineCard}>
-          <Text style={styles.routineLabel}>Routine hôm nay 🌱</Text>
-          <Text style={styles.routineValue}>
-            3<Text style={styles.routineValueMuted}>/5 Task</Text>
-          </Text>
-        </View>
-
         <View style={styles.weekCard}>
           <View style={styles.weekHeader}>
             <Text style={styles.weekEmoji}>🌙</Text>
             <View style={styles.weekTextWrap}>
-              <Text style={styles.weekTitle}>Soft reset weeks</Text>
-              <Text style={styles.weekSubtitle}>Day 3/7</Text>
+              <Text style={styles.weekTitle}>{currentGoal ?? 'Đang tải mục tiêu...'}</Text>
             </View>
           </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: '43%' }]} />
-          </View>
-          <Text style={styles.progressPercent}>43%</Text>
+          <Pressable
+            accessibilityRole="button"
+            disabled={isDailyStatusLoading}
+            onPress={handleExecuteGoal}
+            style={styles.executeButton}>
+            {isDailyStatusLoading ? (
+              <ActivityIndicator color={Design.colors.black} />
+            ) : (
+              <Text style={styles.executeButtonText}>Thực thi</Text>
+            )}
+          </Pressable>
         </View>
       </ScrollView>
 
@@ -133,6 +220,49 @@ export default function HomeScreen() {
         onClose={() => setPurchasedProduct(null)}
         product={purchasedProduct}
       />
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setIsDailyStatusVisible(false)}
+        transparent
+        visible={isDailyStatusVisible}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.dailyStatusModal}>
+            <Text style={styles.modalTitle}>Nhiệm vụ hôm qua</Text>
+            <Text style={styles.modalSubtitle}>
+              Bạn có muốn tiếp tục 5 nhiệm vụ đã hoàn thành hôm qua không?
+            </Text>
+
+            <ScrollView style={styles.yesterdayTaskList} showsVerticalScrollIndicator={false}>
+              {dailyStatus?.yesterdayTasks.map((task, index) => (
+                <View key={task.id} style={styles.yesterdayTaskItem}>
+                  <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={20} />
+                  <View style={styles.yesterdayTaskText}>
+                    <Text style={styles.yesterdayTaskTitle}>{`Nhiệm vụ ${String(index + 1).padStart(2, '0')}`}</Text>
+                    <Text style={styles.yesterdayTaskContent}>{task.content}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+
+            <View style={styles.modalActions}>
+              <Pressable onPress={handleChooseNewTasks} style={styles.secondaryAction}>
+                <Text style={styles.secondaryActionText}>Thay đổi task mới</Text>
+              </Pressable>
+              <Pressable
+                disabled={isConfirmingDailyTasks || !dailyStatus?.yesterdayTasks.length}
+                onPress={handleKeepYesterdayTasks}
+                style={styles.primaryAction}>
+                {isConfirmingDailyTasks ? (
+                  <ActivityIndicator color={Design.colors.white} />
+                ) : (
+                  <Text style={styles.primaryActionText}>Giữ lại task cũ hôm qua</Text>
+                )}
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -143,9 +273,11 @@ const styles = StyleSheet.create({
     backgroundColor: Design.colors.white,
   },
   scrollContent: {
+    flexGrow: 1,
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: 16,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
   },
   headerRow: {
     flexDirection: 'row',
@@ -158,21 +290,47 @@ const styles = StyleSheet.create({
     color: Design.colors.black,
     marginBottom: 8,
   },
-  currencyRow: {
+  streakCard: {
     flexDirection: 'row',
-    gap: 6,
-  },
-  currencyChip: {
+    alignItems: 'center',
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: Design.colors.optionBorder,
-    borderRadius: 20,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    backgroundColor: Design.colors.white,
+    borderColor: '#F5D8CE',
+    paddingHorizontal: 9,
+    paddingVertical: 7,
+    backgroundColor: '#FFF7F3',
   },
-  currencyText: {
+  streakIconWrap: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFE1D5',
+  },
+  streakTextWrap: {
+    marginLeft: 8,
+    marginRight: 10,
+  },
+  streakLabel: {
     fontFamily: FontFamily.beVietnamMedium,
-    fontSize: Design.fontSize.caption + 1,
+    fontSize: 9,
+    color: '#9B6A5B',
+  },
+  streakValue: {
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 14,
+    color: '#D9552D',
+  },
+  streakDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: '#F0CFC4',
+    marginRight: 10,
+  },
+  streakBest: {
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 14,
     color: Design.colors.black,
   },
   avatar: {
@@ -190,8 +348,7 @@ const styles = StyleSheet.create({
   },
   mascotCard: {
     alignItems: 'center',
-    marginTop: 18,
-    marginBottom: 18,
+    marginVertical: 24,
   },
   mascot: {
     width: 230,
@@ -232,6 +389,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 12,
   },
+  executeButton: {
+    alignSelf: 'flex-start',
+    backgroundColor: Design.colors.white,
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    marginBottom: 14,
+  },
+  executeButtonText: {
+    color: Design.colors.black,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.caption + 1,
+  },
   weekEmoji: {
     fontSize: 24,
     marginRight: 10,
@@ -267,6 +437,86 @@ const styles = StyleSheet.create({
     fontSize: Design.fontSize.caption,
     color: Design.colors.white,
     alignSelf: 'flex-end',
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  dailyStatusModal: {
+    maxHeight: '88%',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    backgroundColor: Design.colors.white,
+  },
+  modalTitle: {
+    color: Design.colors.black,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.title,
+    marginBottom: 6,
+  },
+  modalSubtitle: {
+    color: Design.colors.mutedText,
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: Design.fontSize.caption + 1,
+    marginBottom: 16,
+  },
+  yesterdayTaskList: {
+    marginBottom: 16,
+  },
+  yesterdayTaskItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E9E9E9',
+    paddingVertical: 12,
+  },
+  yesterdayTaskText: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  yesterdayTaskTitle: {
+    color: Design.colors.primaryGreen,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.body + 1,
+    lineHeight: 23,
+  },
+  yesterdayTaskContent: {
+    color: Design.colors.mutedText,
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: Design.fontSize.caption + 1,
+    marginTop: 4,
+  },
+  modalActions: {
+    gap: 10,
+  },
+  primaryAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    borderRadius: 24,
+    backgroundColor: Design.colors.primaryGreen,
+    paddingHorizontal: 16,
+  },
+  primaryActionText: {
+    color: Design.colors.white,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.caption + 1,
+  },
+  secondaryAction: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: Design.colors.primaryGreen,
+    paddingHorizontal: 16,
+  },
+  secondaryActionText: {
+    color: Design.colors.primaryGreen,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.caption + 1,
   },
   bottomBar: {
     flexDirection: 'row',

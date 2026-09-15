@@ -1,5 +1,6 @@
 import { OnboardingProvider } from '@/src/context/onboarding-context';
 import { useAppFonts } from '@/src/hooks/use-app-fonts';
+import { restoreAccessToken } from '@/src/services/apiClient';
 import { Stack } from 'expo-router';
 import {
   DarkTheme,
@@ -7,6 +8,7 @@ import {
   ThemeProvider,
 } from 'expo-router/react-navigation';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
@@ -14,8 +16,13 @@ import 'react-native-reanimated';
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [fontsLoaded] = useAppFonts();
+  const [authLoaded, setAuthLoaded] = useState(false);
 
-  if (!fontsLoaded) {
+  useEffect(() => {
+    restoreAccessToken().finally(() => setAuthLoaded(true));
+  }, []);
+
+  if (!fontsLoaded || !authLoaded) {
     return (
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator size="large" />

@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const CURRENT_USER_KEY = "@pentava/current-user";
+const ACCESS_TOKEN_KEY = "@pentava/access-token";
 
 type AuthResponse = {
   id?: string | number;
@@ -45,4 +46,16 @@ export async function getCurrentUserId() {
   } catch {
     return "anonymous";
   }
+}
+
+export async function saveAccessToken(token: string) {
+  await AsyncStorage.setItem(ACCESS_TOKEN_KEY, token);
+}
+
+export async function getAccessToken() {
+  return AsyncStorage.getItem(ACCESS_TOKEN_KEY);
+}
+
+export async function removeAccessToken() {
+  await AsyncStorage.removeItem(ACCESS_TOKEN_KEY);
 }

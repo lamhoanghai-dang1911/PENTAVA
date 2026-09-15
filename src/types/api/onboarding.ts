@@ -38,3 +38,27 @@ export type OnboardingSubmitResponse = {
   tasks: unknown | null;
   taskProgress: unknown | null;
 };
+
+export type CurrentGoal = {
+  goalId: number;
+  goalName: string;
+  status: string;
+  createdAt: string;
+  expiresAt: string;
+};
+
+export type CurrentGoalResponse = {
+  message: string;
+  currentGoal: CurrentGoal | null;
+};
+
+export type CurrentStreak = {
+  currentStreak: number;
+  longestStreak: number;
+  lastCompletedDate: string | null;
+};
+
+export type CurrentStreakResponse = {
+  message: string;
+  streak: CurrentStreak | null;
+};

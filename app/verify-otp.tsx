@@ -5,6 +5,7 @@ import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
 import { setAccessToken } from '@/src/services/apiClient';
 import { authService } from '@/src/services/authService';
+import { removeAccessToken } from '@/src/services/authStorage';
 
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
@@ -48,6 +49,7 @@ export default function VerifyOtpScreen() {
 
         if (logoutAfterConfirm) {
             setAccessToken(null);
+            void removeAccessToken();
             router.replace('/login');
         }
     };

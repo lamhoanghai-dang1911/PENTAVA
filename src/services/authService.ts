@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "../constants/api";
 import apiClient, { setAccessToken } from "./apiClient";
+import { saveAccessToken } from "./authStorage";
 
 type RegisterData = {
   email: string;
@@ -18,6 +19,14 @@ type VerifyOtpData = {
 };
 
 function getErrorMessage(error: any, fallback: string) {
+  if (error?.code === "ECONNABORTED" || error?.code === "ETIMEDOUT") {
+    return "Kết nối máy chủ quá thời gian. Hãy kiểm tra điện thoại và máy tính cùng Wi-Fi, sau đó thử lại.";
+  }
+
+  if (!error?.response && error?.request) {
+    return "Không thể kết nối đến máy chủ. Hãy kiểm tra địa chỉ API và mạng Wi-Fi.";
+  }
+
   const responseData = error?.response?.data;
   const validationErrors = responseData?.errors;
 
@@ -33,6 +42,16 @@ function getErrorMessage(error: any, fallback: string) {
     responseData?.error ||
     error?.message ||
     fallback
+  );
+}
+
+function getAccessTokenFromResponse(responseData: any) {
+  return (
+    responseData?.data?.accessToken ??
+    responseData?.accessToken ??
+    responseData?.data?.token ??
+    responseData?.token ??
+    null
   );
 }
 
@@ -93,7 +112,11 @@ export const authService = {
         password: data.password,
       });
 
-      setAccessToken(response.data?.data?.accessToken ?? null);
+      const accessToken = getAccessTokenFromResponse(response.data);
+      setAccessToken(accessToken ?? null);
+      if (accessToken) {
+        await saveAccessToken(accessToken);
+      }
       return response.data;
     } catch (error: any) {
       throw new Error(
@@ -108,6 +131,12 @@ export const authService = {
       const response = await apiClient.post(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, {
         idToken,
       });
+
+      const accessToken = getAccessTokenFromResponse(response.data);
+      setAccessToken(accessToken ?? null);
+      if (accessToken) {
+        await saveAccessToken(accessToken);
+      }
 
       return response.data;
     } catch (error: any) {

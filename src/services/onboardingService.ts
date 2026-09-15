@@ -1,10 +1,22 @@
+import { API_ENDPOINTS } from "@/src/constants/api";
 import type { OnboardingData } from "@/src/context/onboarding-context";
 import apiClient from "@/src/services/apiClient";
 import type {
-    GoalProgressionRequestDTO,
-    OnboardingRequestDTO,
-    OnboardingSubmitResponse,
+  CurrentGoalResponse,
+  CurrentStreakResponse,
+  GoalProgressionRequestDTO,
+  OnboardingRequestDTO,
+  OnboardingSubmitResponse,
 } from "@/src/types/api/onboarding";
+
+function getErrorMessage(error: any, fallback: string) {
+  return (
+    error?.response?.data?.message ||
+    error?.response?.data?.error ||
+    error?.message ||
+    fallback
+  );
+}
 
 export const onboardingService = {
   async submit(data: OnboardingRequestDTO): Promise<OnboardingSubmitResponse> {
@@ -47,6 +59,34 @@ export const onboardingService = {
   async progressGoal(data: GoalProgressionRequestDTO) {
     const response = await apiClient.post("/api/onboarding/next-goal", data);
     return response.data;
+  },
+
+  async getCurrentGoal(): Promise<CurrentGoalResponse> {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.ONBOARDING.CURRENT_GOAL);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        getErrorMessage(
+          error,
+          `Không thể lấy mục tiêu hiện tại (${error?.response?.status || 500})`,
+        ),
+      );
+    }
+  },
+
+  async getCurrentStreak(): Promise<CurrentStreakResponse> {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.ONBOARDING.CURRENT_STREAK);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        getErrorMessage(
+          error,
+          `Không thể lấy chuỗi ngày hiện tại (${error?.response?.status || 500})`,
+        ),
+      );
+    }
   },
 
 };

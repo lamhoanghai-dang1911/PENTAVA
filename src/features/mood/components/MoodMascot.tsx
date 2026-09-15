@@ -1,4 +1,3 @@
-import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   type SharedValue,
@@ -68,9 +67,7 @@ export function MoodMascot({ progress, currentIndex }: MoodMascotProps) {
         <Animated.View style={[styles.mouth, animatedMouthStyle]} />
       </View>
 
-      <View style={styles.currentMoodDot} pointerEvents="none">
-        <View style={[styles.currentMoodInner, { backgroundColor: MOOD_OPTIONS[currentIndex].color }]} />
-      </View>
+
     </Animated.View>
   );
 }

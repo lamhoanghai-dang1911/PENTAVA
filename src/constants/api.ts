@@ -11,10 +11,19 @@ export const API_ENDPOINTS = {
   },
   TASK: {
     GET_BY_WEEK: "/api/onboarding/tasks",
+    HISTORY: "/api/onboarding/tasks/history",
+    DAILY_STATUS: "/api/onboarding/tasks/daily-status",
+    CONFIRM_DAILY: "/api/onboarding/tasks/confirm-daily",
+    SWAP: "/api/onboarding/tasks/swap",
     GET_PROGRESS: (taskId: number) =>
       `/api/onboarding/tasks/${taskId}/progress`,
     SAVE_PROGRESS_ITEMS: (taskId: number) =>
       `/api/onboarding/tasks/${taskId}/progress/items`,
     COMPLETE: (taskId: number) => `/api/onboarding/tasks/${taskId}/complete`,
+  },
+  ONBOARDING: {
+    CURRENT_GOAL: "/api/onboarding/goals/current",
+    CURRENT_STREAK: "/api/onboarding/streak/current",
+    SELECT_MOOD: "/api/onboarding/mood/select",
   },
 };
