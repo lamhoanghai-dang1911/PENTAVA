@@ -5,7 +5,7 @@ import { saveAccessToken, saveCurrentUser } from "./authStorage";
 type RegisterData = {
   email: string;
   password: string;
-  name: string;
+  confirmPassword: string;
 };
 
 type LoginData = {
@@ -16,6 +16,13 @@ type LoginData = {
 type VerifyOtpData = {
   email: string;
   otpCode: string;
+};
+
+type VerifyResetOtpData = VerifyOtpData;
+
+type ResetPasswordData = {
+  resetToken: string;
+  newPassword: string;
 };
 
 function getErrorMessage(error: any, fallback: string) {
@@ -59,7 +66,7 @@ export const authService = {
       const response = await apiClient.post(API_ENDPOINTS.AUTH.REGISTER, {
         email: data.email,
         password: data.password,
-        name: data.name,
+        confirmPassword: data.confirmPassword,
       });
 
       return response.data;
@@ -105,6 +112,53 @@ export const authService = {
         getErrorMessage(
           error,
           `Không thể gửi lại mã OTP (${error?.response?.status || 500})`,
+        ),
+      );
+    }
+  },
+
+  // Gửi OTP đặt lại mật khẩu
+  async forgotPassword(email: string) {
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, {
+        email,
+      });
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        getErrorMessage(
+          error,
+          `Không thể gửi OTP đặt lại mật khẩu (${error?.response?.status || 500})`,
+        ),
+      );
+    }
+  },
+
+  // Xác thực OTP đặt lại mật khẩu
+  async verifyResetOtp(data: VerifyResetOtpData) {
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.VERIFY_RESET_OTP, data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        getErrorMessage(
+          error,
+          `Xác thực OTP đặt lại mật khẩu thất bại (${error?.response?.status || 500})`,
+        ),
+      );
+    }
+  },
+
+  // Đặt mật khẩu mới
+  async resetPassword(data: ResetPasswordData) {
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        getErrorMessage(
+          error,
+          `Đặt lại mật khẩu thất bại (${error?.response?.status || 500})`,
         ),
       );
     }

@@ -1,7 +1,8 @@
+import { AppText as Text } from '@/src/components/ui/app-text';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Dimensions, Image, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Dimensions, Image, StyleSheet, Switch, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 

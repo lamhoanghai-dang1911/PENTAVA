@@ -16,10 +16,11 @@ import {
 } from 'react-native';
 
 export default function RegisterScreen() {
-    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
+    const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
     const [loading, setLoading] = useState(false);
     const [registeredEmail, setRegisteredEmail] = useState('');
     const [modal, setModal] = useState({
@@ -44,12 +45,12 @@ export default function RegisterScreen() {
     };
 
     const handleRegister = async () => {
-        const trimmedName = name.trim();
         const trimmedEmail = email.trim().toLowerCase();
         const trimmedPassword = password.trim();
+        const trimmedConfirmPassword = confirmPassword.trim();
 
-        if (!trimmedName || !trimmedEmail || !trimmedPassword) {
-            showModal('Thiếu thông tin', 'Vui lòng điền đầy đủ họ tên, email và mật khẩu.');
+        if (!trimmedEmail || !trimmedPassword || !trimmedConfirmPassword) {
+            showModal('Thiếu thông tin', 'Vui lòng điền đầy đủ email và mật khẩu.');
             return;
         }
 
@@ -65,13 +66,18 @@ export default function RegisterScreen() {
             return;
         }
 
+        if (trimmedPassword !== trimmedConfirmPassword) {
+            showModal('Mật khẩu không khớp', 'Mật khẩu xác nhận không giống mật khẩu mới.');
+            return;
+        }
+
         try {
             setLoading(true);
 
             const result = await authService.register({
-                name: trimmedName,
                 email: trimmedEmail,
                 password: trimmedPassword,
+                confirmPassword: trimmedConfirmPassword,
             });
 
             console.log('REGISTER SUCCESS:', result);
@@ -123,12 +129,6 @@ export default function RegisterScreen() {
 
                 <View style={styles.form}>
                     <PillTextInput
-                        autoCapitalize="words"
-                        onChangeText={setName}
-                        placeholder="Họ và tên"
-                        value={name}
-                    />
-                    <PillTextInput
                         autoCapitalize="none"
                         keyboardType="email-address"
                         onChangeText={setEmail}
@@ -142,6 +142,14 @@ export default function RegisterScreen() {
                         isPasswordVisible={isPasswordVisible}
                         onTogglePassword={() => setIsPasswordVisible((prev) => !prev)}
                         value={password}
+                    />
+                    <PillTextInput
+                        onChangeText={setConfirmPassword}
+                        placeholder="Xác nhận mật khẩu"
+                        showPasswordToggle
+                        isPasswordVisible={isConfirmPasswordVisible}
+                        onTogglePassword={() => setIsConfirmPasswordVisible((prev) => !prev)}
+                        value={confirmPassword}
                     />
                 </View>
 

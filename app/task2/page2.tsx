@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/src/components/ui/app-text';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 const { width } = Dimensions.get('window');

@@ -1,6 +1,6 @@
-import React from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { AppText as Text } from '@/src/components/ui/app-text';
 import { useRouter } from 'expo-router';
+import { Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -9,15 +9,15 @@ export default function Page3() {
 
   return (
     <View style={styles.container}>
-      <Image 
-        source={require('../../assets/images/onboarding/meo_task1_2.jpg')} 
-        style={styles.topImage} 
+      <Image
+        source={require('../../assets/images/onboarding/meo_task1_2.jpg')}
+        style={styles.topImage}
         resizeMode="cover"
       />
       <View style={[styles.bottomCard, styles.celebrateCard]}>
         <Text style={styles.celebrateTitle}>Tuyệt vời</Text>
         <Text style={styles.celebrateSub}>Bạn đã tránh được thực phẩm siêu chế biến hôm nay</Text>
-        
+
         <View style={styles.statsRow}>
           <View style={styles.statBox}><Text style={styles.statIcon}>📋</Text><Text style={styles.statVal}>5/5</Text><Text style={styles.statLbl}>Tuân thủ</Text></View>
           <View style={styles.statBox}><Text style={styles.statIcon}>🏅</Text><Text style={styles.statVal}>+6</Text><Text style={styles.statLbl}>Huy chương</Text></View>

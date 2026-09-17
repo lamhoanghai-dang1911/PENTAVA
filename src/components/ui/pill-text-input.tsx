@@ -1,5 +1,6 @@
 import { Design, FontFamily } from '@/src/constants/design';
-import { Image, Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, StyleSheet, TextInput, TextInputProps, View } from 'react-native';
 
 type PillTextInputProps = TextInputProps & {
   showPasswordToggle?: boolean;
@@ -20,17 +21,22 @@ export function PillTextInput({
       <TextInput
         placeholderTextColor={placeholderTextColor}
         secureTextEntry={showPasswordToggle && !isPasswordVisible}
-        style={[styles.input, style]}
+        style={[styles.input, showPasswordToggle && styles.passwordInput, style]}
         {...props}
       />
       {showPasswordToggle ? (
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={isPasswordVisible ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+          accessibilityState={{ checked: isPasswordVisible }}
           hitSlop={8}
           onPress={onTogglePassword}
           style={styles.toggleButton}>
-          <Image source={require('@/assets/images/auth/eye-icon.png')} style={styles.eyeIcon} />
+          <Ionicons
+            name={isPasswordVisible ? 'eye-off-outline' : 'eye-outline'}
+            size={24}
+            color={Design.colors.mutedText}
+          />
         </Pressable>
       ) : null}
     </View>
@@ -53,13 +59,19 @@ const styles = StyleSheet.create({
     fontSize: Design.fontSize.body,
     color: Design.colors.black,
   },
+  passwordInput: {
+    paddingRight: 62,
+  },
   toggleButton: {
     position: 'absolute',
-    right: 32,
-    padding: 4,
+    right: 18,
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   eyeIcon: {
-    width: 15,
-    height: 12,
+    width: 22,
+    height: 17,
   },
 });

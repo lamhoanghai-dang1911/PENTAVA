@@ -8,6 +8,9 @@ export const API_ENDPOINTS = {
     RESEND_OTP: "/api/auth/resend-otp",
     LOGIN: "/api/auth/login",
     GOOGLE_LOGIN: "/api/auth/google",
+    FORGOT_PASSWORD: "/api/auth/forgot-password",
+    VERIFY_RESET_OTP: "/api/auth/verify-reset-otp",
+    RESET_PASSWORD: "/api/auth/reset-password",
   },
   TASK: {
     GET_BY_WEEK: "/api/onboarding/tasks",

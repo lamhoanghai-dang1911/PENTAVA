@@ -1,6 +1,6 @@
+import { AppText as Text } from '@/src/components/ui/app-text';
 import { useRouter } from 'expo-router';
-import React from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -25,7 +25,7 @@ export default function Task4Page4() {
         </View>
 
         <TouchableOpacity style={[styles.primaryButton, { width: '100%' }]} onPress={() => {
-          alert('Hoàn thành trọn vẹn Task 4!'); 
+          alert('Hoàn thành trọn vẹn Task 4!');
           router.replace('/daily-tasks');
         }}>
           <Text style={styles.primaryButtonText}>Tiếp tục</Text>

@@ -1,7 +1,8 @@
+import { AppText as Text } from '@/src/components/ui/app-text';
 import { taskService } from '@/src/services/taskService';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const FOOD_ITEMS = ['Thức ăn nhanh', 'Nước ngọt có ga', 'Kẹo ngọt', 'Khoai tây chiên', 'Thịt chế biến sẵn', 'Bánh ngọt'];
 
@@ -52,7 +53,7 @@ export default function Page2() {
       <ScrollView contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 100 }}>
         <Text style={styles.page2Title}>Tránh thực phẩm{"\n"}siêu chế biến</Text>
         <Text style={styles.page2Sub}>{selectedFoods.length}/6 loại đã tránh</Text>
-        
+
         <View style={styles.progressBarBg}>
           <View style={[styles.progressBarFill, { width: `${(selectedFoods.length / 6) * 100}%` }]} />
         </View>

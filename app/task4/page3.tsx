@@ -1,6 +1,7 @@
+import { AppText as Text } from '@/src/components/ui/app-text';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Dimensions, Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const { width, height } = Dimensions.get('window');
 
