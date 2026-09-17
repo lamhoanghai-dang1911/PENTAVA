@@ -69,7 +69,11 @@ export default function HomeScreen() {
       }
 
       setDailyStatus(status);
-      setIsDailyStatusVisible(true);
+      if (status.yesterdayTasks.length > 0) {
+        setIsDailyStatusVisible(true);
+      } else {
+        handleChooseNewTasks();
+      }
     } catch (error) {
       Alert.alert(
         'Không thể tải nhiệm vụ',
