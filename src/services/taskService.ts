@@ -23,7 +23,9 @@ function getTaskErrorMessage(error: any, fallback: string) {
       .join("\n");
   }
 
-  return responseData?.message || responseData?.error || error?.message || fallback;
+  return (
+    responseData?.message || responseData?.error || error?.message || fallback
+  );
 }
 
 export const taskService = {
@@ -34,7 +36,10 @@ export const taskService = {
     return response.data;
   },
 
-  async getTaskHistory(startDate: string, endDate: string): Promise<TaskHistoryResponse> {
+  async getTaskHistory(
+    startDate: string,
+    endDate: string,
+  ): Promise<TaskHistoryResponse> {
     const response = await apiClient.get(API_ENDPOINTS.TASK.HISTORY, {
       params: { startDate, endDate },
     });
@@ -48,22 +53,35 @@ export const taskService = {
     return response.data;
   },
 
-  async selectMood(data: MoodSelectionRequest): Promise<MoodTaskResponseEnvelope> {
-    const response = await apiClient.post(API_ENDPOINTS.ONBOARDING.SELECT_MOOD, data);
+  async selectMood(
+    data: MoodSelectionRequest,
+  ): Promise<MoodTaskResponseEnvelope> {
+    const response = await apiClient.post(
+      API_ENDPOINTS.ONBOARDING.SELECT_MOOD,
+      data,
+    );
     return response.data;
   },
 
-  async confirmDailyTasks(data: ConfirmDailyTasksRequest): Promise<TaskResponse> {
+  async confirmDailyTasks(
+    data: ConfirmDailyTasksRequest,
+  ): Promise<TaskResponse> {
     try {
       if (__DEV__) {
         console.log("CONFIRM DAILY PAYLOAD:", data);
       }
 
-      const response = await apiClient.post(API_ENDPOINTS.TASK.CONFIRM_DAILY, data);
+      const response = await apiClient.post(
+        API_ENDPOINTS.TASK.CONFIRM_DAILY,
+        data,
+      );
       return response.data;
     } catch (error: any) {
       throw new Error(
-        getTaskErrorMessage(error, `Không thể xác nhận task (${error?.response?.status || 500})`),
+        getTaskErrorMessage(
+          error,
+          `Không thể xác nhận task (${error?.response?.status || 500})`,
+        ),
       );
     }
   },
@@ -78,7 +96,10 @@ export const taskService = {
       return response.data;
     } catch (error: any) {
       throw new Error(
-        getTaskErrorMessage(error, `Không thể đổi nhiệm vụ (${error?.response?.status || 500})`),
+        getTaskErrorMessage(
+          error,
+          `Không thể đổi nhiệm vụ (${error?.response?.status || 500})`,
+        ),
       );
     }
   },

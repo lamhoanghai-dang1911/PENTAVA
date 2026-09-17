@@ -8,7 +8,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 export default function RecoveryScreen() {
     const { submitResponse } = useOnboarding();
     const diagnostic = submitResponse?.diagnostic;
-    const firstPlan = diagnostic?.actionPlans[0];
 
     return (
         <ScreenContainer>
@@ -19,22 +18,23 @@ export default function RecoveryScreen() {
                         source={require('@/assets/images/onboarding/cat-sparkle.png')}
                         style={styles.mascot}
                     />
-                    <Text style={styles.title}>Chuẩn đoán</Text>
-                    <Text style={styles.message}>
-                        {diagnostic?.summary || 'Đang tải kế hoạch hồi phục của bạn...'}
-                    </Text>
-                    {diagnostic?.topIssues.map((issue) => (
-                        <Text key={issue} style={styles.issue}>• {issue}</Text>
-                    ))}
-                    {firstPlan && (
-                        <View style={styles.plan}>
-                            <Text style={styles.planTitle}>{firstPlan.goal}</Text>
-                            <Text style={styles.planDescription}>{firstPlan.description}</Text>
-                            {firstPlan.actions.map((action) => (
-                                <Text key={action} style={styles.action}>• {action}</Text>
-                            ))}
-                        </View>
-                    )}
+                    <Text style={styles.eyebrow}>KẾT QUẢ KHẢO SÁT</Text>
+                    <Text style={styles.title}>Điều gì đang ảnh hưởng đến bạn?</Text>
+                    <View style={styles.summaryCard}>
+                        <Text style={styles.sectionLabel}>TỔNG QUAN</Text>
+                        <Text style={styles.message}>
+                            {diagnostic?.summary || 'Đang tải kết quả khảo sát của bạn...'}
+                        </Text>
+                    </View>
+                    <View style={styles.issuesSection}>
+                        <Text style={styles.sectionLabel}>ĐIỂM CẦN LƯU Ý</Text>
+                        {diagnostic?.topIssues.map((issue, index) => (
+                            <View key={issue} style={styles.issueCard}>
+                                <Text style={styles.issueNumber}>0{index + 1}</Text>
+                                <Text style={styles.issue}>{issue}</Text>
+                            </View>
+                        ))}
+                    </View>
                 </View>
 
                 <View style={styles.footer}>
@@ -53,67 +53,81 @@ export default function RecoveryScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 8,
+        paddingTop: 18,
         paddingHorizontal: Design.spacing.screenHorizontal,
+        paddingBottom: 20,
     },
     content: {
         flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
     },
     mascot: {
-        width: 190,
-        height: 190,
-        marginBottom: 24,
+        alignSelf: 'center',
+        width: 132,
+        height: 132,
+        marginBottom: 14,
+    },
+    eyebrow: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 11,
+        letterSpacing: 1.4,
+        color: Design.colors.primaryGreen,
+        textAlign: 'center',
+        marginBottom: 8,
     },
     title: {
         fontFamily: FontFamily.poppinsSemiBold,
-        fontSize: Design.fontSize.h2,
+        fontSize: Design.fontSize.h2 - 2,
         color: Design.colors.primaryGreen,
         textAlign: 'center',
-        marginBottom: 20,
+        lineHeight: 30,
+        marginBottom: 22,
+    },
+    summaryCard: {
+        padding: 18,
+        borderRadius: 16,
+        backgroundColor: '#F3F7F4',
+        borderLeftWidth: 4,
+        borderLeftColor: Design.colors.primaryGreen,
+    },
+    sectionLabel: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 11,
+        letterSpacing: 1,
+        color: Design.colors.primaryGreen,
+        marginBottom: 9,
     },
     message: {
         fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.body - 3,
-        color: Design.colors.mutedText,
-        textAlign: 'center',
-        lineHeight: 21,
-        paddingHorizontal: 6,
+        fontSize: Design.fontSize.body - 2,
+        color: Design.colors.black,
+        lineHeight: 23,
     },
-    issue: {
-        alignSelf: 'stretch',
-        marginTop: 8,
-        fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.caption,
-        color: Design.colors.mutedText,
+    issuesSection: {
+        marginTop: 26,
     },
-    plan: {
-        alignSelf: 'stretch',
-        marginTop: 20,
-        padding: 16,
-        borderRadius: Design.borderRadius.button,
-        backgroundColor: '#F3F7F4',
+    issueCard: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        paddingVertical: 15,
+        paddingHorizontal: 16,
+        marginTop: 10,
+        borderRadius: 14,
+        backgroundColor: Design.colors.white,
+        borderWidth: 1,
+        borderColor: '#DCE8DF',
     },
-    planTitle: {
-        marginBottom: 6,
-        fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.body,
+    issueNumber: {
+        width: 30,
+        fontFamily: FontFamily.poppinsSemiBold,
+        fontSize: Design.fontSize.body - 2,
         color: Design.colors.primaryGreen,
     },
-    planDescription: {
-        marginBottom: 10,
+    issue: {
         fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.caption,
-        color: Design.colors.mutedText,
-        lineHeight: 19,
-    },
-    action: {
-        marginTop: 5,
-        fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.caption,
         color: Design.colors.black,
-        lineHeight: 19,
+        fontSize: Design.fontSize.body - 2,
+        lineHeight: 22,
+        flex: 1,
     },
     footer: {
         paddingBottom: 36,

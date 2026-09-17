@@ -1,3 +1,10 @@
+import type {
+  DailyTaskStatus,
+  MoodTaskResponse,
+  Task,
+  TaskHistoryEntry,
+} from "@/src/types/api/task";
+
 export type OnboardingRequestDTO = {
   name: string;
   gender: string;
@@ -17,10 +24,12 @@ export type GoalProgressionRequestDTO = {
   nextGoalName: string;
 };
 
-export type OnboardingActionPlan = {
+export type OnboardingMoodTaskPlan = {
   goal: string;
   description: string;
-  actions: string[];
+  badTasks: string[];
+  neutralTasks: string[];
+  goodTasks: string[];
 };
 
 export type OnboardingDiagnostic = {
@@ -29,14 +38,20 @@ export type OnboardingDiagnostic = {
   topIssues: string[];
   recommendedGoals: string[];
   summary: string;
-  actionPlans: OnboardingActionPlan[];
+  moodTaskPlan: OnboardingMoodTaskPlan | null;
 };
 
 export type OnboardingSubmitResponse = {
   message: string;
   diagnostic: OnboardingDiagnostic;
-  tasks: unknown | null;
+  tasks: Task[] | null;
   taskProgress: unknown | null;
+  moodTaskResponse: MoodTaskResponse | null;
+  goalId: number | null;
+  dailyTaskStatus: DailyTaskStatus | null;
+  currentGoal: CurrentGoal | null;
+  streak: CurrentStreak | null;
+  taskHistory: TaskHistoryEntry[] | null;
 };
 
 export type CurrentGoal = {

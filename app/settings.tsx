@@ -1,8 +1,10 @@
+import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
+import { setAccessToken } from '@/src/services/apiClient';
+import { clearCurrentUser, removeAccessToken } from '@/src/services/authStorage';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
-import { ScreenContainer } from '@/src/components/ui/screen-container';
 
 type MenuItem = {
     label: string;
@@ -21,6 +23,12 @@ const MENU_ITEMS: MenuItem[] = [
 
 export default function SettingsScreen() {
     const router = useRouter();
+
+    const handleLogout = async () => {
+        setAccessToken(null);
+        await Promise.all([removeAccessToken(), clearCurrentUser()]);
+        router.replace('/login');
+    };
 
     return (
         <ScreenContainer scrollable contentStyle={styles.container}>
@@ -97,7 +105,14 @@ export default function SettingsScreen() {
                     <Pressable
                         key={item.label}
                         accessibilityRole="button"
-                        onPress={() => item.path && router.push(item.path as any)}
+                        onPress={() => {
+                            if (item.label === 'Đăng xuất') {
+                                void handleLogout();
+                                return;
+                            }
+
+                            if (item.path) router.push(item.path as any);
+                        }}
                         style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}
                     >
                         <View style={styles.menuLeft}>

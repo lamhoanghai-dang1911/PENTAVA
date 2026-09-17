@@ -1,5 +1,5 @@
 import { API_ENDPOINTS } from "@/src/constants/api";
-import type { OnboardingData } from "@/src/context/onboarding-context";
+import type { OnboardingData } from "@/src/types/onboarding";
 import apiClient from "@/src/services/apiClient";
 import type {
   CurrentGoalResponse,

@@ -2,6 +2,7 @@ import { PurchaseSuccessModal } from '@/src/components/home/purchase-success-mod
 import { ShopSheet, type ShopProduct } from '@/src/components/home/shop-sheet';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
+import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
 import { onboardingService } from '@/src/services/onboardingService';
 import { taskService } from '@/src/services/taskService';
 import type { DailyTaskStatus } from '@/src/types/api/task';
@@ -9,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -221,48 +222,23 @@ export default function HomeScreen() {
         product={purchasedProduct}
       />
 
-      <Modal
-        animationType="slide"
-        onRequestClose={() => setIsDailyStatusVisible(false)}
-        transparent
-        visible={isDailyStatusVisible}>
-        <View style={styles.modalOverlay}>
-          <View style={styles.dailyStatusModal}>
-            <Text style={styles.modalTitle}>Nhiệm vụ hôm qua</Text>
-            <Text style={styles.modalSubtitle}>
-              Bạn có muốn tiếp tục 5 nhiệm vụ đã hoàn thành hôm qua không?
-            </Text>
-
-            <ScrollView style={styles.yesterdayTaskList} showsVerticalScrollIndicator={false}>
-              {dailyStatus?.yesterdayTasks.map((task, index) => (
-                <View key={task.id} style={styles.yesterdayTaskItem}>
-                  <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={20} />
-                  <View style={styles.yesterdayTaskText}>
-                    <Text style={styles.yesterdayTaskTitle}>{`Nhiệm vụ ${String(index + 1).padStart(2, '0')}`}</Text>
-                    <Text style={styles.yesterdayTaskContent}>{task.content}</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-
-            <View style={styles.modalActions}>
-              <Pressable onPress={handleChooseNewTasks} style={styles.secondaryAction}>
-                <Text style={styles.secondaryActionText}>Thay đổi task mới</Text>
-              </Pressable>
-              <Pressable
-                disabled={isConfirmingDailyTasks || !dailyStatus?.yesterdayTasks.length}
-                onPress={handleKeepYesterdayTasks}
-                style={styles.primaryAction}>
-                {isConfirmingDailyTasks ? (
-                  <ActivityIndicator color={Design.colors.white} />
-                ) : (
-                  <Text style={styles.primaryActionText}>Giữ lại task cũ hôm qua</Text>
-                )}
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      </Modal>
+      <DailyTaskModals
+        completedStreak={null}
+        dailyStatusVisible={isDailyStatusVisible}
+        isConfirmingDailyTasks={isConfirmingDailyTasks}
+        isSwapping={false}
+        isSwapLoading={false}
+        onCancelStreak={() => undefined}
+        onCloseDailyStatus={() => setIsDailyStatusVisible(false)}
+        onCloseSwap={() => undefined}
+        onConfirmSwap={() => undefined}
+        onKeepYesterdayTasks={handleKeepYesterdayTasks}
+        onOpenMoodSelection={handleChooseNewTasks}
+        streakVisible={false}
+        swapCandidates={[]}
+        swapTask={null}
+        yesterdayTasks={dailyStatus?.yesterdayTasks ?? []}
+      />
     </SafeAreaView>
   );
 }

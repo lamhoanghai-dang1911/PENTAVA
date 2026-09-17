@@ -1,6 +1,6 @@
 import { API_ENDPOINTS } from "../constants/api";
 import apiClient, { setAccessToken } from "./apiClient";
-import { saveAccessToken } from "./authStorage";
+import { saveAccessToken, saveCurrentUser } from "./authStorage";
 
 type RegisterData = {
   email: string;
@@ -38,10 +38,7 @@ function getErrorMessage(error: any, fallback: string) {
   }
 
   return (
-    responseData?.message ||
-    responseData?.error ||
-    error?.message ||
-    fallback
+    responseData?.message || responseData?.error || error?.message || fallback
   );
 }
 
@@ -68,7 +65,10 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       throw new Error(
-        getErrorMessage(error, `Đăng ký thất bại (${error?.response?.status || 500})`)
+        getErrorMessage(
+          error,
+          `Đăng ký thất bại (${error?.response?.status || 500})`,
+        ),
       );
     }
   },
@@ -84,7 +84,10 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       throw new Error(
-        getErrorMessage(error, `Xác thực OTP thất bại (${error?.response?.status || 500})`)
+        getErrorMessage(
+          error,
+          `Xác thực OTP thất bại (${error?.response?.status || 500})`,
+        ),
       );
     }
   },
@@ -99,7 +102,10 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       throw new Error(
-        getErrorMessage(error, `Không thể gửi lại mã OTP (${error?.response?.status || 500})`)
+        getErrorMessage(
+          error,
+          `Không thể gửi lại mã OTP (${error?.response?.status || 500})`,
+        ),
       );
     }
   },
@@ -117,10 +123,14 @@ export const authService = {
       if (accessToken) {
         await saveAccessToken(accessToken);
       }
+      await saveCurrentUser(response.data, data.email);
       return response.data;
     } catch (error: any) {
       throw new Error(
-        getErrorMessage(error, `Đăng nhập thất bại (${error?.response?.status || 500})`)
+        getErrorMessage(
+          error,
+          `Đăng nhập thất bại (${error?.response?.status || 500})`,
+        ),
       );
     }
   },
@@ -138,11 +148,11 @@ export const authService = {
         await saveAccessToken(accessToken);
       }
 
+      await saveCurrentUser(response.data);
+
       return response.data;
     } catch (error: any) {
-      throw new Error(
-        getErrorMessage(error, `Đăng nhập Google thất bại`)
-      );
+      throw new Error(getErrorMessage(error, `Đăng nhập Google thất bại`));
     }
   },
 };

@@ -36,10 +36,6 @@ apiClient.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  if (__DEV__) {
-    console.log("API REQUEST:", config.method?.toUpperCase(), `${config.baseURL ?? ""}${config.url ?? ""}`);
-  }
-
   return config;
 });
 
