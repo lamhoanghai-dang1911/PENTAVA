@@ -142,6 +142,25 @@ src/types/api/onboarding.ts
 
 Không import domain type từ context nếu có thể đặt ở `src/types`.
 
+## Authentication feature
+
+Login business logic is separated from the Expo Router screen:
+
+```text
+app/login.tsx                         # Login UI and route composition
+src/features/auth/hooks/use-login.ts  # Login, Google OAuth, forgot-password flow, modal state
+src/services/authService.ts           # Backend calls, access token and current-user persistence
+src/services/authStorage.ts           # AsyncStorage keys and auth-state listeners
+```
+
+Rules:
+
+- Keep `app/login.tsx` focused on rendering UI and route-only actions such as opening `/register`.
+- Keep React state, form validation, forgot-password step transitions, login-success navigation, and Google OAuth orchestration in `use-login.ts`.
+- Do not move UI state or Expo Router logic into `authService.ts`; it is the API and persistence boundary.
+- Google OAuth client IDs remain environment variables prefixed with `EXPO_PUBLIC_`; never put Google client secrets in the mobile app.
+- Preserve the existing confirmation-modal sequence: successful login or OAuth only navigates after the user confirms the notification.
+
 ## Validation
 
 Lệnh thường dùng:
