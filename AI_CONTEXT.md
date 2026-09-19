@@ -142,6 +142,23 @@ src/types/api/onboarding.ts
 
 Không import domain type từ context nếu có thể đặt ở `src/types`.
 
+## Audio asset constants
+
+Keep bundled audio asset paths in `src/constants/audio.ts`.
+
+```ts
+import { AUDIO_SOURCES } from '@/src/constants/audio';
+
+audioService.play('loginSuccess');
+const source = AUDIO_SOURCES.loginSuccess;
+```
+
+Rules:
+
+- Add each asset with a static `require()` in `AUDIO_SOURCES`; Metro needs static asset paths to bundle them.
+- Import `AUDIO_SOURCES` or `AudioKey` instead of duplicating relative asset paths in services or UI components.
+- `src/services/audioService.ts` owns player lifecycle and playback; it must not contain asset paths.
+
 ## Authentication feature
 
 Login business logic is separated from the Expo Router screen:
