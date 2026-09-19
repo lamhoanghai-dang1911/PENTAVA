@@ -1,9 +1,16 @@
-import { Design, FontFamily } from '@/src/constants/design';
-import { TASK_COLORS_BY_INDEX } from '@/src/features/tasks/constants';
-import type { TaskCardProps } from '@/src/features/tasks/types/task-card';
-import { Ionicons } from '@expo/vector-icons';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-//sửa card đẹp lại.
+import { Design, FontFamily } from "@/src/constants/design";
+import { TASK_COLORS_BY_INDEX } from "@/src/features/tasks/constants";
+import type { TaskCardProps } from "@/src/features/tasks/types/task-card";
+import { Ionicons } from "@expo/vector-icons";
+import {
+    ActivityIndicator,
+    Alert,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
+
 export function TaskCard({
     task,
     index,
@@ -11,38 +18,135 @@ export function TaskCard({
     weekNumber,
     completingTaskId,
     onOpenTask,
+    onCompleteTask,
     onStartCheckIn,
     onSwap,
 }: TaskCardProps) {
+    const isCompleting = completingTaskId === task.id;
+
+    const handleComplete = async () => {
+        // Không cho bấm nếu task đã hoàn thành
+        // hoặc API đang xử lý task này.
+        if (task.isCompleted || isCompleting) {
+            return;
+        }
+
+        // Gọi API completeTask()
+        await onCompleteTask(task);
+
+        // API thành công thì mới hỏi check-in.
+        Alert.alert(
+            "Hoàn thành nhiệm vụ",
+            "Bạn có muốn chụp ảnh check-in cho ngày hôm nay không?",
+            [
+                {
+                    text: "Để sau",
+                    style: "cancel",
+                },
+                {
+                    text: "Có, chụp ảnh",
+                    onPress: () => onStartCheckIn(task),
+                },
+            ],
+            {
+                cancelable: false,
+            }
+        );
+    };
+
     return (
-        <View style={[styles.card, { backgroundColor: TASK_COLORS_BY_INDEX[index] }, !isTodaySelected && styles.pastCard]}>
+        <View
+            style={[
+                styles.card,
+                {
+                    backgroundColor: TASK_COLORS_BY_INDEX[index],
+                },
+                !isTodaySelected && styles.pastCard,
+            ]}
+        >
             <Pressable
-                accessibilityRole={isTodaySelected ? 'button' : undefined}
+                accessibilityRole={isTodaySelected ? "button" : undefined}
                 disabled={!isTodaySelected}
-                onPress={() => onOpenTask(task.id, weekNumber, index)}
-                style={styles.details}>
+                onPress={() =>
+                    onOpenTask(task.id, weekNumber, index)
+                }
+                style={styles.details}
+            >
                 <View style={styles.header}>
-                    <Text style={styles.title}>{`Nhiệm vụ ${String(index + 1).padStart(2, '0')}`}</Text>
-                    <Ionicons color={Design.colors.white} name={task.isCompleted ? 'checkmark-circle' : 'checkmark-circle-outline'} size={22} />
+                    <Text style={styles.title}>
+                        {`Nhiệm vụ ${ String(index + 1).padStart(2, "0") } `}
+                    </Text>
+
+                    <Ionicons
+                        color={Design.colors.white}
+                        name={
+                            task.isCompleted
+                                ? "checkmark-circle"
+                                : "checkmark-circle-outline"
+                        }
+                        size={22}
+                    />
                 </View>
-                <Text style={styles.description}>{task.content}</Text>
-                <Text style={styles.status}>{task.isCompleted ? 'Đã hoàn thành' : 'Chưa hoàn thành'}</Text>
+
+                <Text style={styles.description}>
+                    {task.content}
+                </Text>
+
+                <Text style={styles.status}>
+                    {task.isCompleted
+                        ? "Đã hoàn thành"
+                        : "Chưa hoàn thành"}
+                </Text>
             </Pressable>
 
             {isTodaySelected ? (
                 <View style={styles.actions}>
                     <Pressable
                         accessibilityRole="button"
-                        disabled={task.isCompleted || completingTaskId === task.id}
-                        onPress={() => onStartCheckIn(task)}
-                        style={[styles.action, task.isCompleted && styles.actionCompleted]}>
-                        {completingTaskId === task.id ? <ActivityIndicator color={Design.colors.primaryGreen} /> : <Ionicons color={Design.colors.primaryGreen} name="checkmark" size={18} />}
-                        <Text style={styles.actionText}>{task.isCompleted ? 'Đã xong' : 'Hoàn thành'}</Text>
+                        disabled={
+                            task.isCompleted || isCompleting
+                        }
+                        onPress={handleComplete}
+                        style={[
+                            styles.action,
+                            task.isCompleted &&
+                                styles.actionCompleted,
+                        ]}
+                    >
+                        {isCompleting ? (
+                            <ActivityIndicator
+                                color={Design.colors.primaryGreen}
+                            />
+                        ) : (
+                            <Ionicons
+                                color={Design.colors.primaryGreen}
+                                name="checkmark"
+                                size={18}
+                            />
+                        )}
+
+                        <Text style={styles.actionText}>
+                            {task.isCompleted
+                                ? "Đã xong"
+                                : "Hoàn thành"}
+                        </Text>
                     </Pressable>
+
                     {!task.isCompleted ? (
-                        <Pressable accessibilityRole="button" onPress={() => onSwap(task)} style={styles.action}>
-                            <Ionicons color={Design.colors.primaryGreen} name="swap-horizontal" size={18} />
-                            <Text style={styles.actionText}>Đổi task</Text>
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => onSwap(task)}
+                            style={styles.action}
+                        >
+                            <Ionicons
+                                color={Design.colors.primaryGreen}
+                                name="swap-horizontal"
+                                size={18}
+                            />
+
+                            <Text style={styles.actionText}>
+                                Đổi task
+                            </Text>
                         </Pressable>
                     ) : null}
                 </View>
@@ -58,19 +162,29 @@ const styles = StyleSheet.create({
         paddingVertical: 14,
         marginBottom: 14,
     },
-    pastCard: { opacity: 0.88 },
-    details: { alignSelf: 'stretch', padding: 0 },
+
+    pastCard: {
+        opacity: 0.88,
+    },
+
+    details: {
+        alignSelf: "stretch",
+        padding: 0,
+    },
+
     header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
         marginBottom: 6,
     },
+
     title: {
         fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: Design.fontSize.body - 2,
         color: Design.colors.white,
     },
+
     description: {
         fontFamily: FontFamily.beVietnamRegular,
         fontSize: Design.fontSize.caption + 1,
@@ -79,29 +193,40 @@ const styles = StyleSheet.create({
         lineHeight: 17,
         marginBottom: 10,
     },
+
     status: {
-        alignSelf: 'flex-start',
+        alignSelf: "flex-start",
         borderRadius: 10,
-        backgroundColor: 'rgba(255,255,255,0.22)',
+        backgroundColor: "rgba(255,255,255,0.22)",
         color: Design.colors.white,
         fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: Design.fontSize.caption,
         paddingHorizontal: 8,
         paddingVertical: 4,
     },
-    actions: { flexDirection: 'row', gap: 8, marginTop: 12 },
+
+    actions: {
+        flexDirection: "row",
+        gap: 8,
+        marginTop: 12,
+    },
+
     action: {
         flex: 1,
         minHeight: 38,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
         gap: 5,
         borderRadius: 19,
         backgroundColor: Design.colors.white,
         paddingHorizontal: 8,
     },
-    actionCompleted: { opacity: 0.7 },
+
+    actionCompleted: {
+        opacity: 0.7,
+    },
+
     actionText: {
         color: Design.colors.primaryGreen,
         fontFamily: FontFamily.beVietnamSemiBold,
