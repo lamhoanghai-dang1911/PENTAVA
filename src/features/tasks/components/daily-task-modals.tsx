@@ -1,6 +1,7 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import type { DailyTaskModalsProps } from '@/src/features/tasks/types/daily-task-modals';
 import { Ionicons } from '@expo/vector-icons';
+import { useEffect } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 export function DailyTaskModals({
@@ -20,37 +21,14 @@ export function DailyTaskModals({
     onCancelStreak,
     onConfirmSwap,
 }: DailyTaskModalsProps) {
+
+    useEffect(() => { if (dailyStatusVisible && yesterdayTasks.length === 0) { onOpenMoodSelection(); } }, [dailyStatusVisible, yesterdayTasks.length, onOpenMoodSelection]);
+
     return (
         <>
-            <Modal animationType="slide" onRequestClose={onCloseDailyStatus} transparent visible={dailyStatusVisible}>
-                <View style={styles.overlay}>
-                    <View style={styles.dailyStatusModal}>
-                        <Text style={styles.modalTitle}>Nhiệm vụ hôm qua</Text>
-                        <Text style={styles.modalSubtitle}>Bạn có muốn tiếp tục 5 nhiệm vụ đã hoàn thành hôm qua không?</Text>
-                        <ScrollView style={styles.yesterdayList} showsVerticalScrollIndicator={false}>
-                            {yesterdayTasks.map((task, index) => (
-                                <View key={task.id} style={styles.yesterdayItem}>
-                                    <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={20} />
-                                    <View style={styles.yesterdayText}>
-                                        <Text style={styles.yesterdayTitle}>{`Nhiệm vụ ${String(index + 1).padStart(2, '0')}`}</Text>
-                                        <Text style={styles.yesterdayContent}>{task.content}</Text>
-                                    </View>
-                                </View>
-                            ))}
-                        </ScrollView>
-                        <View style={styles.modalActions}>
-                            <Pressable onPress={onOpenMoodSelection} style={styles.secondaryAction}>
-                                <Text style={styles.secondaryActionText}>Thay đổi task mới</Text>
-                            </Pressable>
-                            <Pressable disabled={isConfirmingDailyTasks} onPress={onKeepYesterdayTasks} style={styles.primaryAction}>
-                                {isConfirmingDailyTasks ? <ActivityIndicator color={Design.colors.white} /> : <Text style={styles.primaryActionText}>Giữ lại task cũ hôm qua</Text>}
-                            </Pressable>
-                        </View>
-                    </View>
-                </View>
-            </Modal>
+            <Modal animationType="slide" onRequestClose={onCloseDailyStatus} transparent visible={dailyStatusVisible && yesterdayTasks.length > 0} > <View style={styles.overlay}> <View style={styles.dailyStatusModal}> <Text style={styles.modalTitle}> Nhiệm vụ hôm qua </Text> <Text style={styles.modalSubtitle}> Bạn có muốn tiếp tục 5 nhiệm vụ đã hoàn thành hôm qua không? </Text> <ScrollView style={styles.yesterdayList} showsVerticalScrollIndicator={false} > {yesterdayTasks.map((task, index) => (<View key={task.id} style={styles.yesterdayItem}> <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={20} /> <View style={styles.yesterdayText}> <Text style={styles.yesterdayTitle}> {`Nhiệm vụ ${String(index + 1).padStart(2, '0')}`} </Text> <Text style={styles.yesterdayContent}> {task.content} </Text> </View> </View>))} </ScrollView> <View style={styles.modalActions}> <Pressable disabled={isConfirmingDailyTasks} onPress={onKeepYesterdayTasks} style={styles.primaryAction} > {isConfirmingDailyTasks ? (<ActivityIndicator color={Design.colors.white} />) : (<Text style={styles.primaryActionText}> Giữ lại task cũ hôm qua </Text>)} </Pressable> <Pressable onPress={onOpenMoodSelection} style={styles.secondaryAction} > <Text style={styles.secondaryActionText}> Thay đổi task mới </Text> </Pressable> </View> </View> </View> </Modal>
 
-            <Modal animationType="slide" onRequestClose={onCloseSwap} transparent visible={swapTask !== null}>
+            <Modal animationType="slide" onRequestClose={onCloseSwap} transparent visible={dailyStatusVisible && yesterdayTasks.length > 0}>
                 <View style={styles.overlay}>
                     <View style={styles.swapModal}>
                         <Text style={styles.modalTitle}>Đổi nhiệm vụ</Text>

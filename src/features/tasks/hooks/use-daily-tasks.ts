@@ -178,7 +178,7 @@ export function useDailyTasks({
       setDailyStatus(status);
       await cacheDailyStatus(await getCurrentUserId(), currentGoalId, status);
       if (status.hasConfirmedToday) return;
-      if (status.hasYesterdayTasks) setIsDailyStatusVisible(true);
+      if (status.yesterdayTasks.length > 0) setIsDailyStatusVisible(true);
       else openMoodSelection();
     } catch (error) {
       Alert.alert("Không thể tải nhiệm vụ", getErrorMessage(error));
