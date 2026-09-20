@@ -1,11 +1,13 @@
 import { Design, FontFamily } from "@/src/constants/design";
 import { TASK_COLORS_BY_INDEX } from "@/src/features/tasks/constants";
 import type { TaskCardProps } from "@/src/features/tasks/types/task-card";
+import { checkinService } from "@/src/services/checkinService";
 import { Ionicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Image,
     Modal,
     Pressable,
     StyleSheet,
@@ -27,6 +29,58 @@ export function TaskCard({
 }: TaskCardProps) {
     const isCompleting = completingTaskId === task.id;
     const [isCheckInModalVisible, setIsCheckInModalVisible] = useState(false);
+    const [isImageModalVisible, setIsImageModalVisible] = useState(false);
+    const [isLoadingCheckInImage, setIsLoadingCheckInImage] = useState(false);
+    const [checkInImageUrl, setCheckInImageUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        if (!task.isCompleted || !task.progressId) {
+            return () => {
+                isMounted = false;
+            };
+        }
+
+        checkinService
+            .getImage(task.progressId)
+            .then((response) => {
+                if (isMounted && response.imageUrl) {
+                    setCheckInImageUrl(response.imageUrl);
+                }
+            })
+            .catch(() => {
+                if (isMounted) {
+                    setCheckInImageUrl(null);
+                }
+            });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [task.isCompleted, task.progressId]);
+
+    const handleViewCheckInImage = async () => {
+        if (!task.progressId || isLoadingCheckInImage) {
+            return;
+        }
+
+        try {
+            setIsLoadingCheckInImage(true);
+            const response = await checkinService.getImage(task.progressId);
+            if (!response.imageUrl) {
+                Alert.alert("Chưa có ảnh check-in", "Task này chưa có ảnh check-in.");
+                return;
+            }
+
+            setCheckInImageUrl(response.imageUrl);
+            setIsImageModalVisible(true);
+        } catch {
+            Alert.alert("Không thể tải ảnh", "Vui lòng thử lại sau.");
+        } finally {
+            setIsLoadingCheckInImage(false);
+        }
+    };
 
     const handleComplete = async () => {
         // Không cho bấm nếu task đã hoàn thành
@@ -156,6 +210,26 @@ export function TaskCard({
                 </View>
             ) : null}
 
+            {task.isCompleted && checkInImageUrl ? (
+                <Pressable
+                    accessibilityRole="button"
+                    disabled={isLoadingCheckInImage}
+                    onPress={handleViewCheckInImage}
+                    style={styles.viewImageAction}
+                >
+                    {isLoadingCheckInImage ? (
+                        <ActivityIndicator color={Design.colors.primaryGreen} />
+                    ) : (
+                        <Ionicons
+                            color={Design.colors.primaryGreen}
+                            name="image-outline"
+                            size={18}
+                        />
+                    )}
+                    <Text style={styles.actionText}>Xem ảnh check-in</Text>
+                </Pressable>
+            ) : null}
+
             <Modal
                 animationType="fade"
                 onRequestClose={() => setIsCheckInModalVisible(false)}
@@ -206,6 +280,40 @@ export function TaskCard({
                                 Để sau
                             </Text>
                         </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal
+                animationType="fade"
+                onRequestClose={() => setIsImageModalVisible(false)}
+                transparent
+                visible={isImageModalVisible}
+            >
+                <View style={styles.imageModalOverlay}>
+                    <View style={styles.imageModal}>
+                        <View style={styles.imageModalHeader}>
+                            <Text style={styles.imageModalTitle}>Ảnh check-in</Text>
+                            <Pressable
+                                accessibilityRole="button"
+                                accessibilityLabel="Đóng ảnh check-in"
+                                onPress={() => setIsImageModalVisible(false)}
+                            >
+                                <Ionicons
+                                    color={Design.colors.black}
+                                    name="close"
+                                    size={26}
+                                />
+                            </Pressable>
+                        </View>
+
+                        {checkInImageUrl ? (
+                            <Image
+                                resizeMode="contain"
+                                source={{ uri: checkInImageUrl }}
+                                style={styles.checkInImage}
+                            />
+                        ) : null}
                     </View>
                 </View>
             </Modal>
@@ -291,6 +399,17 @@ const styles = StyleSheet.create({
         fontSize: Design.fontSize.caption + 1,
     },
 
+    viewImageAction: {
+        minHeight: 38,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 5,
+        borderRadius: 19,
+        backgroundColor: Design.colors.white,
+        marginTop: 8,
+    },
+
     modalOverlay: {
         flex: 1,
         alignItems: "center",
@@ -367,5 +486,41 @@ const styles = StyleSheet.create({
         color: Design.colors.primaryGreen,
         fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: Design.fontSize.body - 1,
+    },
+
+    imageModalOverlay: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.72)",
+        paddingHorizontal: 16,
+    },
+
+    imageModal: {
+        width: "100%",
+        maxWidth: 430,
+        borderRadius: 18,
+        backgroundColor: Design.colors.white,
+        padding: 12,
+    },
+
+    imageModalHeader: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "space-between",
+        marginBottom: 10,
+    },
+
+    imageModalTitle: {
+        color: Design.colors.black,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: Design.fontSize.body,
+    },
+
+    checkInImage: {
+        width: "100%",
+        height: 480,
+        borderRadius: 12,
+        backgroundColor: Design.colors.lightGray,
     },
 });

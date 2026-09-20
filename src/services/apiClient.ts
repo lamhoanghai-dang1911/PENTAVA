@@ -36,6 +36,10 @@ apiClient.interceptors.request.use(async (config) => {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
+  if (!isAuthRequest && !accessToken) {
+    throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+  }
+
   return config;
 });
 
