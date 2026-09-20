@@ -6,6 +6,7 @@ export type ReviewPathname =
 
 export type TaskCameraRouteParams = {
   taskId?: string;
+  progressId?: string;
   week?: string;
   selectedItems?: string;
 };

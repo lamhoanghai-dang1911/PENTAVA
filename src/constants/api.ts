@@ -22,7 +22,8 @@ export const API_ENDPOINTS = {
       `/api/onboarding/tasks/${taskId}/progress`,
     SAVE_PROGRESS_ITEMS: (taskId: number) =>
       `/api/onboarding/tasks/${taskId}/progress/items`,
-    COMPLETE: (taskId: number) => `/api/onboarding/tasks/${taskId}/complete`,
+    COMPLETE: (progressId: number) =>
+      `/api/onboarding/tasks/daily/${progressId}/complete`,
   },
   ONBOARDING: {
     CURRENT_GOAL: "/api/onboarding/goals/current",
@@ -30,7 +31,9 @@ export const API_ENDPOINTS = {
     SELECT_MOOD: "/api/onboarding/mood/select",
   },
   CHECKIN: {
-    GET_IMAGE: (taskId: number) => `/api/checkin/tasks/${taskId}`,
-    SAVE_IMAGE: (taskId: number) => `/api/checkin/tasks/${taskId}`,
+    GET_IMAGE: (taskProgressId: number) =>
+      `/api/checkin/task-progress/${taskProgressId}`,
+    SAVE_IMAGE: (taskProgressId: number) =>
+      `/api/checkin/task-progress/${taskProgressId}`,
   },
 };

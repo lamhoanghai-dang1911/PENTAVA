@@ -9,12 +9,14 @@ export type DailyTaskModalsProps = {
   swapCandidates: Task[];
   isSwapLoading: boolean;
   isSwapping: boolean;
+  swapSuccessVisible: boolean;
   streakVisible: boolean;
   completedStreak: CurrentStreak | null;
   onCloseDailyStatus: () => void;
   onOpenMoodSelection: () => void;
   onKeepYesterdayTasks: () => void;
   onCloseSwap: () => void;
+  onCloseSwapSuccess: () => void;
   onCancelStreak: () => void;
   onConfirmSwap: (task: Task) => void;
 };

@@ -2,9 +2,11 @@ import { Design, FontFamily } from "@/src/constants/design";
 import { TASK_COLORS_BY_INDEX } from "@/src/features/tasks/constants";
 import type { TaskCardProps } from "@/src/features/tasks/types/task-card";
 import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
 import {
     ActivityIndicator,
     Alert,
+    Modal,
     Pressable,
     StyleSheet,
     Text,
@@ -23,6 +25,7 @@ export function TaskCard({
     onSwap,
 }: TaskCardProps) {
     const isCompleting = completingTaskId === task.id;
+    const [isCheckInModalVisible, setIsCheckInModalVisible] = useState(false);
 
     const handleComplete = async () => {
         // Không cho bấm nếu task đã hoàn thành
@@ -31,27 +34,27 @@ export function TaskCard({
             return;
         }
 
-        // Gọi API completeTask()
-        await onCompleteTask(task);
+        if (!task.progressId) {
+            Alert.alert(
+                "Không thể hoàn thành nhiệm vụ",
+                "Nhiệm vụ chưa có thông tin tiến độ.",
+            );
+            return;
+        }
 
-        // API thành công thì mới hỏi check-in.
-        Alert.alert(
-            "Hoàn thành nhiệm vụ",
-            "Bạn có muốn chụp ảnh check-in cho ngày hôm nay không?",
-            [
-                {
-                    text: "Để sau",
-                    style: "cancel",
-                },
-                {
-                    text: "Có, chụp ảnh",
-                    onPress: () => onStartCheckIn(task),
-                },
-            ],
-            {
-                cancelable: false,
-            }
-        );
+        // Gọi API completeTask()
+        const completed = await onCompleteTask(task);
+        if (!completed) {
+            return;
+        }
+
+        // API thành công thì mới mở lựa chọn check-in.
+        setIsCheckInModalVisible(true);
+    };
+
+    const handleStartCheckIn = () => {
+        setIsCheckInModalVisible(false);
+        onStartCheckIn(task);
     };
 
     return (
@@ -74,7 +77,7 @@ export function TaskCard({
             >
                 <View style={styles.header}>
                     <Text style={styles.title}>
-                        {`Nhiệm vụ ${ String(index + 1).padStart(2, "0") } `}
+                        {`Nhiệm vụ ${String(index + 1).padStart(2, "0")} `}
                     </Text>
 
                     <Ionicons
@@ -110,7 +113,7 @@ export function TaskCard({
                         style={[
                             styles.action,
                             task.isCompleted &&
-                                styles.actionCompleted,
+                            styles.actionCompleted,
                         ]}
                     >
                         {isCompleting ? (
@@ -151,6 +154,57 @@ export function TaskCard({
                     ) : null}
                 </View>
             ) : null}
+
+            <Modal
+                animationType="fade"
+                onRequestClose={() => setIsCheckInModalVisible(false)}
+                transparent
+                visible={isCheckInModalVisible}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.checkInModal}>
+                        <View style={styles.checkInIcon}>
+                            <Ionicons
+                                color={Design.colors.white}
+                                name="camera-outline"
+                                size={28}
+                            />
+                        </View>
+
+                        <Text style={styles.modalTitle}>
+                            Hoàn thành nhiệm vụ
+                        </Text>
+                        <Text style={styles.modalDescription}>
+                            Bạn có muốn chụp ảnh check-in cho ngày hôm nay không?
+                        </Text>
+
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={handleStartCheckIn}
+                            style={styles.modalPrimaryAction}
+                        >
+                            <Ionicons
+                                color={Design.colors.white}
+                                name="camera"
+                                size={18}
+                            />
+                            <Text style={styles.modalPrimaryActionText}>
+                                Có, chụp ảnh
+                            </Text>
+                        </Pressable>
+
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => setIsCheckInModalVisible(false)}
+                            style={styles.modalSecondaryAction}
+                        >
+                            <Text style={styles.modalSecondaryActionText}>
+                                Để sau
+                            </Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
         </View>
     );
 }
@@ -231,5 +285,83 @@ const styles = StyleSheet.create({
         color: Design.colors.primaryGreen,
         fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: Design.fontSize.caption + 1,
+    },
+
+    modalOverlay: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        backgroundColor: "rgba(0, 0, 0, 0.45)",
+        paddingHorizontal: 24,
+    },
+
+    checkInModal: {
+        width: "100%",
+        maxWidth: 380,
+        alignItems: "center",
+        borderRadius: 24,
+        backgroundColor: Design.colors.white,
+        padding: 24,
+    },
+
+    checkInIcon: {
+        width: 60,
+        height: 60,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 30,
+        backgroundColor: Design.colors.primaryGreen,
+        marginBottom: 14,
+    },
+
+    modalTitle: {
+        color: Design.colors.black,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: Design.fontSize.title,
+        textAlign: "center",
+    },
+
+    modalDescription: {
+        color: Design.colors.mutedText,
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: Design.fontSize.body - 1,
+        lineHeight: 21,
+        marginTop: 8,
+        marginBottom: 20,
+        textAlign: "center",
+    },
+
+    modalPrimaryAction: {
+        width: "100%",
+        minHeight: 46,
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 8,
+        borderRadius: 23,
+        backgroundColor: Design.colors.primaryGreen,
+    },
+
+    modalPrimaryActionText: {
+        color: Design.colors.white,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: Design.fontSize.body - 1,
+    },
+
+    modalSecondaryAction: {
+        width: "100%",
+        minHeight: 46,
+        alignItems: "center",
+        justifyContent: "center",
+        borderRadius: 23,
+        borderWidth: 1,
+        borderColor: Design.colors.primaryGreen,
+        marginTop: 10,
+    },
+
+    modalSecondaryActionText: {
+        color: Design.colors.primaryGreen,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: Design.fontSize.body - 1,
     },
 });

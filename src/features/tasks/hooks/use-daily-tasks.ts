@@ -4,17 +4,17 @@ import type { UseDailyTasksOptions } from "@/src/features/tasks/types/use-daily-
 import { getCurrentUserId } from "@/src/services/authStorage";
 import { onboardingService } from "@/src/services/onboardingService";
 import {
-    cacheDailyStatus,
-    cacheTaskHistory,
-    getCachedDailyStatus,
-    getCachedTaskHistory,
+  cacheDailyStatus,
+  cacheTaskHistory,
+  getCachedDailyStatus,
+  getCachedTaskHistory,
 } from "@/src/services/taskCacheStorage";
 import { taskService } from "@/src/services/taskService";
 import type { CurrentStreak } from "@/src/types/api/onboarding";
 import type {
-    DailyTaskStatus,
-    Task,
-    TaskHistoryEntry,
+  DailyTaskStatus,
+  Task,
+  TaskHistoryEntry,
 } from "@/src/types/api/task";
 import { useEffect, useMemo, useState } from "react";
 import { Alert } from "react-native";
@@ -44,6 +44,7 @@ export function useDailyTasks({
   const [swapCandidates, setSwapCandidates] = useState<Task[]>([]);
   const [isSwapLoading, setIsSwapLoading] = useState(false);
   const [isSwapping, setIsSwapping] = useState(false);
+  const [swapSuccessVisible, setSwapSuccessVisible] = useState(false);
   const [completedStreak, setCompletedStreak] = useState<CurrentStreak | null>(
     null,
   );
@@ -101,21 +102,27 @@ export function useDailyTasks({
 
   useEffect(() => {
     let isActive = true;
+    let goalId: number | null = null;
+    let cachedStatus: DailyTaskStatus | null = null;
+    let cacheHasProgressIds = false;
 
     const loadDailyStatus = async () => {
       try {
         const goalResponse = await onboardingService.getCurrentGoal();
-        const goalId = goalResponse.currentGoal?.goalId ?? null;
+        goalId = goalResponse.currentGoal?.goalId ?? null;
         if (!goalId || !isActive) return;
 
         const userId = await getCurrentUserId();
-        const cachedStatus = await getCachedDailyStatus(userId, goalId);
-        if (isActive && cachedStatus) {
-          setCurrentGoalId(goalId);
-          setDailyStatus(cachedStatus);
-          setIsDailyStatusLoaded(true);
-          return;
-        }
+        cachedStatus = await getCachedDailyStatus(userId, goalId);
+        const cachedTasks = cachedStatus
+          ? [
+            ...cachedStatus.todayTasks,
+            ...cachedStatus.yesterdayTasks,
+          ]
+          : [];
+        cacheHasProgressIds = cachedTasks.every(
+          (task) => task.progressId != null,
+        );
 
         const statusResponse = await taskService.getDailyTaskStatus(goalId);
         if (isActive) {
@@ -130,11 +137,19 @@ export function useDailyTasks({
             statusResponse.dailyTaskStatus,
           );
       } catch (error) {
-        if (isActive)
-          Alert.alert(
-            "Không thể tải trạng thái nhiệm vụ",
-            getErrorMessage(error),
-          );
+        if (!isActive) return;
+
+        if (cachedStatus && cacheHasProgressIds) {
+          setCurrentGoalId(goalId);
+          setDailyStatus(cachedStatus);
+          setIsDailyStatusLoaded(true);
+          return;
+        }
+
+        Alert.alert(
+          "Không thể tải trạng thái nhiệm vụ",
+          getErrorMessage(error),
+        );
       }
     };
 
@@ -211,23 +226,47 @@ export function useDailyTasks({
     }
   };
 
-  const handleCompleteTask = async (task: Task) => {
-    if (task.isCompleted) return;
+  const handleCompleteTask = async (task: Task): Promise<boolean> => {
+    if (task.isCompleted) return false;
+
+    if (!task.progressId) {
+      Alert.alert(
+        "Không thể hoàn thành nhiệm vụ",
+        "Nhiệm vụ chưa có thông tin tiến độ.",
+      );
+      return false;
+    }
 
     setCompletingTaskId(task.id);
     try {
-      await taskService.completeTask(task.id);
-      const updatedTasks = (dailyStatus?.todayTasks ?? []).map((item) =>
-        item.id === task.id ? { ...item, isCompleted: true } : item,
+      await taskService.completeTask(task.progressId);
+      const statusResponse = currentGoalId
+        ? await taskService.getDailyTaskStatus(currentGoalId)
+        : null;
+      const serverStatus = statusResponse?.dailyTaskStatus;
+      if (!serverStatus) {
+        throw new Error("Không nhận được trạng thái nhiệm vụ sau khi hoàn thành.");
+      }
+
+      // POST complete is authoritative. Merge it into GET in case daily-status
+      // is briefly stale while the backend updates the daily task record.
+      const updatedTasks = serverStatus.todayTasks.map((item) =>
+        item.progressId === task.progressId
+          ? { ...item, isCompleted: true }
+          : item,
       );
-      setDailyStatus((current) =>
-        current ? { ...current, todayTasks: updatedTasks } : current,
-      );
-      if (currentGoalId && dailyStatus) {
-        await cacheDailyStatus(await getCurrentUserId(), currentGoalId, {
-          ...dailyStatus,
-          todayTasks: updatedTasks,
-        });
+      const updatedStatus = {
+        ...serverStatus,
+        todayTasks: updatedTasks,
+      };
+
+      setDailyStatus(updatedStatus);
+      if (currentGoalId) {
+        await cacheDailyStatus(
+          await getCurrentUserId(),
+          currentGoalId,
+          updatedStatus,
+        );
       }
 
       if (
@@ -238,8 +277,34 @@ export function useDailyTasks({
         setCompletedStreak(streakResponse.streak);
         setIsStreakVisible(true);
       }
+      return true;
     } catch (error) {
-      Alert.alert("Không thể hoàn thành nhiệm vụ", getErrorMessage(error));
+      const errorMessage = getErrorMessage(error);
+      if (/đã (được )?hoàn thành trước đó/i.test(errorMessage)) {
+        const updatedStatus = dailyStatus
+          ? {
+            ...dailyStatus,
+            todayTasks: dailyStatus.todayTasks.map((item) =>
+              item.progressId === task.progressId
+                ? { ...item, isCompleted: true }
+                : item,
+            ),
+          }
+          : null;
+
+        setDailyStatus(updatedStatus);
+        if (currentGoalId && updatedStatus) {
+          await cacheDailyStatus(
+            await getCurrentUserId(),
+            currentGoalId,
+            updatedStatus,
+          );
+        }
+        return true;
+      }
+
+      Alert.alert("Không thể hoàn thành nhiệm vụ", errorMessage);
+      return false;
     } finally {
       setCompletingTaskId(null);
     }
@@ -289,6 +354,9 @@ export function useDailyTasks({
         oldTaskId: swapTask.id,
         newTaskId: newTask.id,
       });
+      setSwapTask(null);
+      setSwapSuccessVisible(true);
+
       if (response.tasks?.length) {
         const updatedStatus = dailyStatus
           ? { ...dailyStatus, todayTasks: response.tasks }
@@ -309,7 +377,6 @@ export function useDailyTasks({
           statusResponse.dailyTaskStatus,
         );
       }
-      setSwapTask(null);
     } catch (error) {
       Alert.alert("Không thể đổi nhiệm vụ", getErrorMessage(error));
     } finally {
@@ -346,6 +413,8 @@ export function useDailyTasks({
     swapCandidates,
     isSwapLoading,
     isSwapping,
+    swapSuccessVisible,
+    setSwapSuccessVisible,
     completedStreak,
     isStreakVisible,
     setIsStreakVisible,

@@ -10,7 +10,7 @@ export type TaskCardProps = {
   onOpenTask: (taskId: number, weekNumber: number, taskIndex: number) => void;
 
   // Gọi API complete task
-  onCompleteTask: (task: Task) => Promise<void>;
+  onCompleteTask: (task: Task) => Promise<boolean>;
 
   // Chuyển sang màn hình check-in
   onStartCheckIn: (task: Task) => void;

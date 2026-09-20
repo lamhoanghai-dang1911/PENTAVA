@@ -47,7 +47,7 @@ export default function DailyTasksScreen() {
      * Task 5 -> /task5/page3
      */
     const startTaskCheckIn = (
-        task: { id: number },
+        task: { id: number; progressId?: number },
         index: number,
     ) => {
         const captureRoutes = [
@@ -68,10 +68,19 @@ export default function DailyTasksScreen() {
             return;
         }
 
+        if (!task.progressId) {
+            Alert.alert(
+                'Không thể check-in',
+                'Nhiệm vụ chưa có thông tin tiến độ để check-in.',
+            );
+            return;
+        }
+
         router.push({
             pathname: route,
             params: {
                 taskId: String(task.id),
+                progressId: String(task.progressId),
                 week: String(dailyTasks.weekNumber),
             },
         } as any);
@@ -211,6 +220,9 @@ export default function DailyTasksScreen() {
                 isSwapping={
                     dailyTasks.isSwapping
                 }
+                swapSuccessVisible={
+                    dailyTasks.swapSuccessVisible
+                }
                 onCancelStreak={() =>
                     dailyTasks.setIsStreakVisible(false)
                 }
@@ -219,6 +231,9 @@ export default function DailyTasksScreen() {
                 }
                 onCloseSwap={() =>
                     dailyTasks.setSwapTask(null)
+                }
+                onCloseSwapSuccess={() =>
+                    dailyTasks.setSwapSuccessVisible(false)
                 }
                 onConfirmSwap={
                     dailyTasks.handleSwapTask

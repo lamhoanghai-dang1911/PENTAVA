@@ -4,6 +4,7 @@ export type TaskProgressRequestDTO = {
 
 export type Task = {
   id: number;
+  progressId?: number;
   title: string;
   content: string;
   weekNumber: number | null;

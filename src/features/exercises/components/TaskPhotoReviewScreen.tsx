@@ -1,38 +1,30 @@
+import { Design, FontFamily } from '@/src/constants/design';
 import { checkinService } from '@/src/services/checkinService';
-import { taskService } from '@/src/services/taskService';
 import type { TaskCameraRouteParams } from '@/src/types/camera';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
 
 export function TaskPhotoReviewScreen() {
   const router = useRouter();
-  const { imageUri, taskId: taskIdParam, selectedItems: selectedItemsParam } = useLocalSearchParams<TaskCameraRouteParams & { imageUri?: string }>();
+  const { imageUri, progressId: progressIdParam } = useLocalSearchParams<TaskCameraRouteParams & { imageUri?: string }>();
   const [isSaving, setIsSaving] = useState(false);
+  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
 
   const usePhoto = async () => {
-    const taskId = Number(taskIdParam);
-    if (!imageUri || !Number.isInteger(taskId) || taskId <= 0) {
+    const progressId = Number(progressIdParam);
+    if (!imageUri || !Number.isInteger(progressId) || progressId <= 0) {
       Alert.alert('Thiếu dữ liệu check-in', 'Vui lòng mở lại nhiệm vụ từ danh sách.');
-      return;
-    }
-
-    let selectedItems: string[] = [];
-    try {
-      selectedItems = selectedItemsParam ? JSON.parse(selectedItemsParam) as string[] : [];
-    } catch {
-      Alert.alert('Dữ liệu không hợp lệ', 'Không thể đọc các lựa chọn của nhiệm vụ.');
       return;
     }
 
     try {
       setIsSaving(true);
-      const imageUrl = await checkinService.uploadImage(imageUri, taskId);
-      await checkinService.saveImage(taskId, imageUrl);
-      await taskService.completeTask(taskId, { selectedItems });
-      Alert.alert('Hoàn thành nhiệm vụ!', 'Ảnh check-in đã được lưu.');
-      router.replace('/daily-tasks');
+      const imageUrl = await checkinService.uploadImage(imageUri, progressId);
+      await checkinService.saveImage(progressId, imageUrl);
+      setIsSuccessModalVisible(true);
     } catch (error) {
       Alert.alert('Không thể lưu check-in', error instanceof Error ? error.message : 'Đã có lỗi xảy ra.');
     } finally {
@@ -41,19 +33,90 @@ export function TaskPhotoReviewScreen() {
   };
 
   return (
-    <TaskCameraScaffold
-      background={imageUri ? <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} /> : <View style={[StyleSheet.absoluteFill, cameraStyles.emptyPreview]} />}
-      onBack={() => router.back()}
-      footer={
-        <View style={cameraStyles.finalActionsRow}>
-          <TouchableOpacity disabled={isSaving} style={cameraStyles.retakeBtn} onPress={() => router.back()}>
-            <Text style={cameraStyles.retakeText}>↻ CHỤP LẠI</Text>
-          </TouchableOpacity>
-          <TouchableOpacity disabled={isSaving} style={cameraStyles.usePhotoBtn} onPress={usePhoto}>
-            <Text style={cameraStyles.usePhotoText}>{isSaving ? 'ĐANG LƯU...' : 'SỬ DỤNG ẢNH'}</Text>
-          </TouchableOpacity>
+    <>
+      <TaskCameraScaffold
+        background={imageUri ? <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} /> : <View style={[StyleSheet.absoluteFill, cameraStyles.emptyPreview]} />}
+        onBack={() => router.back()}
+        footer={
+          <View style={cameraStyles.finalActionsRow}>
+            <TouchableOpacity disabled={isSaving} style={cameraStyles.retakeBtn} onPress={() => router.back()}>
+              <Text style={cameraStyles.retakeText}>↻ CHỤP LẠI</Text>
+            </TouchableOpacity>
+            <TouchableOpacity disabled={isSaving} style={cameraStyles.usePhotoBtn} onPress={usePhoto}>
+              <Text style={cameraStyles.usePhotoText}>{isSaving ? 'ĐANG LƯU...' : 'SỬ DỤNG ẢNH'}</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
+
+      <Modal animationType="fade" onRequestClose={() => setIsSuccessModalVisible(false)} transparent visible={isSuccessModalVisible}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.successModal}>
+            <View style={styles.successIcon}>
+              <Ionicons color={Design.colors.white} name="checkmark" size={32} />
+            </View>
+            <Text style={styles.successTitle}>Check-in thành công</Text>
+            <Text style={styles.successDescription}>Ảnh check-in đã được lưu.</Text>
+            <Pressable onPress={() => router.replace('/daily-tasks')} style={styles.successButton}>
+              <Text style={styles.successButtonText}>OK</Text>
+            </Pressable>
+          </View>
         </View>
-      }
-    />
+      </Modal>
+    </>
   );
 }
+
+const styles = StyleSheet.create({
+  modalOverlay: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    paddingHorizontal: 24,
+  },
+  successModal: {
+    width: '100%',
+    maxWidth: 380,
+    alignItems: 'center',
+    borderRadius: 24,
+    backgroundColor: Design.colors.white,
+    padding: 24,
+  },
+  successIcon: {
+    width: 64,
+    height: 64,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 32,
+    backgroundColor: Design.colors.primaryGreen,
+    marginBottom: 14,
+  },
+  successTitle: {
+    color: Design.colors.black,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.title,
+    textAlign: 'center',
+  },
+  successDescription: {
+    color: Design.colors.mutedText,
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: Design.fontSize.body - 1,
+    marginTop: 8,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  successButton: {
+    width: '100%',
+    minHeight: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 23,
+    backgroundColor: Design.colors.primaryGreen,
+  },
+  successButtonText: {
+    color: Design.colors.white,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.body - 1,
+  },
+});
