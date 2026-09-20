@@ -235,12 +235,14 @@ export default function HomeScreen() {
         onCancelStreak={() => undefined}
         onCloseDailyStatus={() => setIsDailyStatusVisible(false)}
         onCloseSwap={() => undefined}
+        onCloseSwapSuccess={() => undefined}
         onConfirmSwap={() => undefined}
         onKeepYesterdayTasks={handleKeepYesterdayTasks}
         onOpenMoodSelection={handleChooseNewTasks}
         streakVisible={false}
         swapCandidates={[]}
         swapTask={null}
+        swapSuccessVisible={false}
         yesterdayTasks={dailyStatus?.yesterdayTasks ?? []}
       />
     </SafeAreaView>

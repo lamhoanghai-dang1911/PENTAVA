@@ -15,6 +15,9 @@ export type TaskCardProps = {
   // Chuyển sang màn hình check-in
   onStartCheckIn: (task: Task) => void;
 
+  // Hiển thị streak sau khi người dùng bỏ qua check-in
+  onDismissCheckIn: () => void;
+
   // Đổi task
   onSwap: (task: Task) => void | Promise<void>;
 };

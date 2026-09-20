@@ -192,6 +192,7 @@ export default function DailyTasksScreen() {
                             index={index}
                             isTodaySelected={dailyTasks.isTodaySelected}
                             onCompleteTask={dailyTasks.handleCompleteTask}
+                            onDismissCheckIn={dailyTasks.showStreak}
                             onOpenTask={dailyTasks.openTask}
                             onStartCheckIn={(task) => startTaskCheckIn(task, index)}
                             onSwap={dailyTasks.openSwap}

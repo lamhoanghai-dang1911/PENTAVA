@@ -22,6 +22,7 @@ export function TaskCard({
     onOpenTask,
     onCompleteTask,
     onStartCheckIn,
+    onDismissCheckIn,
     onSwap,
 }: TaskCardProps) {
     const isCompleting = completingTaskId === task.id;
@@ -195,7 +196,10 @@ export function TaskCard({
 
                         <Pressable
                             accessibilityRole="button"
-                            onPress={() => setIsCheckInModalVisible(false)}
+                            onPress={() => {
+                                setIsCheckInModalVisible(false);
+                                onDismissCheckIn();
+                            }}
                             style={styles.modalSecondaryAction}
                         >
                             <Text style={styles.modalSecondaryActionText}>

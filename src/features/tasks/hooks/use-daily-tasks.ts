@@ -275,7 +275,6 @@ export function useDailyTasks({
       ) {
         const streakResponse = await onboardingService.getCurrentStreak();
         setCompletedStreak(streakResponse.streak);
-        setIsStreakVisible(true);
       }
       return true;
     } catch (error) {
@@ -384,6 +383,10 @@ export function useDailyTasks({
     }
   };
 
+  const showStreak = () => {
+    if (completedStreak) setIsStreakVisible(true);
+  };
+
   const changeWeek = (nextWeek: number) => {
     if (nextWeek < 1) return;
     setWeekNumber(nextWeek);
@@ -422,6 +425,7 @@ export function useDailyTasks({
     handleExecuteToday,
     handleKeepYesterdayTasks,
     handleCompleteTask,
+    showStreak,
     openSwap,
     handleSwapTask,
     openTask: onOpenTask,
