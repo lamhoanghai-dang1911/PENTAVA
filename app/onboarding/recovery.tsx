@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     title: {
-        fontFamily: FontFamily.poppinsSemiBold,
+        fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: Design.fontSize.h2 - 2,
         color: Design.colors.primaryGreen,
         textAlign: 'center',

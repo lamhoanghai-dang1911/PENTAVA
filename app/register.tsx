@@ -202,7 +202,7 @@ const styles = StyleSheet.create({
         height: '100%',
     },
     greeting: {
-        fontFamily: FontFamily.poppinsSemiBold,
+        fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: Design.fontSize.h2,
         color: Design.colors.black,
         textAlign: 'center',
