@@ -12,12 +12,14 @@ export function DailyTaskModals({
     swapCandidates,
     isSwapLoading,
     isSwapping,
+    swapSuccessVisible,
     streakVisible,
     completedStreak,
     onCloseDailyStatus,
     onOpenMoodSelection,
     onKeepYesterdayTasks,
     onCloseSwap,
+    onCloseSwapSuccess,
     onCancelStreak,
     onConfirmSwap,
 }: DailyTaskModalsProps) {
@@ -28,7 +30,7 @@ export function DailyTaskModals({
         <>
             <Modal animationType="slide" onRequestClose={onCloseDailyStatus} transparent visible={dailyStatusVisible && yesterdayTasks.length > 0} > <View style={styles.overlay}> <View style={styles.dailyStatusModal}> <Text style={styles.modalTitle}> Nhiệm vụ hôm qua </Text> <Text style={styles.modalSubtitle}> Bạn có muốn tiếp tục 5 nhiệm vụ đã hoàn thành hôm qua không? </Text> <ScrollView style={styles.yesterdayList} showsVerticalScrollIndicator={false} > {yesterdayTasks.map((task, index) => (<View key={task.id} style={styles.yesterdayItem}> <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={20} /> <View style={styles.yesterdayText}> <Text style={styles.yesterdayTitle}> {`Nhiệm vụ ${String(index + 1).padStart(2, '0')}`} </Text> <Text style={styles.yesterdayContent}> {task.content} </Text> </View> </View>))} </ScrollView> <View style={styles.modalActions}> <Pressable disabled={isConfirmingDailyTasks} onPress={onKeepYesterdayTasks} style={styles.primaryAction} > {isConfirmingDailyTasks ? (<ActivityIndicator color={Design.colors.white} />) : (<Text style={styles.primaryActionText}> Giữ lại task cũ hôm qua </Text>)} </Pressable> <Pressable onPress={onOpenMoodSelection} style={styles.secondaryAction} > <Text style={styles.secondaryActionText}> Thay đổi task mới </Text> </Pressable> </View> </View> </View> </Modal>
 
-            <Modal animationType="slide" onRequestClose={onCloseSwap} transparent visible={dailyStatusVisible && yesterdayTasks.length > 0}>
+            <Modal animationType="slide" onRequestClose={onCloseSwap} transparent visible={swapTask !== null}>
                 <View style={styles.overlay}>
                     <View style={styles.swapModal}>
                         <Text style={styles.modalTitle}>Đổi nhiệm vụ</Text>
@@ -45,6 +47,20 @@ export function DailyTaskModals({
                         )}
                         <Pressable onPress={onCloseSwap} style={styles.secondaryAction}>
                             <Text style={styles.secondaryActionText}>Hủy</Text>
+                        </Pressable>
+                    </View>
+                </View>
+            </Modal>
+
+            <Modal animationType="fade" onRequestClose={onCloseSwapSuccess} transparent visible={swapSuccessVisible}>
+                <View style={styles.streakOverlay}>
+                    <View style={styles.successModal}>
+                        <View style={styles.successIcon}>
+                            <Ionicons color={Design.colors.white} name="checkmark" size={34} />
+                        </View>
+                        <Text style={styles.successTitle}>Đổi task thành công</Text>
+                        <Pressable onPress={onCloseSwapSuccess} style={styles.primaryAction}>
+                            <Text style={styles.primaryActionText}>Tiếp tục</Text>
                         </Pressable>
                     </View>
                 </View>
@@ -94,6 +110,30 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 24,
         padding: 24,
         backgroundColor: Design.colors.white,
+    },
+    successModal: {
+        alignItems: 'center',
+        width: '88%',
+        maxWidth: 380,
+        borderRadius: 24,
+        padding: 24,
+        backgroundColor: Design.colors.white,
+    },
+    successIcon: {
+        width: 68,
+        height: 68,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 34,
+        backgroundColor: Design.colors.primaryGreen,
+        marginBottom: 14,
+    },
+    successTitle: {
+        color: Design.colors.black,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: Design.fontSize.title,
+        marginBottom: 20,
+        textAlign: 'center',
     },
     modalTitle: { color: Design.colors.black, fontFamily: FontFamily.beVietnamSemiBold, fontSize: Design.fontSize.title, marginBottom: 6 },
     modalSubtitle: { color: Design.colors.mutedText, fontFamily: FontFamily.beVietnamRegular, fontSize: Design.fontSize.caption + 1, marginBottom: 16 },

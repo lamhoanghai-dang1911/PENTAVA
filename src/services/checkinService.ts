@@ -43,14 +43,14 @@ function getImageInfo(uri: string) {
 }
 
 export const checkinService = {
-  async getImage(taskId: number): Promise<CheckinResponse> {
+  async getImage(progressId: number): Promise<CheckinResponse> {
     const response = await apiClient.get(
-      API_ENDPOINTS.CHECKIN.GET_IMAGE(taskId),
+      API_ENDPOINTS.CHECKIN.GET_IMAGE(progressId),
     );
     return response.data;
   },
 
-  async uploadImage(imageUri: string, taskId: number) {
+  async uploadImage(imageUri: string, progressId: number) {
     try {
       const { extension, contentType } = getImageInfo(imageUri);
       const response = await fetch(imageUri);
@@ -61,7 +61,7 @@ export const checkinService = {
 
       // ArrayBuffer is more reliable than Blob for local file URIs in React Native.
       const fileData = await response.arrayBuffer();
-      const filePath = `tasks/${taskId}/${Date.now()}.${extension}`;
+      const filePath = `tasks/${progressId}/${Date.now()}.${extension}`;
       const supabase = getSupabase();
       const { error } = await supabase.storage
         .from(CHECKIN_BUCKET)
@@ -87,10 +87,10 @@ export const checkinService = {
     }
   },
 
-  async saveImage(taskId: number, imageUrl: string): Promise<CheckinResponse> {
+  async saveImage(progressId: number, imageUrl: string): Promise<CheckinResponse> {
     const payload: CheckinRequestDTO = { imageUrl };
     const response = await apiClient.post(
-      API_ENDPOINTS.CHECKIN.SAVE_IMAGE(taskId),
+      API_ENDPOINTS.CHECKIN.SAVE_IMAGE(progressId),
       payload,
     );
     return response.data;

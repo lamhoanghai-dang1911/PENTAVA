@@ -122,14 +122,8 @@ export const taskService = {
     return response.data;
   },
 
-  async completeTask(
-    taskId: number,
-    data: TaskProgressRequestDTO = { selectedItems: [] },
-  ): Promise<TaskResponse> {
-    const response = await apiClient.post(
-      API_ENDPOINTS.TASK.COMPLETE(taskId),
-      data,
-    );
+  async completeTask(progressId: number): Promise<TaskResponse> {
+    const response = await apiClient.post(API_ENDPOINTS.TASK.COMPLETE(progressId));
     return response.data;
   },
 };
