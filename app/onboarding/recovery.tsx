@@ -11,7 +11,9 @@ export default function RecoveryScreen() {
 
     return (
         <ScreenContainer>
-            <ScrollView contentContainerStyle={styles.container}>
+            <ScrollView
+                contentContainerStyle={styles.container}
+                showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
                     <Image
                         contentFit="contain"
@@ -35,6 +37,7 @@ export default function RecoveryScreen() {
                             </View>
                         ))}
                     </View>
+                    
                 </View>
 
                 <View style={styles.footer}>
@@ -52,13 +55,13 @@ export default function RecoveryScreen() {
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
+        flexGrow: 1,
         paddingTop: 18,
         paddingHorizontal: Design.spacing.screenHorizontal,
         paddingBottom: 20,
     },
     content: {
-        flex: 1,
+        flexGrow: 1,
     },
     mascot: {
         alignSelf: 'center',
@@ -130,6 +133,8 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     footer: {
+        marginTop: 'auto',
+        paddingTop: 24,
         paddingBottom: 36,
     },
     ctaButton: {
