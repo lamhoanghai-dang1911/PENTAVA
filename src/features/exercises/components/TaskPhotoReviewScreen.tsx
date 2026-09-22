@@ -43,10 +43,7 @@ export function TaskPhotoReviewScreen() {
                 resizeMode="cover"
                 source={{ uri: imageUri }}
                 style={[
-                  styles.reviewImage,
-                  {
-                    transform: [{ scaleX: -1 }],
-                  },
+                  styles.reviewImage
                 ]}
               />
             </View>

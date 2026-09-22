@@ -1,12 +1,13 @@
 import type { TaskCameraCaptureScreenProps } from '@/src/types/camera';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
+import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { CameraPermissionFallback } from './CameraPermissionFallback';
-import { cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
+import { CameraPermissionFallback } from './CameraPermissionFallback';
+import { cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
 
 export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCameraCaptureScreenProps) {
   const router = useRouter();
@@ -50,13 +51,44 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
     if (!cameraRef.current) return;
 
     try {
-      const photo = await cameraRef.current.takePictureAsync({ quality: 0.8 });
+      const photo = await cameraRef.current.takePictureAsync({
+        quality: 0.8,
+      });
+
       if (!photo?.uri) {
         Alert.alert('Lỗi chụp ảnh', 'Không lấy được ảnh vừa chụp.');
         return;
       }
 
-      router.push({ pathname: reviewPathname, params: { ...routeParams, imageUri: photo.uri } });
+      let imageUri = photo.uri;
+
+      // Camera trước -> flip ngang để ảnh Review không bị mirror
+      if (facing === 'front') {
+        const result = await manipulateAsync(
+          photo.uri,
+          [
+            {
+              flip: FlipType.Horizontal,
+            },
+          ],
+          {
+            compress: 0.8,
+            format: SaveFormat.JPEG,
+          },
+        );
+
+        imageUri = result.uri;
+      }
+
+      // Camera sau: dùng nguyên ảnh gốc
+      // Camera trước: dùng ảnh đã flip
+      router.push({
+        pathname: reviewPathname,
+        params: {
+          ...routeParams,
+          imageUri,
+        },
+      });
     } catch {
       Alert.alert('Lỗi chụp ảnh', 'Không thể chụp ảnh lúc này.');
     }
