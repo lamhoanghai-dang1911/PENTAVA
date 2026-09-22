@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
+import { cameraFrameHeight, cameraFrameWidth, cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
+
 
 export function TaskPhotoReviewScreen() {
   const router = useRouter();
@@ -36,11 +37,20 @@ export function TaskPhotoReviewScreen() {
     <>
       <TaskCameraScaffold
         background={imageUri ? (
-          <Image
-            resizeMode="contain"
-            source={{ uri: imageUri }}
-            style={StyleSheet.absoluteFill}
-          />
+          <View style={styles.reviewBackground}>
+            <View style={styles.reviewImageContainer}>
+              <Image
+                resizeMode="cover"
+                source={{ uri: imageUri }}
+                style={[
+                  styles.reviewImage,
+                  {
+                    transform: [{ scaleX: -1 }],
+                  },
+                ]}
+              />
+            </View>
+          </View>
         ) : <View style={[StyleSheet.absoluteFill, cameraStyles.emptyPreview]} />}
         onBack={() => router.back()}
         footer={
@@ -74,6 +84,26 @@ export function TaskPhotoReviewScreen() {
 }
 
 const styles = StyleSheet.create({
+  reviewBackground: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  reviewImageContainer: {
+    width: cameraFrameWidth,
+    height: cameraFrameHeight + 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    overflow: 'hidden',
+    alignSelf: 'center',
+  },
+  reviewImage: {
+
+    width: cameraFrameWidth,
+    height: '100%',
+    alignSelf: 'center',
+  },
   modalOverlay: {
     flex: 1,
     alignItems: 'center',

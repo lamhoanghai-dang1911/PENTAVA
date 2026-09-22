@@ -1,16 +1,10 @@
 import type { TaskCameraCaptureScreenProps } from '@/src/types/camera';
 import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImageManipulator from 'expo-image-manipulator';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { CameraPermissionFallback } from './CameraPermissionFallback';
-import {
-  cameraFrameHeight,
-  cameraFrameWidth,
-  cameraStyles,
-  TaskCameraScaffold,
-} from './TaskCameraScaffold';
+import { cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 
@@ -21,8 +15,6 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
   const [zoom, setZoom] = React.useState(0);
   const cameraRef = useRef<CameraView>(null);
   const hasRequestedPermission = useRef(false);
-  const cameraLayout = useRef({ x: 0, y: 0, width: Dimensions.get('window').width, height: Dimensions.get('window').height });
-  const frameLayout = useRef({ x: 0, y: 0, width: cameraFrameWidth, height: cameraFrameHeight });
   const pinchStartZoom = useSharedValue(0);
   const zoomValue = useSharedValue(0);
 
@@ -64,32 +56,7 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
         return;
       }
 
-      const { x: cameraX, y: cameraY, width: cameraWidth, height: cameraHeight } = cameraLayout.current;
-      const frame = frameLayout.current;
-      // CameraView uses aspect-fill. This is the pixel-per-point scale of
-      // the image portion visible in the camera preview.
-      const previewScale = Math.min(photo.width / cameraWidth, photo.height / cameraHeight);
-      const displayedWidth = photo.width / previewScale;
-      const displayedHeight = photo.height / previewScale;
-      const imageLeft = (cameraWidth - displayedWidth) / 2;
-      const imageTop = (cameraHeight - displayedHeight) / 2;
-      const cropWidth = Math.min(photo.width, Math.round(frame.width * previewScale));
-      const cropHeight = Math.min(photo.height, Math.round(frame.height * previewScale));
-      const cropOriginX = Math.round((frame.x - cameraX - imageLeft) * previewScale);
-      const cropOriginY = Math.round((frame.y - cameraY - imageTop) * previewScale);
-      const crop = {
-        originX: Math.max(0, Math.min(photo.width - cropWidth, cropOriginX)),
-        originY: Math.max(0, Math.min(photo.height - cropHeight, cropOriginY)),
-        width: cropWidth,
-        height: cropHeight,
-      };
-      const croppedPhoto = await ImageManipulator.manipulateAsync(
-        photo.uri,
-        [{ crop }],
-        { compress: 0.8, format: ImageManipulator.SaveFormat.JPEG },
-      );
-
-      router.push({ pathname: reviewPathname, params: { ...routeParams, imageUri: croppedPhoto.uri } });
+      router.push({ pathname: reviewPathname, params: { ...routeParams, imageUri: photo.uri } });
     } catch {
       Alert.alert('Lỗi chụp ảnh', 'Không thể chụp ảnh lúc này.');
     }
@@ -103,7 +70,14 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
     <GestureDetector gesture={pinchGesture}>
       <View collapsable={false} style={StyleSheet.absoluteFill}>
         <TaskCameraScaffold
-          background={<CameraView style={StyleSheet.absoluteFill} facing={facing} ref={cameraRef} zoom={zoom} />}
+          background={
+            <CameraView
+              style={StyleSheet.absoluteFill}
+              facing={facing}
+              ref={cameraRef}
+              zoom={zoom}
+            />
+          }
           headerRight={
             <View style={cameraStyles.headerActions}>
               <TouchableOpacity
@@ -113,12 +87,6 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
               </TouchableOpacity>
             </View>
           }
-          onCameraLayout={(layout) => {
-            cameraLayout.current = layout;
-          }}
-          onFrameLayout={(layout) => {
-            frameLayout.current = layout;
-          }}
           onBack={() => router.back()}
           footer={
             <View>

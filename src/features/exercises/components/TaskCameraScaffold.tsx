@@ -4,8 +4,9 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
-export const cameraFrameWidth = width * 0.75;
-export const cameraFrameHeight = height * 0.45;
+export const cameraFrameAspectRatio = 4 / 5;
+export const cameraFrameWidth = width * 1.0;
+export const cameraFrameHeight = cameraFrameWidth / cameraFrameAspectRatio;
 
 export type TaskCameraScaffoldProps = {
   background: ReactNode;
@@ -53,10 +54,11 @@ export function TaskCameraScaffold({
         });
       }}
       style={cameraStyles.cameraContainer}>
-      <View style={StyleSheet.absoluteFill} onLayout={measureFrame}>
+        {/* bo góc khúc này */}
+      <View style={[StyleSheet.absoluteFill, cameraStyles.cameraOverlayContainer]} onLayout={measureFrame}>
         {background}
       </View>
-      <View pointerEvents="none" style={StyleSheet.absoluteFill}>
+      {/* <View pointerEvents="none" style={StyleSheet.absoluteFill}>
         <View style={[cameraStyles.maskTop, { height: Math.max(0, frameRect.y - rootOrigin.y) }]} />
         <View
           style={[
@@ -88,7 +90,7 @@ export function TaskCameraScaffold({
             },
           ]}
         />
-      </View>
+      </View> */}
       <SafeAreaView style={cameraStyles.overlay}>
         <View style={cameraStyles.headerRow}>
           <TouchableOpacity style={cameraStyles.camBack} onPress={onBack}>
@@ -96,11 +98,11 @@ export function TaskCameraScaffold({
           </TouchableOpacity>
           {headerRight ?? <View style={cameraStyles.headerSpacer} />}
         </View>
-        <View
+        {/* <View
           onLayout={measureFrame}
           style={cameraStyles.cameraOverlayContainer}>
           <View ref={frameRef} style={cameraStyles.cameraFrame} />
-        </View>
+        </View> */}
         {footer}
       </SafeAreaView>
     </View>
@@ -109,6 +111,7 @@ export function TaskCameraScaffold({
 
 export const cameraStyles = StyleSheet.create({
   cameraContainer: { flex: 1, backgroundColor: '#000' },
+  backgroundLayer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   overlay: { flex: 1, justifyContent: 'space-between' },
   headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, marginTop: 20 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
