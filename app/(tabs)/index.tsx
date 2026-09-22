@@ -1,4 +1,5 @@
 import { PurchaseSuccessModal } from '@/src/components/home/purchase-success-modal';
+import RoutineTodayCard from '@/src/components/home/routinetodaycard';
 import { ShopSheet, type ShopProduct } from '@/src/components/home/shop-sheet';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
@@ -10,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
@@ -156,24 +157,17 @@ export default function HomeScreen() {
           />
         </View>
 
+        <RoutineTodayCard goalId={currentGoalId} />
+
         <View style={styles.weekCard}>
+
           <View style={styles.weekHeader}>
             <Text style={styles.weekEmoji}>🌙</Text>
             <View style={styles.weekTextWrap}>
               <Text style={styles.weekTitle}>{currentGoal ?? 'Đang tải mục tiêu...'}</Text>
             </View>
           </View>
-          <Pressable
-            accessibilityRole="button"
-            disabled={isDailyStatusLoading}
-            onPress={handleExecuteGoal}
-            style={styles.executeButton}>
-            {isDailyStatusLoading ? (
-              <ActivityIndicator color={Design.colors.black} />
-            ) : (
-              <Text style={styles.executeButtonText}>Thực thi</Text>
-            )}
-          </Pressable>
+
         </View>
       </ScrollView>
 
@@ -259,7 +253,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 8,
     paddingBottom: 24,
-    justifyContent: 'space-between',
+    gap: 16, // hoặc dùng marginBottom riêng cho từng View
   },
   headerRow: {
     flexDirection: 'row',
@@ -333,8 +327,8 @@ const styles = StyleSheet.create({
     marginVertical: 24,
   },
   mascot: {
-    width: 230,
-    height: 240,
+    width: 330,
+    height: 340,
   },
   routineCard: {
     borderWidth: 1,
