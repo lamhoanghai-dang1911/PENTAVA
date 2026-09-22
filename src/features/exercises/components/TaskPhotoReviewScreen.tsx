@@ -35,7 +35,13 @@ export function TaskPhotoReviewScreen() {
   return (
     <>
       <TaskCameraScaffold
-        background={imageUri ? <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} /> : <View style={[StyleSheet.absoluteFill, cameraStyles.emptyPreview]} />}
+        background={imageUri ? (
+          <Image
+            resizeMode="contain"
+            source={{ uri: imageUri }}
+            style={StyleSheet.absoluteFill}
+          />
+        ) : <View style={[StyleSheet.absoluteFill, cameraStyles.emptyPreview]} />}
         onBack={() => router.back()}
         footer={
           <View style={cameraStyles.finalActionsRow}>
