@@ -1,4 +1,5 @@
 import { OnboardingProvider } from '@/src/context/onboarding-context';
+import { CinemaProgressProvider } from '@/src/context/cinema-progress-context';
 import { useAppFonts } from '@/src/hooks/use-app-fonts';
 import { restoreAccessToken } from '@/src/services/apiClient';
 import { Stack } from 'expo-router';
@@ -33,23 +34,28 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <OnboardingProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="login" />
-            <Stack.Screen name="onboarding" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="daily-tasks" options={{ animation: 'none' }} />
-            <Stack.Screen name="cinema" options={{ animation: 'none' }} />
-            <Stack.Screen name="settings" />
-            <Stack.Screen name="membership" />
-            <Stack.Screen name="payment" />
-            <Stack.Screen name="payment-success" />
-            <Stack.Screen name="payment-failed" />
-            <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-          </Stack>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-        </ThemeProvider>
+        <CinemaProgressProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="login" />
+              <Stack.Screen name="onboarding" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="daily-tasks" options={{ animation: 'none' }} />
+              <Stack.Screen name="cinema" options={{ animation: 'none' }} />
+              <Stack.Screen name="social-post" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="social-profile" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="friend-requests" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="membership" />
+              <Stack.Screen name="payment" />
+              <Stack.Screen name="payment-success" />
+              <Stack.Screen name="payment-failed" />
+              <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
+            </Stack>
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+          </ThemeProvider>
+        </CinemaProgressProvider>
       </OnboardingProvider>
     </GestureHandlerRootView>
   );

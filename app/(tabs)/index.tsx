@@ -4,6 +4,8 @@ import { ShopSheet, type ShopProduct } from '@/src/components/home/shop-sheet';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
+import { authService } from '@/src/services/authService';
+import { socialService, type SocialNotification } from '@/src/services/socialService';
 import { onboardingService } from '@/src/services/onboardingService';
 import { taskService } from '@/src/services/taskService';
 import type { DailyTaskStatus } from '@/src/types/api/task';
@@ -11,12 +13,31 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+function getNotificationMessage(notification: SocialNotification) {
+  if (notification.message) return notification.message;
+
+  const actorName = notification.actorName || 'Ai đó';
+  switch (notification.eventType) {
+    case 'HIGH_FIVE':
+      return `${actorName} đã thả High-Five cho bài viết của bạn.`;
+    case 'COMMENT':
+      return `${actorName} đã bình luận bài viết của bạn.`;
+    case 'FRIEND_REQUEST':
+      return `${actorName} đã gửi cho bạn lời mời kết bạn.`;
+    case 'FRIEND_ACCEPTED':
+      return `${actorName} đã đồng ý lời mời kết bạn của bạn.`;
+    default:
+      return 'Bạn có thông báo mới.';
+  }
+}
 
 export default function HomeScreen() {
   const { data } = useOnboarding();
-  const displayName = data.name.trim() || 'bạn';
+  const [profileName, setProfileName] = useState('');
+  const displayName = profileName.trim() || data.name.trim() || 'bạn';
   const [currentGoal, setCurrentGoal] = useState<string | null>(null);
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
@@ -30,6 +51,128 @@ export default function HomeScreen() {
 
   const [isShopVisible, setIsShopVisible] = useState(false);
   const [purchasedProduct, setPurchasedProduct] = useState<ShopProduct | null>(null);
+  const [isNotificationsVisible, setIsNotificationsVisible] = useState(false);
+  const [notifications, setNotifications] = useState<SocialNotification[]>([]);
+  const [notificationError, setNotificationError] = useState<string | null>(null);
+  const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+
+  useEffect(() => {
+    let isMounted = true;
+    const timeout = setTimeout(() => {
+      void authService
+        .getProfile()
+        .then((profile) => {
+          if (isMounted) {
+            setProfileName(profile.name);
+          }
+        })
+        .catch((error: Error) => {
+          if (isMounted) {
+            Alert.alert('Không thể tải thông tin tài khoản', error.message);
+          }
+        });
+    }, 0);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  useEffect(() => {
+    let disposed = false;
+    let closeStream: (() => void) | null = null;
+
+    void socialService.openNotificationStream(
+      (notification) => {
+        Vibration.vibrate([0, 220, 100, 220]);
+        setUnreadNotificationCount((count) => count + 1);
+        setNotifications((current) => [
+          { ...notification, read: false },
+          ...current.filter((item) => notification.id === undefined || item.id !== notification.id),
+        ].slice(0, 50));
+      },
+      (error) => {
+        if (!disposed) setNotificationError(error.message);
+      },
+    ).then((close) => {
+      if (disposed) close();
+      else closeStream = close;
+    }).catch((error: unknown) => {
+      if (!disposed) {
+        setNotificationError(error instanceof Error ? error.message : "Không thể kết nối thông báo.");
+      }
+    });
+
+    return () => {
+      disposed = true;
+      closeStream?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    void socialService.getUnreadNotificationCount()
+      .then(setUnreadNotificationCount)
+      .catch((error: unknown) => {
+        setNotificationError(error instanceof Error ? error.message : 'Không thể tải số thông báo chưa đọc.');
+      });
+  }, []);
+
+  const toggleNotifications = async () => {
+    if (isNotificationsVisible) {
+      setIsNotificationsVisible(false);
+      return;
+    }
+
+    setNotificationError(null);
+    setIsNotificationsVisible(true);
+    try {
+      const [storedNotifications, unreadCount] = await Promise.all([
+        socialService.getAllNotifications(),
+        socialService.getUnreadNotificationCount(),
+      ]);
+      setUnreadNotificationCount(unreadCount);
+      setNotifications((current) => {
+        const merged: SocialNotification[] = [];
+        const ids = new Set<number>();
+        [...current, ...storedNotifications].forEach((notification) => {
+          if (notification.id !== undefined) {
+            if (ids.has(notification.id)) return;
+            ids.add(notification.id);
+          }
+          merged.push(notification);
+        });
+        return merged.sort((left, right) =>
+          new Date(right.createdAt ?? right.timestamp ?? 0).getTime()
+          - new Date(left.createdAt ?? left.timestamp ?? 0).getTime());
+      });
+    } catch (error) {
+      setNotificationError(error instanceof Error ? error.message : 'Không thể kết nối thông báo.');
+    }
+  };
+
+  const markNotificationAsRead = async (notification: SocialNotification) => {
+    if (notification.id === undefined || notification.read !== false) return;
+    try {
+      await socialService.markNotificationAsRead(notification.id);
+      setNotifications((current) => current.map((item) =>
+        item.id === notification.id ? { ...item, read: true } : item,
+      ));
+      setUnreadNotificationCount((count) => Math.max(0, count - 1));
+    } catch (error) {
+      setNotificationError(error instanceof Error ? error.message : 'Không thể đánh dấu thông báo đã đọc.');
+    }
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await socialService.markAllNotificationsAsRead();
+      setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
+      setUnreadNotificationCount(0);
+    } catch (error) {
+      setNotificationError(error instanceof Error ? error.message : 'Không thể đánh dấu tất cả thông báo đã đọc.');
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -144,9 +287,15 @@ export default function HomeScreen() {
               </View>
             </View>
           </View>
-          <Pressable onPress={() => router.push('/settings' as any)} style={styles.avatar}>
-            <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable accessibilityLabel="Thông báo" onPress={() => void toggleNotifications()} style={styles.notificationButton}>
+              <Ionicons color={Design.colors.black} name="notifications-outline" size={24} />
+              {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
+            </Pressable>
+            <Pressable onPress={() => router.push('/settings' as any)} style={styles.avatar}>
+              <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
+            </Pressable>
+          </View>
         </View>
 
         <View style={styles.mascotCard}>
@@ -170,6 +319,58 @@ export default function HomeScreen() {
 
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="slide"
+        onRequestClose={() => void toggleNotifications()}
+        visible={isNotificationsVisible}>
+        <SafeAreaView style={styles.notificationModal}>
+          <View style={styles.notificationHeader}>
+            <Text style={styles.notificationTitle}>Thông báo</Text>
+            <View style={styles.notificationHeaderActions}>
+              <Pressable
+                accessibilityLabel="Xem lời mời kết bạn"
+                onPress={() => {
+                  setIsNotificationsVisible(false);
+                  router.push('/friend-requests');
+                }}
+                style={styles.friendRequestsLink}>
+                <Ionicons color={Design.colors.primaryGreen} name="people-outline" size={18} />
+                <Text style={styles.friendRequestsLinkText}>Lời mời</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel="Đánh dấu tất cả thông báo đã đọc"
+                disabled={unreadNotificationCount === 0}
+                onPress={() => void markAllNotificationsAsRead()}
+                style={styles.markAllLink}>
+                <Text style={styles.markAllLinkText}>Đã đọc hết</Text>
+              </Pressable>
+              <Pressable onPress={() => void toggleNotifications()}>
+                <Ionicons color={Design.colors.black} name="close" size={24} />
+              </Pressable>
+            </View>
+          </View>
+          {notificationError ? <Text style={styles.notificationError}>{notificationError}</Text> : null}
+          {notifications.length === 0 ? (
+            <Text style={styles.emptyNotifications}>Đang chờ thông báo mới...</Text>
+          ) : (
+            <ScrollView>
+              {notifications.map((notification, index) => (
+              <Pressable
+                key={`${String(notification.id ?? "notification")}-${index}`}
+                accessibilityRole="button"
+                onPress={() => void markNotificationAsRead(notification)}
+                style={styles.notificationItem}>
+                <Ionicons color={Design.colors.primaryGreen} name="notifications-outline" size={20} />
+                <Text style={[styles.notificationText, notification.read === false && styles.unreadNotificationText]}>
+                  {getNotificationMessage(notification)}
+                </Text>
+              </Pressable>
+            ))}
+            </ScrollView>
+          )}
+        </SafeAreaView>
+      </Modal>
 
       <View style={styles.bottomBar}>
         <Pressable
@@ -259,6 +460,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+  },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  notificationButton: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+    position: 'relative',
+    width: 40,
+  },
+  notificationBadge: {
+    backgroundColor: '#E34D59',
+    borderColor: Design.colors.white,
+    borderRadius: 5,
+    borderWidth: 1,
+    height: 10,
+    position: 'absolute',
+    right: 6,
+    top: 5,
+    width: 10,
   },
   greeting: {
     fontFamily: FontFamily.beVietnamSemiBold,
@@ -418,6 +642,76 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'flex-end',
     backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
+  notificationModal: {
+    backgroundColor: Design.colors.white,
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  notificationHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+  },
+  notificationHeaderActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 14,
+  },
+  friendRequestsLink: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+  },
+  friendRequestsLinkText: {
+    color: Design.colors.primaryGreen,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.caption,
+  },
+  markAllLink: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  markAllLinkText: {
+    color: Design.colors.primaryGreen,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.caption,
+  },
+  notificationTitle: {
+    color: Design.colors.black,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.title,
+  },
+  notificationError: {
+    color: '#B33A3A',
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: Design.fontSize.caption + 1,
+    marginVertical: 12,
+  },
+  emptyNotifications: {
+    color: Design.colors.mutedText,
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: Design.fontSize.caption + 1,
+    paddingVertical: 24,
+    textAlign: 'center',
+  },
+  notificationItem: {
+    alignItems: 'center',
+    borderBottomColor: '#E9E9E9',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    paddingVertical: 14,
+  },
+  notificationText: {
+    color: Design.colors.black,
+    flex: 1,
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: Design.fontSize.caption + 1,
+  },
+  unreadNotificationText: {
+    fontFamily: FontFamily.beVietnamSemiBold,
   },
   dailyStatusModal: {
     maxHeight: '88%',

@@ -25,6 +25,16 @@ type ResetPasswordData = {
   newPassword: string;
 };
 
+export type Profile = {
+  id: number;
+  email: string;
+  name: string;
+  avatarUrl: string | null;
+  bio: string | null;
+};
+
+export type UpdateProfileData = Pick<Profile, "name" | "avatarUrl" | "bio">;
+
 function getErrorMessage(error: any, fallback: string) {
   if (error?.code === "ECONNABORTED" || error?.code === "ETIMEDOUT") {
     return "Kết nối máy chủ quá thời gian. Hãy kiểm tra điện thoại và máy tính cùng Wi-Fi, sau đó thử lại.";
@@ -207,6 +217,24 @@ export const authService = {
       return response.data;
     } catch (error: any) {
       throw new Error(getErrorMessage(error, `Đăng nhập Google thất bại`));
+    }
+  },
+
+  async getProfile(): Promise<Profile> {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.AUTH.ME);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(getErrorMessage(error, "Không thể tải thông tin tài khoản."));
+    }
+  },
+
+  async updateProfile(data: UpdateProfileData): Promise<Profile> {
+    try {
+      const response = await apiClient.put(API_ENDPOINTS.AUTH.PROFILE, data);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(getErrorMessage(error, "Không thể cập nhật thông tin tài khoản."));
     }
   },
 };
