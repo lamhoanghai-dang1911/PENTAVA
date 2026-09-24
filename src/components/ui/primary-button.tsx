@@ -1,5 +1,6 @@
 import { Design, FontFamily } from '@/src/constants/design';
-import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Animated, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 
 type PrimaryButtonProps = {
   label: string;
@@ -17,25 +18,48 @@ export function PrimaryButton({
   style,
 }: PrimaryButtonProps) {
   const isDisabled = disabled || loading;
+  const [scaleAnim] = useState(() => new Animated.Value(1));
+
+  const handlePressIn = () => {
+    if (!isDisabled) {
+      Animated.spring(scaleAnim, {
+        toValue: 0.96,
+        useNativeDriver: true,
+        bounciness: 4,
+        speed: 18,
+      }).start();
+    }
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      bounciness: 4,
+      speed: 18,
+    }).start();
+  };
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ busy: loading, disabled: isDisabled }}
-      disabled={isDisabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.button,
-        isDisabled && styles.buttonDisabled,
-        pressed && !isDisabled && styles.buttonPressed,
-        style,
-      ]}>
-      {loading ? (
-        <ActivityIndicator color={Design.colors.primaryGreen} />
-      ) : (
-        <Text style={[styles.label, isDisabled && styles.labelDisabled]}>{label}</Text>
-      )}
-    </Pressable>
+    <Animated.View style={[{ transform: [{ scale: scaleAnim }] }, style]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ busy: loading, disabled: isDisabled }}
+        disabled={isDisabled}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.button,
+          isDisabled && styles.buttonDisabled,
+        ]}>
+        {loading ? (
+          <ActivityIndicator color={Design.colors.primaryGreen} />
+        ) : (
+          <Text style={[styles.label, isDisabled && styles.labelDisabled]}>{label}</Text>
+        )}
+      </Pressable>
+    </Animated.View>
   );
 }
 

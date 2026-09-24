@@ -1,5 +1,6 @@
 import { Design, FontFamily } from '@/src/constants/design';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { useState } from 'react';
+import { Animated, Pressable, StyleSheet, Text } from 'react-native';
 
 import { SelectionIndicator } from './selection-indicator';
 
@@ -10,19 +11,42 @@ type SelectionCardProps = {
 };
 
 export function SelectionCard({ label, selected, onPress }: SelectionCardProps) {
+  const [scaleAnim] = useState(() => new Animated.Value(1));
+
+  const handlePressIn = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 0.97,
+      useNativeDriver: true,
+      bounciness: 4,
+      speed: 18,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.spring(scaleAnim, {
+      toValue: 1,
+      useNativeDriver: true,
+      bounciness: 4,
+      speed: 18,
+    }).start();
+  };
+
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.card,
-        selected && styles.cardSelected,
-        pressed && styles.cardPressed,
-      ]}>
-      <Text style={styles.label}>{label}</Text>
-      <SelectionIndicator selected={selected} />
-    </Pressable>
+    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityState={{ selected }}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        style={[
+          styles.card,
+          selected && styles.cardSelected,
+        ]}>
+        <Text style={styles.label}>{label}</Text>
+        <SelectionIndicator selected={selected} />
+      </Pressable>
+    </Animated.View>
   );
 }
 

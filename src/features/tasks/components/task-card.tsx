@@ -14,6 +14,7 @@ import {
     Text,
     View,
 } from "react-native";
+import Animated, { FadeInDown, ZoomIn } from "react-native-reanimated";
 
 export function TaskCard({
     task,
@@ -113,7 +114,8 @@ export function TaskCard({
     };
 
     return (
-        <View
+        <Animated.View
+            entering={FadeInDown.delay(index * 60).springify().damping(15)}
             style={[
                 styles.card,
                 {
@@ -135,15 +137,19 @@ export function TaskCard({
                         {`Nhiệm vụ ${String(index + 1).padStart(2, "0")} `}
                     </Text>
 
-                    <Ionicons
-                        color={Design.colors.white}
-                        name={
-                            task.isCompleted
-                                ? "checkmark-circle"
-                                : "checkmark-circle-outline"
-                        }
-                        size={22}
-                    />
+                    <Animated.View
+                        key={task.isCompleted ? "completed" : "pending"}
+                        entering={task.isCompleted ? ZoomIn.springify().damping(12) : undefined}>
+                        <Ionicons
+                            color={Design.colors.white}
+                            name={
+                                task.isCompleted
+                                    ? "checkmark-circle"
+                                    : "checkmark-circle-outline"
+                            }
+                            size={22}
+                        />
+                    </Animated.View>
                 </View>
 
                 <Text style={styles.description}>
@@ -165,10 +171,11 @@ export function TaskCard({
                             task.isCompleted || isCompleting
                         }
                         onPress={handleComplete}
-                        style={[
+                        style={({ pressed }) => [
                             styles.action,
                             task.isCompleted &&
                             styles.actionCompleted,
+                            pressed && !task.isCompleted && !isCompleting && { transform: [{ scale: 0.95 }] },
                         ]}
                     >
                         {isCompleting ? (
@@ -194,7 +201,10 @@ export function TaskCard({
                         <Pressable
                             accessibilityRole="button"
                             onPress={() => onSwap(task)}
-                            style={styles.action}
+                            style={({ pressed }) => [
+                                styles.action,
+                                pressed && { transform: [{ scale: 0.95 }] },
+                            ]}
                         >
                             <Ionicons
                                 color={Design.colors.primaryGreen}
@@ -215,7 +225,10 @@ export function TaskCard({
                     accessibilityRole="button"
                     disabled={isLoadingCheckInImage}
                     onPress={handleViewCheckInImage}
-                    style={styles.viewImageAction}
+                    style={({ pressed }) => [
+                        styles.viewImageAction,
+                        pressed && { transform: [{ scale: 0.97 }] },
+                    ]}
                 >
                     {isLoadingCheckInImage ? (
                         <ActivityIndicator color={Design.colors.primaryGreen} />
@@ -237,7 +250,9 @@ export function TaskCard({
                 visible={isCheckInModalVisible}
             >
                 <View style={styles.modalOverlay}>
-                    <View style={styles.checkInModal}>
+                    <Animated.View
+                        entering={ZoomIn.springify().damping(16)}
+                        style={styles.checkInModal}>
                         <View style={styles.checkInIcon}>
                             <Ionicons
                                 color={Design.colors.white}
@@ -280,7 +295,7 @@ export function TaskCard({
                                 Để sau
                             </Text>
                         </Pressable>
-                    </View>
+                    </Animated.View>
                 </View>
             </Modal>
 
@@ -317,7 +332,7 @@ export function TaskCard({
                     </View>
                 </View>
             </Modal>
-        </View>
+        </Animated.View>
     );
 }
 

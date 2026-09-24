@@ -117,7 +117,7 @@ export default function DailyTasksScreen() {
                             'Tính năng nhật ký sẽ được cập nhật sau.',
                         )
                     }
-                    style={styles.diaryCard}>
+                    style={({ pressed }) => [styles.diaryCard, pressed && { transform: [{ scale: 0.98 }] }]}>
                     <Text style={styles.diaryTitle}>
                         NHẬT KÝ HÔM NAY
                     </Text>
@@ -167,7 +167,10 @@ export default function DailyTasksScreen() {
                         <Pressable
                             disabled={dailyTasks.isDailyStatusLoading}
                             onPress={dailyTasks.handleExecuteToday}
-                            style={styles.executeAction}>
+                            style={({ pressed }) => [
+                                styles.executeAction,
+                                pressed && !dailyTasks.isDailyStatusLoading && { transform: [{ scale: 0.95 }] },
+                            ]}>
                             {dailyTasks.isDailyStatusLoading ? (
                                 <ActivityIndicator
                                     color={Design.colors.white}

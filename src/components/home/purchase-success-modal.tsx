@@ -2,6 +2,7 @@ import type { ShopProduct } from '@/src/components/home/shop-sheet';
 import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
 
 type PurchaseSuccessModalProps = {
     product: ShopProduct | null;
@@ -13,11 +14,11 @@ export function PurchaseSuccessModal({ product, balance, onClose }: PurchaseSucc
     if (!product) return null;
 
     return (
-        <View style={styles.overlay}>
-            <View style={styles.card}>
-                <View style={styles.checkWrap}>
+        <Animated.View entering={FadeIn.duration(180)} style={styles.overlay}>
+            <Animated.View entering={ZoomIn.springify().damping(15)} style={styles.card}>
+                <Animated.View entering={ZoomIn.springify().damping(10).delay(120)} style={styles.checkWrap}>
                     <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={44} />
-                </View>
+                </Animated.View>
 
                 <Text style={styles.title}>Mua thành công!</Text>
                 <Text style={styles.subtitle}>
@@ -33,17 +34,21 @@ export function PurchaseSuccessModal({ product, balance, onClose }: PurchaseSucc
                 <Pressable
                     accessibilityRole="button"
                     onPress={onClose}
-                    style={({ pressed }) => [styles.closeButton, pressed && styles.closeButtonPressed]}>
+                    style={({ pressed }) => [
+                        styles.closeButton,
+                        pressed && { transform: [{ scale: 0.96 }] },
+                        pressed && styles.closeButtonPressed,
+                    ]}>
                     <Text style={styles.closeLabel}>Đóng</Text>
                 </Pressable>
-            </View>
-        </View>
+            </Animated.View>
+        </Animated.View>
     );
 }
 
 const styles = StyleSheet.create({
     overlay: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
         backgroundColor: 'rgba(0,0,0,0.4)',
         alignItems: 'center',
         justifyContent: 'center',
