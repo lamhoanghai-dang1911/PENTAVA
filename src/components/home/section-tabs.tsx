@@ -13,7 +13,11 @@ export function SectionTabs({ active }: SectionTabsProps) {
                 accessibilityRole="button"
                 disabled={active === 'tasks'}
                 onPress={() => router.replace('/daily-tasks')}
-                style={[styles.tab, active === 'tasks' && styles.tabActive]}>
+                style={({ pressed }) => [
+                    styles.tab,
+                    active === 'tasks' && styles.tabActive,
+                    pressed && active !== 'tasks' && { transform: [{ scale: 0.96 }], opacity: 0.8 },
+                ]}>
                 <Text style={[styles.tabText, active === 'tasks' && styles.tabTextActive]}>
                     Nhiệm vụ ngày
                 </Text>
@@ -22,7 +26,11 @@ export function SectionTabs({ active }: SectionTabsProps) {
                 accessibilityRole="button"
                 disabled={active === 'cinema'}
                 onPress={() => router.replace('/cinema')}
-                style={[styles.tab, active === 'cinema' && styles.tabActive]}>
+                style={({ pressed }) => [
+                    styles.tab,
+                    active === 'cinema' && styles.tabActive,
+                    pressed && active !== 'cinema' && { transform: [{ scale: 0.96 }], opacity: 0.8 },
+                ]}>
                 <Text style={[styles.tabText, active === 'cinema' && styles.tabTextActive]}>
                     PENTA-CINEMA
                 </Text>

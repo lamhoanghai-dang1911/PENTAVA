@@ -1,6 +1,7 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { PurchaseSuccessModal } from '@/src/components/home/purchase-success-modal';
 
 
@@ -57,10 +58,13 @@ export function ShopSheet({ visible, balance, onClose, onBuy, purchasedProduct, 
                     <Text style={styles.sectionTitle}>Sản phẩm nổi bật</Text>
 
                     <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-                        {PRODUCTS.map((product) => {
+                        {PRODUCTS.map((product, index) => {
                             const affordable = product.price <= balance;
                             return (
-                                <View key={product.id} style={styles.productCard}>
+                                <Animated.View
+                                    key={product.id}
+                                    entering={FadeInDown.delay(index * 60).springify().damping(14)}
+                                    style={styles.productCard}>
                                     <View style={styles.productBadge}>
                                         <Text style={styles.productBadgeText}>Nổi bật</Text>
                                     </View>
@@ -71,11 +75,15 @@ export function ShopSheet({ visible, balance, onClose, onBuy, purchasedProduct, 
                                         <Pressable
                                             accessibilityRole="button"
                                             onPress={() => onBuy(product)}
-                                            style={[styles.buyButton, !affordable && styles.buyButtonDisabled]}>
+                                            style={({ pressed }) => [
+                                                styles.buyButton,
+                                                !affordable && styles.buyButtonDisabled,
+                                                pressed && affordable && { transform: [{ scale: 0.94 }] },
+                                            ]}>
                                             <Text style={styles.buyButtonText}>Mua ngay</Text>
                                         </Pressable>
                                     </View>
-                                </View>
+                                </Animated.View>
                             );
                         })}
                     </ScrollView>

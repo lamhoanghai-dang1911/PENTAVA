@@ -3,6 +3,7 @@ import type { DailyTaskModalsProps } from '@/src/features/tasks/types/daily-task
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 export function DailyTaskModals({
     dailyStatusVisible,
@@ -64,7 +65,10 @@ export function DailyTaskModals({
                             <Pressable
                                 disabled={isConfirmingDailyTasks}
                                 onPress={onKeepYesterdayTasks}
-                                style={styles.primaryAction}>
+                                style={({ pressed }) => [
+                                    styles.primaryAction,
+                                    pressed && !isConfirmingDailyTasks && { transform: [{ scale: 0.97 }] },
+                                ]}>
                                 {isConfirmingDailyTasks ? (
                                     <ActivityIndicator color={Design.colors.white} />
                                 ) : (
@@ -75,7 +79,10 @@ export function DailyTaskModals({
                             </Pressable>
                             <Pressable
                                 onPress={onOpenMoodSelection}
-                                style={styles.secondaryAction}>
+                                style={({ pressed }) => [
+                                    styles.secondaryAction,
+                                    pressed && { transform: [{ scale: 0.97 }] },
+                                ]}>
                                 <Text style={styles.secondaryActionText}>
                                     Thay đổi task mới
                                 </Text>
@@ -93,14 +100,26 @@ export function DailyTaskModals({
                         {isSwapLoading ? <ActivityIndicator color={Design.colors.primaryGreen} size="large" style={styles.loading} /> : (
                             <ScrollView style={styles.swapList} showsVerticalScrollIndicator={false}>
                                 {swapCandidates.map((candidate) => (
-                                    <Pressable key={candidate.id} disabled={isSwapping} onPress={() => onConfirmSwap(candidate)} style={styles.swapCandidate}>
+                                    <Pressable
+                                        key={candidate.id}
+                                        disabled={isSwapping}
+                                        onPress={() => onConfirmSwap(candidate)}
+                                        style={({ pressed }) => [
+                                            styles.swapCandidate,
+                                            pressed && !isSwapping && { transform: [{ scale: 0.98 }] },
+                                        ]}>
                                         <Text style={styles.swapCandidateText}>{candidate.content}</Text>
                                         <Ionicons color={Design.colors.primaryGreen} name="arrow-forward-circle-outline" size={22} />
                                     </Pressable>
                                 ))}
                             </ScrollView>
                         )}
-                        <Pressable onPress={onCloseSwap} style={styles.secondaryAction}>
+                        <Pressable
+                            onPress={onCloseSwap}
+                            style={({ pressed }) => [
+                                styles.secondaryAction,
+                                pressed && { transform: [{ scale: 0.97 }] },
+                            ]}>
                             <Text style={styles.secondaryActionText}>Hủy</Text>
                         </Pressable>
                     </View>
@@ -109,24 +128,37 @@ export function DailyTaskModals({
 
             <Modal animationType="fade" onRequestClose={onCloseSwapSuccess} transparent visible={swapSuccessVisible}>
                 <View style={styles.streakOverlay}>
-                    <View style={styles.successModal}>
-                        <View style={styles.successIcon}>
+                    <Animated.View
+                        entering={ZoomIn.springify().damping(15)}
+                        style={styles.successModal}>
+                        <Animated.View
+                            entering={ZoomIn.springify().damping(10).delay(100)}
+                            style={styles.successIcon}>
                             <Ionicons color={Design.colors.white} name="checkmark" size={34} />
-                        </View>
+                        </Animated.View>
                         <Text style={styles.successTitle}>Đổi task thành công</Text>
-                        <Pressable onPress={onCloseSwapSuccess} style={styles.primaryAction}>
+                        <Pressable
+                            onPress={onCloseSwapSuccess}
+                            style={({ pressed }) => [
+                                styles.primaryAction,
+                                pressed && { transform: [{ scale: 0.97 }] },
+                            ]}>
                             <Text style={styles.primaryActionText}>Tiếp tục</Text>
                         </Pressable>
-                    </View>
+                    </Animated.View>
                 </View>
             </Modal>
 
             <Modal animationType="fade" onRequestClose={onCancelStreak} transparent visible={streakVisible}>
                 <View style={styles.streakOverlay}>
-                    <View style={styles.streakModal}>
-                        <View style={styles.streakIcon}>
+                    <Animated.View
+                        entering={ZoomIn.springify().damping(15)}
+                        style={styles.streakModal}>
+                        <Animated.View
+                            entering={ZoomIn.springify().damping(10).delay(150)}
+                            style={styles.streakIcon}>
                             <Ionicons color="#F26A3D" name="flame" size={42} />
-                        </View>
+                        </Animated.View>
                         <Text style={styles.streakTitle}>Chúc mừng bạn!</Text>
                         <Text style={styles.streakSubtitle}>Bạn đã hoàn thành đủ 5 nhiệm vụ hôm nay.</Text>
                         <View style={styles.streakStats}>
@@ -140,10 +172,15 @@ export function DailyTaskModals({
                                 <Text style={styles.streakLabel}>Kỷ lục</Text>
                             </View>
                         </View>
-                        <Pressable onPress={onCancelStreak} style={styles.primaryAction}>
+                        <Pressable
+                            onPress={onCancelStreak}
+                            style={({ pressed }) => [
+                                styles.primaryAction,
+                                pressed && { transform: [{ scale: 0.97 }] },
+                            ]}>
                             <Text style={styles.primaryActionText}>Tiếp tục</Text>
                         </Pressable>
-                    </View>
+                    </Animated.View>
                 </View>
             </Modal>
         </>

@@ -4,12 +4,18 @@ import type { DailyTasksHeaderProps } from '@/src/features/tasks/types/daily-tas
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { ZoomIn } from 'react-native-reanimated';
 
 export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber, onSelectDay, onChangeWeek }: DailyTasksHeaderProps) {
     return (
         <>
             <View style={styles.header}>
-                <Pressable accessibilityRole="button" accessibilityLabel="Quay lại" hitSlop={8} onPress={() => router.replace('/(tabs)')} style={styles.backButton}>
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Quay lại"
+                    hitSlop={8}
+                    onPress={() => router.replace('/(tabs)')}
+                    style={({ pressed }) => [styles.backButton, pressed && { transform: [{ scale: 0.9 }] }]}>
                     <Ionicons color={Design.colors.black} name="chevron-back" size={34} />
                 </Pressable>
                 <SectionTabs active="tasks" />
@@ -18,11 +24,19 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
             <View style={styles.titleRow}>
                 <Text style={styles.title}>Nhiệm vụ{'\n'}hàng ngày</Text>
                 <View style={styles.weekControl}>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Tuần trước" onPress={() => onChangeWeek(weekNumber - 1)}>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Tuần trước"
+                        onPress={() => onChangeWeek(weekNumber - 1)}
+                        style={({ pressed }) => [pressed && { transform: [{ scale: 0.85 }] }]}>
                         <Ionicons color={Design.colors.black} name="chevron-back" size={18} />
                     </Pressable>
                     <Text style={styles.weekLabel}>Tuần {weekNumber}</Text>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Tuần sau" onPress={() => onChangeWeek(weekNumber + 1)}>
+                    <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Tuần sau"
+                        onPress={() => onChangeWeek(weekNumber + 1)}
+                        style={({ pressed }) => [pressed && { transform: [{ scale: 0.85 }] }]}>
                         <Ionicons color={Design.colors.black} name="chevron-forward" size={18} />
                     </Pressable>
                 </View>
@@ -33,10 +47,23 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
                     const isSelected = index === selectedDayIndex;
                     const isFuture = item.dateKey > todayKey;
                     return (
-                        <Pressable key={item.dateKey} disabled={isFuture} onPress={() => onSelectDay(index)} style={[styles.dateCell, isSelected && styles.dateCellToday, isFuture && styles.dateCellDisabled]}>
+                        <Pressable
+                            key={item.dateKey}
+                            disabled={isFuture}
+                            onPress={() => onSelectDay(index)}
+                            style={({ pressed }) => [
+                                styles.dateCell,
+                                isSelected && styles.dateCellToday,
+                                isFuture && styles.dateCellDisabled,
+                                pressed && !isFuture && { transform: [{ scale: 0.92 }] },
+                            ]}>
                             <Text style={[styles.weekdayText, isSelected && styles.dateTextToday]}>{item.weekday}</Text>
                             <Text style={[styles.dateText, isSelected && styles.dateTextToday]}>{item.day}</Text>
-                            <View style={[styles.dateDot, isSelected && styles.dateDotToday]} />
+                            {isSelected ? (
+                                <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.dateDot, styles.dateDotToday]} />
+                            ) : (
+                                <View style={styles.dateDot} />
+                            )}
                         </Pressable>
                     );
                 })}

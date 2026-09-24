@@ -1,5 +1,6 @@
 import { Design, FontFamily } from '@/src/constants/design';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text } from 'react-native';
+import Animated, { FadeIn, FadeOut, ZoomIn } from 'react-native-reanimated';
 
 type NotificationModalProps = {
     visible: boolean;
@@ -14,14 +15,22 @@ export function NotificationModal({
     message,
     onConfirm,
 }: NotificationModalProps) {
+    if (!visible) return null;
+
     return (
         <Modal
-            animationType="fade"
+            animationType="none"
             onRequestClose={onConfirm}
             transparent
             visible={visible}>
-            <View style={styles.overlay}>
-                <View accessibilityRole="alert" style={styles.card}>
+            <Animated.View
+                entering={FadeIn.duration(180)}
+                exiting={FadeOut.duration(150)}
+                style={styles.overlay}>
+                <Animated.View
+                    accessibilityRole="alert"
+                    entering={ZoomIn.springify().damping(16).stiffness(280)}
+                    style={styles.card}>
                     <Text style={styles.title}>{title}</Text>
                     <Text style={styles.message}>{message}</Text>
                     <Pressable
@@ -30,8 +39,8 @@ export function NotificationModal({
                         style={styles.button}>
                         <Text style={styles.buttonText}>OK</Text>
                     </Pressable>
-                </View>
-            </View>
+                </Animated.View>
+            </Animated.View>
         </Modal>
     );
 }

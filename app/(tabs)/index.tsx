@@ -13,8 +13,16 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View, Vibration } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withSequence,
+  withTiming,
+} from 'react-native-reanimated';
 
 function getNotificationMessage(notification: SocialNotification) {
   if (notification.message) return notification.message;
@@ -55,6 +63,48 @@ export default function HomeScreen() {
   const [notifications, setNotifications] = useState<SocialNotification[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+
+  const mascotFloatY = useSharedValue(0);
+  const mascotScale = useSharedValue(1);
+  const flameScale = useSharedValue(1);
+
+  useEffect(() => {
+    mascotFloatY.value = withRepeat(
+      withSequence(
+        withTiming(-7, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+        withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+      ),
+      -1,
+      true,
+    );
+    mascotScale.value = withRepeat(
+      withSequence(
+        withTiming(1.025, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1.0, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+      ),
+      -1,
+      true,
+    );
+    flameScale.value = withRepeat(
+      withSequence(
+        withTiming(1.18, { duration: 900, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1.0, { duration: 900, easing: Easing.inOut(Easing.quad) }),
+      ),
+      -1,
+      true,
+    );
+  }, [mascotFloatY, mascotScale, flameScale]);
+
+  const animatedMascotStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateY: mascotFloatY.value },
+      { scale: mascotScale.value },
+    ],
+  }));
+
+  const animatedFlameStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: flameScale.value }],
+  }));
 
   useEffect(() => {
     let isMounted = true;
@@ -274,7 +324,9 @@ export default function HomeScreen() {
             <Text style={styles.greeting}>Chào {displayName}</Text>
             <View style={styles.streakCard}>
               <View style={styles.streakIconWrap}>
-                <Ionicons color="#F26A3D" name="flame" size={20} />
+                <Animated.View style={animatedFlameStyle}>
+                  <Ionicons color="#F26A3D" name="flame" size={20} />
+                </Animated.View>
               </View>
               <View style={styles.streakTextWrap}>
                 <Text style={styles.streakLabel}>Chuỗi hiện tại</Text>
@@ -299,11 +351,13 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.mascotCard}>
-          <Image
-            contentFit="contain"
-            source={require('@/assets/images/onboarding/cat-loading.png')}
-            style={styles.mascot}
-          />
+          <Animated.View style={animatedMascotStyle}>
+            <Image
+              contentFit="contain"
+              source={require('@/assets/images/onboarding/cat-loading.png')}
+              style={styles.mascot}
+            />
+          </Animated.View>
         </View>
 
         <RoutineTodayCard goalId={currentGoalId} />
@@ -321,10 +375,12 @@ export default function HomeScreen() {
       </ScrollView>
 
       <Modal
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => void toggleNotifications()}
+        presentationStyle="fullScreen"
+        statusBarTranslucent={false}
         visible={isNotificationsVisible}>
-        <SafeAreaView style={styles.notificationModal}>
+        <SafeAreaView edges={['right', 'bottom', 'left']} style={styles.notificationModal}>
           <View style={styles.notificationHeader}>
             <Text style={styles.notificationTitle}>Thông báo</Text>
             <View style={styles.notificationHeaderActions}>
@@ -345,7 +401,12 @@ export default function HomeScreen() {
                 style={styles.markAllLink}>
                 <Text style={styles.markAllLinkText}>Đã đọc hết</Text>
               </Pressable>
-              <Pressable onPress={() => void toggleNotifications()}>
+              <Pressable
+                accessibilityLabel="Đóng thông báo"
+                accessibilityRole="button"
+                hitSlop={12}
+                onPress={() => void toggleNotifications()}
+                style={styles.notificationCloseButton}>
                 <Ionicons color={Design.colors.black} name="close" size={24} />
               </Pressable>
             </View>
@@ -377,7 +438,7 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel="Cửa hàng"
           onPress={() => setIsShopVisible(true)}
-          style={styles.roundButton}>
+          style={({ pressed }) => [styles.roundButton, pressed && { transform: [{ scale: 0.93 }] }]}>
           <Ionicons color={Design.colors.white} name="storefront-outline" size={22} />
         </Pressable>
 
@@ -385,23 +446,23 @@ export default function HomeScreen() {
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/daily-tasks')}
-            style={styles.toggleOption}>
+            style={({ pressed }) => [styles.toggleOption, pressed && { opacity: 0.75 }]}>
             <Text style={styles.toggleText}>Nhiệm vụ ngày</Text>
           </Pressable>
           <View style={styles.toggleDivider} />
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/cinema')}
-            style={styles.toggleOption}>
+            style={({ pressed }) => [styles.toggleOption, pressed && { opacity: 0.75 }]}>
             <Text style={styles.toggleText}>PENTA-CINEMA</Text>
           </Pressable>
         </View>
 
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Ngôn ngữ"
+          accessibilityLabel="Cộng đồng"
           onPress={() => router.push('/community')}
-          style={[styles.roundButton, styles.roundButtonOutline]}>
+          style={({ pressed }) => [styles.roundButton, styles.roundButtonOutline, pressed && { transform: [{ scale: 0.93 }] }]}>
           <Ionicons color={Design.colors.black} name="globe-outline" size={22} />
         </Pressable>
       </View>
@@ -647,11 +708,13 @@ const styles = StyleSheet.create({
     backgroundColor: Design.colors.white,
     flex: 1,
     paddingHorizontal: 24,
+    paddingTop: Platform.OS === 'ios' ? 48 : 24,
   },
   notificationHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    minHeight: 56,
     paddingVertical: 14,
   },
   notificationHeaderActions: {
@@ -677,6 +740,12 @@ const styles = StyleSheet.create({
     color: Design.colors.primaryGreen,
     fontFamily: FontFamily.beVietnamSemiBold,
     fontSize: Design.fontSize.caption,
+  },
+  notificationCloseButton: {
+    alignItems: 'center',
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
   notificationTitle: {
     color: Design.colors.black,

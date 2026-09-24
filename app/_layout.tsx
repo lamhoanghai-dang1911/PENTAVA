@@ -41,16 +41,16 @@ export default function RootLayout() {
               <Stack.Screen name="login" />
               <Stack.Screen name="onboarding" />
               <Stack.Screen name="(tabs)" />
-              <Stack.Screen name="daily-tasks" options={{ animation: 'none' }} />
-              <Stack.Screen name="cinema" options={{ animation: 'none' }} />
+              <Stack.Screen name="daily-tasks" options={{ animation: 'fade' }} />
+              <Stack.Screen name="cinema" options={{ animation: 'fade' }} />
               <Stack.Screen name="social-post" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="social-profile" options={{ animation: 'slide_from_right' }} />
               <Stack.Screen name="friend-requests" options={{ animation: 'slide_from_right' }} />
-              <Stack.Screen name="settings" />
-              <Stack.Screen name="membership" />
-              <Stack.Screen name="payment" />
-              <Stack.Screen name="payment-success" />
-              <Stack.Screen name="payment-failed" />
+              <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="membership" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="payment" options={{ animation: 'slide_from_right' }} />
+              <Stack.Screen name="payment-success" options={{ animation: 'fade' }} />
+              <Stack.Screen name="payment-failed" options={{ animation: 'fade' }} />
               <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
             </Stack>
             <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
