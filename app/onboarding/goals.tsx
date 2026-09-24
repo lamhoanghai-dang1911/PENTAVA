@@ -17,7 +17,7 @@ const GOAL_OPTIONS = [
 ] as const;
 
 export default function GoalsScreen() {
-  const { data, toggleGoal } = useOnboarding();
+  const { data, setGoal } = useOnboarding();
   const canContinue = data.goals.length > 0;
 
   return (
@@ -35,15 +35,13 @@ export default function GoalsScreen() {
       <Text style={styles.title}>
         Bạn muốn cải thiện điều gì{'\n'}nhất lúc này?
       </Text>
-        <Text style={styles.helperText}>Có thể chọn nhiều đáp án</Text>
-
       <View style={styles.optionGroup}>
         {GOAL_OPTIONS.map((option) => (
           <SelectionCard
             key={option}
             label={option}
-            selected={data.goals.includes(option)}
-            onPress={() => toggleGoal(option)}
+            selected={data.goals === option}
+            onPress={() => setGoal(option)}
           />
         ))}
       </View>

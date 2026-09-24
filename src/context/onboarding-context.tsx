@@ -8,7 +8,7 @@ const initialData: OnboardingData = {
   name: '',
   gender: null,
   age: null,
-  goals: [],
+  goals: '',
   routine: null,
   sleepHours: null,
   exerciseFrequency: null,
@@ -107,12 +107,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
       setName: (name) => setData((prev) => ({ ...prev, name })),
       setGender: (gender) => setData((prev) => ({ ...prev, gender })),
       setAge: (age) => setData((prev) => ({ ...prev, age })),
-      toggleGoal: (goal) => setData((prev) => ({
-        ...prev,
-        goals: prev.goals.includes(goal)
-          ? prev.goals.filter((item) => item !== goal)
-          : [...prev.goals, goal],
-      })),
+      setGoal: (goal) => setData((prev) => ({ ...prev, goals: goal })),
       setRoutine: (routine) => setData((prev) => ({ ...prev, routine })),
       setSleepHours: (sleepHours) => setData((prev) => ({ ...prev, sleepHours })),
       setExerciseFrequency: (exerciseFrequency) => setData((prev) => ({ ...prev, exerciseFrequency })),

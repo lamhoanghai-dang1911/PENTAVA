@@ -11,13 +11,14 @@ export function SelectionIndicator({ selected }: SelectionIndicatorProps) {
     return (
       <View style={styles.selectedCircle}>
         <Ionicons color={Design.colors.white} name="checkmark" size={12} />
+
       </View>
     );
   }
 
   return (
     <Image
-      source={require('@/assets/images/onboarding/check-circle.png')}
+      // source={require('@/assets/images/onboarding/check-circle.png')}
       style={styles.unselectedIcon}
     />
   );

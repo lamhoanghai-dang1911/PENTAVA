@@ -28,7 +28,7 @@ export const onboardingService = {
     if (
       !data.gender ||
       !data.age ||
-      !data.goals[0] ||
+      !data.goals ||
       !data.routine ||
       !data.sleepHours ||
       !data.exerciseFrequency ||
@@ -44,7 +44,7 @@ export const onboardingService = {
       name: data.name,
       gender: data.gender,
       age: data.age,
-      primaryGoal: data.goals[0],
+      primaryGoal: data.goals,
       routineType: data.routine,
       sleepHours: data.sleepHours,
       exerciseFrequency: data.exerciseFrequency,

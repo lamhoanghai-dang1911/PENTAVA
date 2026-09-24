@@ -4,7 +4,7 @@ export type OnboardingData = {
   name: string;
   gender: string | null;
   age: string | null;
-  goals: string[];
+  goals: string;
   routine: string | null;
   sleepHours: string | null;
   exerciseFrequency: string | null;
@@ -21,7 +21,7 @@ export type OnboardingContextValue = {
   setName: (name: string) => void;
   setGender: (gender: string | null) => void;
   setAge: (age: string | null) => void;
-  toggleGoal: (goal: string) => void;
+  setGoal: (goal: string) => void;
   setRoutine: (routine: string | null) => void;
   setSleepHours: (sleepHours: string | null) => void;
   setExerciseFrequency: (exerciseFrequency: string | null) => void;
