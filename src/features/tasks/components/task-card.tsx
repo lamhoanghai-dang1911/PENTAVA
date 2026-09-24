@@ -127,9 +127,6 @@ export function TaskCard({
             <Pressable
                 accessibilityRole={isTodaySelected ? "button" : undefined}
                 disabled={!isTodaySelected}
-                onPress={() =>
-                    onOpenTask(task.id, weekNumber, index)
-                }
                 style={styles.details}
             >
                 <View style={styles.header}>
@@ -193,7 +190,7 @@ export function TaskCard({
                         <Text style={styles.actionText}>
                             {task.isCompleted
                                 ? "Đã xong"
-                                : "Hoàn thành"}
+                                : " Hoàn thành"}
                         </Text>
                     </Pressable>
 

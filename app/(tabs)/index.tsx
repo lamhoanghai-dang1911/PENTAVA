@@ -12,7 +12,7 @@ import type { DailyTaskStatus } from '@/src/types/api/task';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, Vibration } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Animated, {
@@ -42,6 +42,29 @@ function getNotificationMessage(notification: SocialNotification) {
   }
 }
 
+function getNotificationKey(notification: SocialNotification) {
+  if (notification.id !== undefined && notification.id !== null) {
+    return `id-${notification.id}`;
+  }
+
+  const identity = [
+    notification.eventType ?? '',
+    notification.actorId ?? '',
+    notification.targetUserId ?? '',
+    notification.postId ?? '',
+    notification.commentId ?? '',
+  ].join('|');
+
+  if (notification.eventType || notification.actorId !== undefined ||
+    notification.targetUserId !== undefined || notification.postId !== undefined ||
+    notification.commentId !== undefined) {
+    return identity;
+  }
+
+  return `${identity}|${getNotificationMessage(notification)}`;
+}
+
+
 export default function HomeScreen() {
   const { data } = useOnboarding();
   const [profileName, setProfileName] = useState('');
@@ -63,6 +86,7 @@ export default function HomeScreen() {
   const [notifications, setNotifications] = useState<SocialNotification[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
+  const isLoadingNotificationsRef = useRef(false);
 
   const mascotFloatY = useSharedValue(0);
   const mascotScale = useSharedValue(1);
@@ -134,13 +158,17 @@ export default function HomeScreen() {
     let closeStream: (() => void) | null = null;
 
     void socialService.openNotificationStream(
-      (notification) => {
+      () => {
+        if (disposed) return;
         Vibration.vibrate([0, 220, 100, 220]);
+        // Tăng ngay số lượng chưa đọc để chuông hiện chấm đỏ
         setUnreadNotificationCount((count) => count + 1);
-        setNotifications((current) => [
-          { ...notification, read: false },
-          ...current.filter((item) => notification.id === undefined || item.id !== notification.id),
-        ].slice(0, 50));
+        // Đồng bộ lại số lượng chưa đọc chuẩn từ server
+        void socialService.getUnreadNotificationCount()
+          .then((count) => {
+            if (!disposed) setUnreadNotificationCount(count);
+          })
+          .catch(() => {});
       },
       (error) => {
         if (!disposed) setNotificationError(error.message);
@@ -174,6 +202,11 @@ export default function HomeScreen() {
       return;
     }
 
+    if (isLoadingNotificationsRef.current) {
+      return;
+    }
+
+    isLoadingNotificationsRef.current = true;
     setNotificationError(null);
     setIsNotificationsVisible(true);
     try {
@@ -182,22 +215,25 @@ export default function HomeScreen() {
         socialService.getUnreadNotificationCount(),
       ]);
       setUnreadNotificationCount(unreadCount);
-      setNotifications((current) => {
-        const merged: SocialNotification[] = [];
-        const ids = new Set<number>();
-        [...current, ...storedNotifications].forEach((notification) => {
-          if (notification.id !== undefined) {
-            if (ids.has(notification.id)) return;
-            ids.add(notification.id);
-          }
-          merged.push(notification);
-        });
-        return merged.sort((left, right) =>
-          new Date(right.createdAt ?? right.timestamp ?? 0).getTime()
-          - new Date(left.createdAt ?? left.timestamp ?? 0).getTime());
+
+      // Loại bỏ trùng lặp từ kết quả API get
+      const uniqueMap = new Map<string, SocialNotification>();
+      storedNotifications.forEach((notification) => {
+        const key = getNotificationKey(notification);
+        if (!uniqueMap.has(key)) {
+          uniqueMap.set(key, notification);
+        }
       });
+
+      const sorted = [...uniqueMap.values()].sort((left, right) =>
+        new Date(right.createdAt ?? right.timestamp ?? 0).getTime()
+        - new Date(left.createdAt ?? left.timestamp ?? 0).getTime()
+      );
+      setNotifications(sorted);
     } catch (error) {
       setNotificationError(error instanceof Error ? error.message : 'Không thể kết nối thông báo.');
+    } finally {
+      isLoadingNotificationsRef.current = false;
     }
   };
 
@@ -418,7 +454,7 @@ export default function HomeScreen() {
             <ScrollView>
               {notifications.map((notification, index) => (
               <Pressable
-                key={`${String(notification.id ?? "notification")}-${index}`}
+                key={getNotificationKey(notification)}
                 accessibilityRole="button"
                 onPress={() => void markNotificationAsRead(notification)}
                 style={styles.notificationItem}>

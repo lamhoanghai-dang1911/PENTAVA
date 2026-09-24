@@ -61,14 +61,35 @@ export const socialService = {
   async getAllNotifications(): Promise<SocialNotification[]> {
     const size = 20;
     const notifications: SocialNotification[] = [];
+    const seenIds = new Set<number>();
     let page = 0;
+    const MAX_PAGES = 10;
 
-    while (true) {
+    while (page < MAX_PAGES) {
       const batch = await socialService.getNotifications(page, size);
-      notifications.push(...batch);
-      if (batch.length < size) return notifications;
+      if (!Array.isArray(batch) || batch.length === 0) break;
+
+      let hasNew = false;
+      for (const item of batch) {
+        if (item.id !== undefined && item.id !== null) {
+          if (!seenIds.has(item.id)) {
+            seenIds.add(item.id);
+            notifications.push(item);
+            hasNew = true;
+          }
+        } else {
+          notifications.push(item);
+          hasNew = true;
+        }
+      }
+
+      if (!hasNew || batch.length < size) {
+        break;
+      }
       page += 1;
     }
+
+    return notifications;
   },
 
   async markNotificationAsRead(id: number): Promise<void> {

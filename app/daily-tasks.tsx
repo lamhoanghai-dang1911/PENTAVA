@@ -109,7 +109,7 @@ export default function DailyTasksScreen() {
                     weekNumber={dailyTasks.weekNumber}
                 />
 
-                <Pressable
+                {/* <Pressable
                     accessibilityRole="button"
                     onPress={() =>
                         Alert.alert(
@@ -127,7 +127,7 @@ export default function DailyTasksScreen() {
                             Xem
                         </Text>
                     </View>
-                </Pressable>
+                </Pressable> */}
 
                 {dailyTasks.isLoading ? (
                     <ActivityIndicator
