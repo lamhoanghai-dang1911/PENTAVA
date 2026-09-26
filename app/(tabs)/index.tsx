@@ -1,20 +1,26 @@
-import { PurchaseSuccessModal } from '@/src/components/home/purchase-success-modal';
 import RoutineTodayCard from '@/src/components/home/routinetodaycard';
-import { ShopSheet, type ShopProduct } from '@/src/components/home/shop-sheet';
+import {
+  InsufficientRubyModal,
+  PurchaseSuccessModal,
+} from '@/src/components/home/purchase-success-modal';
+import { ShopSheet } from '@/src/components/home/shop-sheet';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
 import { authService } from '@/src/services/authService';
-import { socialService, type SocialNotification } from '@/src/services/socialService';
 import { onboardingService } from '@/src/services/onboardingService';
+import { shopService } from '@/src/services/shopService';
+import { socialService, type SocialNotification } from '@/src/services/socialService';
+import { skinService } from '@/src/services/skinService';
 import { taskService } from '@/src/services/taskService';
+import type { AvatarLayer } from '@/src/types/api/skin';
 import type { DailyTaskStatus } from '@/src/types/api/task';
+import type { ShopItem } from '@/src/types/api/shop';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { router } from 'expo-router';
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View, Vibration } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { router, useFocusEffect } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, Vibration, View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -23,6 +29,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 function getNotificationMessage(notification: SocialNotification) {
   if (notification.message) return notification.message;
@@ -73,15 +80,18 @@ export default function HomeScreen() {
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [longestStreak, setLongestStreak] = useState(0);
+  const [rubyBalance, setRubyBalance] = useState<number | null>(null);
+  const [isRubyBalanceLoading, setIsRubyBalanceLoading] = useState(true);
+  const [avatarLayers, setAvatarLayers] = useState<AvatarLayer[] | null>(null);
   const [dailyStatus, setDailyStatus] = useState<DailyTaskStatus | null>(null);
   const [isDailyStatusVisible, setIsDailyStatusVisible] = useState(false);
   const [isDailyStatusLoading, setIsDailyStatusLoading] = useState(false);
   const [isConfirmingDailyTasks, setIsConfirmingDailyTasks] = useState(false);
 
-  const [strawberries, setStrawberries] = useState(15);
-
   const [isShopVisible, setIsShopVisible] = useState(false);
-  const [purchasedProduct, setPurchasedProduct] = useState<ShopProduct | null>(null);
+  const [purchasedShopItem, setPurchasedShopItem] = useState<ShopItem | null>(null);
+  const [insufficientRubyItem, setInsufficientRubyItem] = useState<ShopItem | null>(null);
+  const [insufficientRubyMessage, setInsufficientRubyMessage] = useState('');
   const [isNotificationsVisible, setIsNotificationsVisible] = useState(false);
   const [notifications, setNotifications] = useState<SocialNotification[]>([]);
   const [notificationError, setNotificationError] = useState<string | null>(null);
@@ -130,6 +140,36 @@ export default function HomeScreen() {
     transform: [{ scale: flameScale.value }],
   }));
 
+  useFocusEffect(
+    useCallback(() => {
+      let isFocused = true;
+
+      void skinService
+        .getMyAvatar()
+        .then((avatar) => {
+          if (isFocused) {
+            setAvatarLayers(
+              [...avatar.layers].sort(
+                (left, right) => left.layerOrder - right.layerOrder,
+              ),
+            );
+          }
+        })
+        .catch((error: unknown) => {
+          if (isFocused) {
+            Alert.alert(
+              'Không thể tải trang phục avatar',
+              error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
+            );
+          }
+        });
+
+      return () => {
+        isFocused = false;
+      };
+    }, []),
+  );
+
   useEffect(() => {
     let isMounted = true;
     const timeout = setTimeout(() => {
@@ -168,7 +208,7 @@ export default function HomeScreen() {
           .then((count) => {
             if (!disposed) setUnreadNotificationCount(count);
           })
-          .catch(() => {});
+          .catch(() => { });
       },
       (error) => {
         if (!disposed) setNotificationError(error.message);
@@ -278,6 +318,24 @@ export default function HomeScreen() {
         }
       });
 
+    void shopService
+      .getMyWallet()
+      .then((wallet) => {
+        if (isMounted) {
+          setRubyBalance(wallet.rubyBalance);
+        }
+      })
+      .catch((error: Error) => {
+        if (isMounted) {
+          Alert.alert('Không thể tải số dư Ruby', error.message);
+        }
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsRubyBalanceLoading(false);
+        }
+      });
+
     return () => {
       isMounted = false;
     };
@@ -341,27 +399,51 @@ export default function HomeScreen() {
     router.push({ pathname: '/mood', params: { goalId: String(currentGoalId) } } as any);
   };
 
-  const handleBuy = (product: ShopProduct) => {
-    if (product.price > strawberries) {
-      Alert.alert('Không đủ số dư', 'Bạn chưa đủ 🍓 để mua vật phẩm này.');
-      return;
-    }
-    setStrawberries((prev) => prev - product.price);
-    setPurchasedProduct(product);
-  };
+  const handleWalletBalanceChange = useCallback((balance: number) => {
+    setRubyBalance(balance);
+  }, []);
+  const handleShopPurchaseSuccess = useCallback((item: ShopItem, remainingRuby: number) => {
+    setRubyBalance(remainingRuby);
+    setPurchasedShopItem(item);
+    setIsShopVisible(false);
+  }, []);
+  const handleInsufficientRuby = useCallback((item: ShopItem, message: string) => {
+    setInsufficientRubyMessage(message);
+    setInsufficientRubyItem(item);
+    setIsShopVisible(false);
+  }, []);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
-        <View style={styles.headerRow}>
-          <View>
+        <View style={styles.headerContainer}>
+          <View style={styles.headerRow}>
             <Text style={styles.greeting}>Chào {displayName}</Text>
+            <View style={styles.headerActions}>
+              <Pressable accessibilityLabel="Thông báo" onPress={() => void toggleNotifications()} style={styles.notificationButton}>
+                <Ionicons color={Design.colors.black} name="notifications-outline" size={24} />
+                {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
+              </Pressable>
+              <Pressable onPress={() => router.push('/settings' as any)} style={styles.avatar}>
+                <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
+              </Pressable>
+            </View>
+          </View>
+          <View style={styles.headerStatsRow}>
             <View style={styles.streakCard}>
               <View style={styles.streakIconWrap}>
                 <Animated.View style={animatedFlameStyle}>
-                  <Ionicons color="#F26A3D" name="flame" size={20} />
+                  <Image
+                    contentFit="contain"
+                    source={
+                      currentStreak > 0
+                        ? require('@/assets/images/streak.png')
+                        : require('@/assets/images/gray_streak.png')
+                    }
+                    style={styles.streakImage}
+                  />
                 </Animated.View>
               </View>
               <View style={styles.streakTextWrap}>
@@ -374,27 +456,69 @@ export default function HomeScreen() {
                 <Text style={styles.streakBest}>{longestStreak} ngày</Text>
               </View>
             </View>
-          </View>
-          <View style={styles.headerActions}>
-            <Pressable accessibilityLabel="Thông báo" onPress={() => void toggleNotifications()} style={styles.notificationButton}>
-              <Ionicons color={Design.colors.black} name="notifications-outline" size={24} />
-              {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
-            </Pressable>
-            <Pressable onPress={() => router.push('/settings' as any)} style={styles.avatar}>
-              <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
-            </Pressable>
+            <View
+              accessibilityLabel={
+                isRubyBalanceLoading
+                  ? 'Đang tải số dư Ruby'
+                  : rubyBalance === null
+                    ? 'Không thể tải số dư Ruby'
+                    : `Số dư Ruby: ${rubyBalance}`
+              }
+              style={styles.rubyCard}>
+              <Image
+                contentFit="contain"
+                source={require('@/assets/images/ruby.png')}
+                style={styles.rubyImage}
+              />
+              <View>
+                {/* <Text style={styles.rubyLabel}>Ruby</Text> */}
+                <Text style={styles.rubyValue}>
+                  {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
+                </Text>
+              </View>
+            </View>
           </View>
         </View>
 
         <View style={styles.mascotCard}>
           <Animated.View style={animatedMascotStyle}>
-            <Image
-              contentFit="contain"
-              source={require('@/assets/images/onboarding/cat-loading.png')}
-              style={styles.mascot}
-            />
+            <View accessibilityLabel="Avatar hiện tại" style={styles.mascot}>
+              {avatarLayers ? (
+                avatarLayers.map((layer) => (
+                  <Image
+                    key={`${layer.layerOrder}-${layer.code}`}
+                    contentFit="contain"
+                    source={{ uri: layer.imageUrl }}
+                    style={[
+                      StyleSheet.absoluteFill,
+                      {
+                        transform: [
+                          { translateY: layer.slot === 'BASE' ? 0 : -19 },
+                        ],
+                        zIndex: layer.layerOrder,
+                      },
+                    ]}
+                  />
+                ))
+              ) : (
+                <Image
+                  contentFit="contain"
+                  source={require('@/assets/images/onboarding/cat-loading.png')}
+                  style={StyleSheet.absoluteFill}
+                />
+              )}
+            </View>
           </Animated.View>
         </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push('/wardrobe' as any)}
+          style={({ pressed }) => [styles.wardrobeButton, pressed && { opacity: 0.8 }]}>
+          <Ionicons color={Design.colors.primaryGreen} name="shirt-outline" size={22} />
+          <Text style={styles.wardrobeButtonText}>Kho trang phục</Text>
+          <Ionicons color={Design.colors.primaryGreen} name="chevron-forward" size={18} />
+        </Pressable>
 
         <RoutineTodayCard goalId={currentGoalId} />
 
@@ -453,17 +577,17 @@ export default function HomeScreen() {
           ) : (
             <ScrollView>
               {notifications.map((notification, index) => (
-              <Pressable
-                key={getNotificationKey(notification)}
-                accessibilityRole="button"
-                onPress={() => void markNotificationAsRead(notification)}
-                style={styles.notificationItem}>
-                <Ionicons color={Design.colors.primaryGreen} name="notifications-outline" size={20} />
-                <Text style={[styles.notificationText, notification.read === false && styles.unreadNotificationText]}>
-                  {getNotificationMessage(notification)}
-                </Text>
-              </Pressable>
-            ))}
+                <Pressable
+                  key={getNotificationKey(notification)}
+                  accessibilityRole="button"
+                  onPress={() => void markNotificationAsRead(notification)}
+                  style={styles.notificationItem}>
+                  <Ionicons color={Design.colors.primaryGreen} name="notifications-outline" size={20} />
+                  <Text style={[styles.notificationText, notification.read === false && styles.unreadNotificationText]}>
+                    {getNotificationMessage(notification)}
+                  </Text>
+                </Pressable>
+              ))}
             </ScrollView>
           )}
         </SafeAreaView>
@@ -504,18 +628,28 @@ export default function HomeScreen() {
       </View>
 
       <ShopSheet
-        balance={strawberries}
-        onBuy={handleBuy}
+        balance={rubyBalance}
+        onBalanceChange={handleWalletBalanceChange}
+        onInsufficientRuby={handleInsufficientRuby}
         onClose={() => setIsShopVisible(false)}
-        purchasedProduct={purchasedProduct}
-        onCloseSuccess={() => setPurchasedProduct(null)}
+        onPurchaseSuccess={handleShopPurchaseSuccess}
         visible={isShopVisible}
       />
-
       <PurchaseSuccessModal
-        balance={strawberries}
-        onClose={() => setPurchasedProduct(null)}
-        product={purchasedProduct}
+        balance={rubyBalance ?? 0}
+        onClose={() => setPurchasedShopItem(null)}
+        product={purchasedShopItem}
+      />
+      <InsufficientRubyModal
+        balance={rubyBalance}
+        message={insufficientRubyMessage}
+        onClose={() => setInsufficientRubyItem(null)}
+        onTopUp={() => {
+          setInsufficientRubyItem(null);
+          router.push('/ruby-topup');
+        }}
+        product={insufficientRubyItem}
+        visible={insufficientRubyItem !== null}
       />
 
       <DailyTaskModals
@@ -556,7 +690,15 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
+  },
+  headerContainer: {
+    gap: 8,
+  },
+  headerStatsRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
   },
   headerActions: {
     alignItems: 'center',
@@ -588,6 +730,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   streakCard: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: 18,
@@ -597,6 +740,31 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     backgroundColor: '#FFF7F3',
   },
+  rubyCard: {
+    alignItems: 'center',
+    backgroundColor: '#FFF4F6',
+    borderColor: '#F3D3DA',
+    borderRadius: 18,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 6,
+    minHeight: 48,
+    paddingHorizontal: 10,
+  },
+  rubyLabel: {
+    color: '#9B6A5B',
+    fontFamily: FontFamily.beVietnamMedium,
+    fontSize: 9,
+  },
+  rubyImage: {
+    height: 22,
+    width: 22,
+  },
+  rubyValue: {
+    color: '#D9556D',
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 14,
+  },
   streakIconWrap: {
     width: 32,
     height: 32,
@@ -604,6 +772,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#FFE1D5',
+  },
+  streakImage: {
+    height: 22,
+    width: 22,
   },
   streakTextWrap: {
     marginLeft: 8,
@@ -650,6 +822,24 @@ const styles = StyleSheet.create({
   mascot: {
     width: 330,
     height: 340,
+  },
+  wardrobeButton: {
+    alignItems: 'center',
+    backgroundColor: '#F0F7EF',
+    borderColor: '#D6E8D3',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  wardrobeButtonText: {
+    color: Design.colors.primaryGreen,
+    flex: 1,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.caption + 1,
   },
   routineCard: {
     borderWidth: 1,

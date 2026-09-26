@@ -32,6 +32,19 @@ export const API_ENDPOINTS = {
     CURRENT_STREAK: "/api/onboarding/streak/current",
     SELECT_MOOD: "/api/onboarding/mood/select",
   },
+  SHOP: {
+    ITEMS: "/api/shop/items",
+    BUY_ITEM: (skinItemId: number) => `/api/shop/items/${skinItemId}/buy`,
+    MY_WALLET: "/api/shop/wallet/me",
+    INIT_TOPUP: "/api/shop/topup/init",
+    TOPUP_HISTORY: "/api/shop/topup/history",
+  },
+  SKIN: {
+    MY_AVATAR: "/api/skin/avatar/my-avatar",
+    INVENTORY: "/api/skin/inventory",
+    EQUIP: "/api/skin/equip",
+    UNEQUIP: "/api/skin/unequip",
+  },
   CINEMA: {
     GOALS: "/api/cinema/goals",
     GOAL_WEEKS: (goalId: number) => `/api/cinema/goals/${goalId}/weeks`,
