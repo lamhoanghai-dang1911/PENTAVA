@@ -98,6 +98,7 @@ export default function DailyTasksScreen() {
         <SafeAreaView edges={['top']} style={styles.safeArea}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
+                contentInsetAdjustmentBehavior="never"
                 showsVerticalScrollIndicator={false}>
 
                 <DailyTasksHeader

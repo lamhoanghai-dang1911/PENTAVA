@@ -15,8 +15,8 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
                     accessibilityLabel="Quay lại"
                     hitSlop={8}
                     onPress={() => router.replace('/(tabs)')}
-                    style={({ pressed }) => [styles.backButton, pressed && { transform: [{ scale: 0.9 }] }]}>
-                    <Ionicons color={Design.colors.black} name="chevron-back" size={34} />
+                    style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
+                    <Ionicons color={Design.colors.black} name="chevron-back" size={28} />
                 </Pressable>
                 <SectionTabs active="tasks" />
             </View>
@@ -74,7 +74,13 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
 
 const styles = StyleSheet.create({
     header: { marginBottom: 8 },
-    backButton: { marginBottom: 10, alignSelf: 'flex-start' },
+    backButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        marginBottom: 10,
+    },
     titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
     title: { fontFamily: FontFamily.beVietnamSemiBold, fontSize: Design.fontSize.h2 + 2, color: Design.colors.black, lineHeight: 34, marginBottom: 16 },
     weekControl: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 12 },

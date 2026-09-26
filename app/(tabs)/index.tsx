@@ -1,4 +1,5 @@
 import DayNightBackground from '@/src/components/home/day-night-background';
+import { AnimatedTogglePill } from '@/src/components/home/animated-toggle-pill';
 import {
   InsufficientRubyModal,
   PurchaseSuccessModal,
@@ -77,12 +78,11 @@ function getNotificationKey(notification: SocialNotification) {
 export default function HomeScreen() {
   const { data } = useOnboarding();
   const { mode: themeMode, isNight, toggleDayNight, cycleMode } = useDayNightTheme();
+  const [isImmersiveView, setIsImmersiveView] = useState(false);
   const [profileName, setProfileName] = useState('');
   const displayName = profileName.trim() || data.name.trim() || 'bạn';
-  const [currentGoal, setCurrentGoal] = useState<string | null>(null);
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
-  const [longestStreak, setLongestStreak] = useState(0);
   const [rubyBalance, setRubyBalance] = useState<number | null>(null);
   const [isRubyBalanceLoading, setIsRubyBalanceLoading] = useState(true);
   const [avatarLayers, setAvatarLayers] = useState<AvatarLayer[] | null>(null);
@@ -309,10 +309,8 @@ export default function HomeScreen() {
     Promise.all([onboardingService.getCurrentGoal(), onboardingService.getCurrentStreak()])
       .then(([goalResponse, streakResponse]) => {
         if (isMounted) {
-          setCurrentGoal(goalResponse.currentGoal?.goalName ?? null);
           setCurrentGoalId(goalResponse.currentGoal?.goalId ?? null);
           setCurrentStreak(streakResponse.streak?.currentStreak ?? 0);
-          setLongestStreak(streakResponse.streak?.longestStreak ?? 0);
         }
       })
       .catch((error: Error) => {
@@ -421,17 +419,45 @@ export default function HomeScreen() {
       <DayNightBackground isNight={isNight} />
       <SafeAreaView edges={['top']} style={styles.safeArea}>
         <ScrollView
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, isImmersiveView && styles.scrollContentImmersive]}
           showsVerticalScrollIndicator={false}>
           <View style={styles.headerContainer}>
-            <View style={styles.headerRow}>
-              <Text
-                numberOfLines={1}
-                style={[styles.greeting, isNight && styles.greetingNight]}>
-                Chào {displayName}
-              </Text>
+            <View style={[styles.headerRow, isImmersiveView && { justifyContent: 'flex-end' }]}>
+              {!isImmersiveView && (
+                <Text
+                  numberOfLines={1}
+                  style={[styles.greeting, isNight && styles.greetingNight]}>
+                  Chào {displayName}
+                </Text>
+              )}
               <View style={styles.headerActions}>
-                {/* Nút chuyển đổi Ngày / Đêm */}
+                {/* Nút bật/tắt toàn cảnh (ẩn/hiện các element) */}
+                <Pressable
+                  accessibilityLabel={
+                    isImmersiveView
+                      ? 'Đang bật xem toàn cảnh. Bấm để hiện lại các chức năng'
+                      : 'Bấm để ẩn các thẻ, xem toàn cảnh nhân vật và thiên nhiên'
+                  }
+                  accessibilityRole="button"
+                  onPress={() => setIsImmersiveView((prev) => !prev)}
+                  style={({ pressed }) => [
+                    styles.iconHeaderButton,
+                    isNight && styles.iconHeaderButtonNight,
+                    isImmersiveView && (isNight ? styles.immersiveButtonActiveNight : styles.immersiveButtonActive),
+                    pressed && { opacity: 0.8 },
+                  ]}>
+                  <Ionicons
+                    color={
+                      isImmersiveView
+                        ? (isNight ? '#38BDF8' : '#15803D')
+                        : (isNight ? '#FFFFFF' : '#1E293B')
+                    }
+                    name={isImmersiveView ? 'eye-off-outline' : 'eye-outline'}
+                    size={20}
+                  />
+                </Pressable>
+
+                {/* Nút chuyển đổi Ngày / Đêm (chỉ giữ icon) */}
                 <Pressable
                   accessibilityLabel={
                     themeMode === 'auto'
@@ -442,43 +468,46 @@ export default function HomeScreen() {
                   onPress={toggleDayNight}
                   onLongPress={cycleMode}
                   style={({ pressed }) => [
-                    styles.themeToggleButton,
-                    isNight && styles.themeToggleButtonNight,
+                    styles.iconHeaderButton,
+                    isNight && styles.iconHeaderButtonNight,
                     pressed && { opacity: 0.8 },
                   ]}>
                   <Ionicons
                     color={isNight ? '#FDE047' : '#F59E0B'}
                     name={isNight ? 'moon' : 'sunny'}
-                    size={16}
+                    size={19}
                   />
-                  <Text style={[styles.themeToggleText, isNight && styles.themeToggleTextNight]}>
-                    {themeMode === 'auto' ? (isNight ? 'Đêm ⏰' : 'Ngày ⏰') : (isNight ? 'Đêm' : 'Ngày')}
-                  </Text>
                 </Pressable>
 
-                <Pressable
-                  accessibilityLabel="Thông báo"
-                  onPress={() => void toggleNotifications()}
-                  style={[styles.notificationButton, isNight && styles.notificationButtonNight]}>
-                  <Ionicons
-                    color={isNight ? Design.colors.white : Design.colors.black}
-                    name="notifications-outline"
-                    size={22}
-                  />
-                  {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
-                </Pressable>
-                <Pressable
-                  onPress={() => router.push('/settings' as any)}
-                  style={[styles.avatar, isNight && styles.avatarNight]}>
-                  <Text style={[styles.avatarText, isNight && styles.avatarTextNight]}>
-                    {displayName.charAt(0).toUpperCase()}
-                  </Text>
-                </Pressable>
+                {!isImmersiveView && (
+                  <>
+                    <Pressable
+                      accessibilityLabel="Thông báo"
+                      onPress={() => void toggleNotifications()}
+                      style={[styles.notificationButton, isNight && styles.notificationButtonNight]}>
+                      <Ionicons
+                        color={isNight ? Design.colors.white : Design.colors.black}
+                        name="notifications-outline"
+                        size={21}
+                      />
+                      {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
+                    </Pressable>
+                    <Pressable
+                      onPress={() => router.push('/settings' as any)}
+                      style={[styles.avatar, isNight && styles.avatarNight]}>
+                      <Text style={[styles.avatarText, isNight && styles.avatarTextNight]}>
+                        {displayName.charAt(0).toUpperCase()}
+                      </Text>
+                    </Pressable>
+                  </>
+                )}
               </View>
             </View>
-            <View style={styles.headerStatsRow}>
-              <View style={[styles.streakCard, isNight && styles.streakCardNight]}>
-                <View style={styles.streakIconWrap}>
+
+            {!isImmersiveView && (
+              <View style={styles.headerStatsRow}>
+                {/* Streak flame & value */}
+                <View style={styles.statPill}>
                   <Animated.View style={animatedFlameStyle}>
                     <Image
                       contentFit="contain"
@@ -487,44 +516,39 @@ export default function HomeScreen() {
                           ? require('@/assets/images/streak.png')
                           : require('@/assets/images/gray_streak.png')
                       }
-                      style={styles.streakImage}
+                      style={styles.statIcon}
                     />
                   </Animated.View>
+                  <Text style={[styles.statValue, styles.streakValue, isNight && styles.streakValueNight]}>
+                    {currentStreak}
+                  </Text>
                 </View>
-                <View style={styles.streakTextWrap}>
-                  <Text style={styles.streakValue}>{currentStreak}</Text>
-                </View>
-                <View style={styles.streakDivider} />
-                <View>
-                  <Text style={styles.streakLabel}>Kỷ lục</Text>
-                  <Text style={styles.streakBest}>{longestStreak}</Text>
-                </View>
-              </View>
-              <View
-                accessibilityLabel={
-                  isRubyBalanceLoading
-                    ? 'Đang tải số dư Ruby'
-                    : rubyBalance === null
-                      ? 'Không thể tải số dư Ruby'
-                      : `Số dư Ruby: ${rubyBalance}`
-                }
-                style={[styles.rubyCard, isNight && styles.rubyCardNight]}>
-                <Image
-                  contentFit="contain"
-                  source={require('@/assets/images/ruby.png')}
-                  style={styles.rubyImage}
-                />
-                <View>
-                  {/* <Text style={styles.rubyLabel}>Ruby</Text> */}
-                  <Text style={styles.rubyValue}>
+
+                {/* Ruby icon & value */}
+                <View
+                  accessibilityLabel={
+                    isRubyBalanceLoading
+                      ? 'Đang tải số dư Ruby'
+                      : rubyBalance === null
+                        ? 'Không thể tải số dư Ruby'
+                        : `Số dư Ruby: ${rubyBalance}`
+                  }
+                  style={styles.statPill}>
+                  <Image
+                    contentFit="contain"
+                    source={require('@/assets/images/ruby.png')}
+                    style={styles.statIcon}
+                  />
+                  <Text style={[styles.statValue, styles.rubyValue, isNight && styles.rubyValueNight]}>
                     {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
                   </Text>
                 </View>
               </View>
-            </View>
+            )}
           </View>
 
-          <View style={styles.mascotCard}>
+          {/* Linh vật mèo nằm chính giữa màn hình */}
+          <View style={[styles.mascotCard, isImmersiveView && styles.mascotCardImmersive]}>
             <Animated.View style={animatedMascotStyle}>
               <View accessibilityLabel="Avatar hiện tại" style={styles.mascot}>
                 {avatarLayers ? (
@@ -557,31 +581,47 @@ export default function HomeScreen() {
             <View style={[styles.mascotShadow, isNight && styles.mascotShadowNight]} />
           </View>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/wardrobe' as any)}
-            style={({ pressed }) => [
-              styles.wardrobeButton,
-              isNight && styles.wardrobeButtonNight,
-              pressed && { opacity: 0.8 },
-            ]}>
-            <Ionicons color={Design.colors.primaryGreen} name="shirt-outline" size={22} />
-            <Text style={styles.wardrobeButtonText}>Kho trang phục</Text>
-            <Ionicons color={Design.colors.primaryGreen} name="chevron-forward" size={18} />
-          </Pressable>
+          {!isImmersiveView ? (
+            <View style={styles.bottomCardSection}>
+              {/* Nút Kho trang phục ngay sát bên trên Routine hôm nay */}
+              <Pressable
+                accessibilityLabel="Kho trang phục"
+                accessibilityRole="button"
+                onPress={() => router.push('/wardrobe' as any)}
+                style={({ pressed }) => [
+                  styles.wardrobeIconButton,
+                  isNight && styles.wardrobeIconButtonNight,
+                  pressed && { transform: [{ scale: 0.9 }], opacity: 0.8 },
+                ]}>
+                <Ionicons
+                  color={isNight ? '#34D399' : Design.colors.primaryGreen}
+                  name="shirt-outline"
+                  size={22}
+                />
+              </Pressable>
 
-          <RoutineTodayCard goalId={currentGoalId} />
-
-          <View style={styles.weekCard}>
-
-            <View style={styles.weekHeader}>
-              <Text style={styles.weekEmoji}>🌙</Text>
-              <View style={styles.weekTextWrap}>
-                <Text style={styles.weekTitle}>{currentGoal ?? 'Đang tải mục tiêu...'}</Text>
-              </View>
+              {/* Routine hôm nay nằm ngay sát bên trên thanh toggle */}
+              <RoutineTodayCard goalId={currentGoalId} />
             </View>
-
-          </View>
+          ) : (
+            <Pressable
+              accessibilityLabel="Chạm để thoát chế độ toàn cảnh"
+              onPress={() => setIsImmersiveView(false)}
+              style={({ pressed }) => [
+                styles.immersiveHintPill,
+                isNight && styles.immersiveHintPillNight,
+                pressed && { opacity: 0.8 },
+              ]}>
+              <Ionicons
+                color={isNight ? '#93C5FD' : '#15803D'}
+                name="sparkles"
+                size={15}
+              />
+              <Text style={[styles.immersiveHintText, isNight && styles.immersiveHintTextNight]}>
+                Đang xem toàn cảnh • Chạm để hiện lại menu
+              </Text>
+            </Pressable>
+          )}
         </ScrollView>
 
       <Modal
@@ -652,21 +692,13 @@ export default function HomeScreen() {
           <Ionicons color={Design.colors.white} name="storefront-outline" size={22} />
         </Pressable>
 
-        <View style={styles.togglePill}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/daily-tasks')}
-            style={({ pressed }) => [styles.toggleOption, pressed && { opacity: 0.75 }]}>
-            <Text style={styles.toggleText}>Nhiệm vụ ngày</Text>
-          </Pressable>
-          <View style={styles.toggleDivider} />
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/cinema')}
-            style={({ pressed }) => [styles.toggleOption, pressed && { opacity: 0.75 }]}>
-            <Text style={styles.toggleText}>PENTA-CINEMA</Text>
-          </Pressable>
-        </View>
+        <AnimatedTogglePill
+          activeTab="tasks"
+          isNight={isNight}
+          onSelectCinema={() => router.push('/cinema')}
+          onSelectTasks={() => router.push('/daily-tasks')}
+          style={styles.togglePill}
+        />
 
         <Pressable
           accessibilityRole="button"
@@ -736,10 +768,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 24,
-    paddingTop: 8,
-    paddingBottom: 24,
-    gap: 16, // hoặc dùng marginBottom riêng cho từng View
+    paddingHorizontal: 20,
+    paddingTop: 4,
+    paddingBottom: 4,
+    justifyContent: 'space-between',
   },
   headerRow: {
     flexDirection: 'row',
@@ -747,48 +779,87 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   headerContainer: {
-    gap: 8,
+    gap: 4,
   },
   headerStatsRow: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 8,
+    justifyContent: 'flex-end',
+    gap: 12,
   },
   headerActions: {
     alignItems: 'center',
     flexDirection: 'row',
     gap: 8,
   },
-  themeToggleButton: {
+  scrollContentImmersive: {
+    justifyContent: 'space-between',
+    paddingBottom: 32,
+  },
+  iconHeaderButton: {
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.88)',
-    borderColor: 'rgba(245, 158, 11, 0.35)',
-    borderRadius: 20,
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 18,
     borderWidth: 1,
     elevation: 2,
-    flexDirection: 'row',
-    gap: 4,
-    minHeight: 36,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    height: 36,
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    width: 36,
   },
-  themeToggleButtonNight: {
+  iconHeaderButtonNight: {
     backgroundColor: 'rgba(30, 41, 59, 0.82)',
-    borderColor: 'rgba(253, 224, 71, 0.45)',
+    borderColor: 'rgba(255, 255, 255, 0.25)',
     elevation: 3,
     shadowOpacity: 0.25,
   },
-  themeToggleText: {
-    color: '#92400E',
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: 11,
+  immersiveButtonActive: {
+    backgroundColor: '#DCFCE7',
+    borderColor: '#4ADE80',
   },
-  themeToggleTextNight: {
-    color: '#FEF08A',
+  immersiveButtonActiveNight: {
+    backgroundColor: 'rgba(56, 189, 248, 0.25)',
+    borderColor: '#38BDF8',
+  },
+  immersiveHintPill: {
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    borderColor: '#86EFAC',
+    borderRadius: 20,
+    borderWidth: 1,
+    elevation: 3,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 24,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+  },
+  immersiveHintPillNight: {
+    backgroundColor: 'rgba(15, 23, 42, 0.9)',
+    borderColor: 'rgba(56, 189, 248, 0.4)',
+    shadowOpacity: 0.35,
+  },
+  immersiveHintText: {
+    color: '#15803D',
+    fontFamily: FontFamily.beVietnamMedium,
+    fontSize: 12,
+  },
+  immersiveHintTextNight: {
+    color: '#BAE6FD',
+  },
+  mascotCardImmersive: {
+    marginTop: 36,
+    marginBottom: 16,
   },
   notificationButton: {
     alignItems: 'center',
@@ -834,102 +905,33 @@ const styles = StyleSheet.create({
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 4,
   },
-  streakCard: {
-    flex: 1,
+  statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 18,
-    borderWidth: 1,
-    borderColor: '#F5D8CE',
-    paddingHorizontal: 9,
-    paddingVertical: 7,
-    backgroundColor: 'rgba(255, 247, 243, 0.94)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
+    gap: 5,
+    backgroundColor: 'transparent',
+    paddingVertical: 2,
+    paddingHorizontal: 4,
   },
-  streakCardNight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
-    borderColor: 'rgba(255, 255, 255, 0.98)',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  rubyCard: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 244, 246, 0.94)',
-    borderColor: '#F3D3DA',
-    borderRadius: 18,
-    borderWidth: 1,
-    flexDirection: 'row',
-    gap: 6,
-    minHeight: 48,
-    paddingHorizontal: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  rubyCardNight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
-    borderColor: 'rgba(255, 255, 255, 0.98)',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-  rubyLabel: {
-    color: '#9B6A5B',
-    fontFamily: FontFamily.beVietnamMedium,
-    fontSize: 9,
-  },
-  rubyImage: {
+  statIcon: {
     height: 22,
     width: 22,
   },
-  rubyValue: {
-    color: '#D9556D',
+  statValue: {
     fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: 14,
-  },
-  streakIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFE1D5',
-  },
-  streakImage: {
-    height: 22,
-    width: 22,
-  },
-  streakTextWrap: {
-    marginLeft: 8,
-    marginRight: 10,
-  },
-  streakLabel: {
-    fontFamily: FontFamily.beVietnamMedium,
-    fontSize: 9,
-    color: '#9B6A5B',
+    fontSize: 15,
   },
   streakValue: {
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: 14,
-    color: '#D9552D',
+    color: '#EA580C',
   },
-  streakDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: '#F0CFC4',
-    marginRight: 10,
+  streakValueNight: {
+    color: '#FB923C',
   },
-  streakBest: {
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: 14,
-    color: Design.colors.black,
+  rubyValue: {
+    color: '#E11D48',
+  },
+  rubyValueNight: {
+    color: '#FB7185',
   },
   avatar: {
     width: 36,
@@ -958,51 +960,51 @@ const styles = StyleSheet.create({
     color: Design.colors.black,
   },
   mascotCard: {
+    flex: 1,
     alignItems: 'center',
-    marginVertical: 18,
+    justifyContent: 'center',
+    marginVertical: 4,
   },
   mascot: {
-    width: 330,
-    height: 340,
+    width: 290,
+    height: 300,
   },
   mascotShadow: {
-    width: 190,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: 'rgba(15, 60, 30, 0.18)',
+    width: 175,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: 'rgba(15, 60, 30, 0.2)',
     alignSelf: 'center',
-    marginTop: -16,
+    marginTop: -14,
   },
   mascotShadowNight: {
     backgroundColor: 'rgba(0, 0, 0, 0.38)',
   },
-  wardrobeButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(240, 247, 239, 0.94)',
-    borderColor: '#D6E8D3',
-    borderRadius: 16,
+  bottomCardSection: {
+    width: '100%',
+    marginBottom: 4,
+  },
+  wardrobeIconButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 6,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: 'rgba(255, 255, 255, 0.92)',
     borderWidth: 1,
-    flexDirection: 'row',
-    gap: 10,
+    borderColor: '#D6E8D3',
+    alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  wardrobeButtonNight: {
-    backgroundColor: 'rgba(255, 255, 255, 0.94)',
-    borderColor: '#A7F3D0',
     shadowOpacity: 0.12,
+    shadowRadius: 5,
+    elevation: 3,
   },
-  wardrobeButtonText: {
-    color: Design.colors.primaryGreen,
-    flex: 1,
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: Design.fontSize.caption + 1,
+  wardrobeIconButtonNight: {
+    backgroundColor: 'rgba(26, 36, 54, 0.9)',
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+    shadowOpacity: 0.25,
   },
   routineCard: {
     borderWidth: 1,
@@ -1251,7 +1253,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingTop: 4,
+    paddingBottom: 8,
   },
   roundButton: {
     width: 46,
@@ -1268,15 +1271,7 @@ const styles = StyleSheet.create({
   },
   togglePill: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
     marginHorizontal: 12,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: Design.colors.optionBorder,
-    backgroundColor: Design.colors.white,
-    overflow: 'hidden',
   },
   toggleOption: {
     flex: 1,

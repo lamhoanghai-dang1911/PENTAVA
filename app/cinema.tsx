@@ -659,10 +659,14 @@ export default function CinemaScreen() {
               setSelectedGoalWeeks(null);
               return;
             }
-            router.back();
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
           }}
-          style={styles.backButton}>
-          <Ionicons color={Design.colors.black} name="chevron-back" size={24} />
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
+          <Ionicons color={Design.colors.black} name="chevron-back" size={28} />
         </Pressable>
 
         {!selectedGoal && <SectionTabs active="cinema" />}
@@ -880,7 +884,13 @@ export default function CinemaScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: Design.colors.white },
   header: { paddingHorizontal: 24, paddingTop: 8 },
-  backButton: { marginBottom: 10 },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
   title: {
     color: Design.colors.black,
     fontFamily: FontFamily.poppinsSemiBold,

@@ -172,17 +172,12 @@ function DayScene() {
           <Stop offset="100%" stopColor="#16A34A" />
         </LinearGradient>
 
-        {/* Đồi tiền cảnh ngay dưới linh vật (Lớp 3) - Cỏ tươi thẫm */}
+        {/* Đồi tiền cảnh ngay dưới linh vật (Lớp 3) - Cỏ tươi thẫm mượt mà */}
         <LinearGradient id="dayForeHills" x1="0%" x2="0%" y1="0%" y2="100%">
-          <Stop offset="0%" stopColor="#22C55E" />
-          <Stop offset="40%" stopColor="#16A34A" />
+          <Stop offset="0%" stopColor="#4ADE80" />
+          <Stop offset="16%" stopColor="#22C55E" />
+          <Stop offset="45%" stopColor="#16A34A" />
           <Stop offset="100%" stopColor="#15803D" />
-        </LinearGradient>
-
-        {/* Thảm cỏ chân trang bên dưới */}
-        <LinearGradient id="dayGroundBase" x1="0%" x2="0%" y1="0%" y2="100%">
-          <Stop offset="0%" stopColor="#15803D" />
-          <Stop offset="100%" stopColor="#0F5B2B" />
         </LinearGradient>
       </Defs>
 
@@ -248,52 +243,49 @@ function DayScene() {
 
       {/* 5. Dãy đồi xanh xa (Lớp 1) */}
       <Path
-        d="M-20 400 Q70 330 180 370 T410 350 L410 850 L-20 850 Z"
+        d="M-20 470 Q70 405 180 445 T410 425 L410 850 L-20 850 Z"
         fill="url(#dayBackHills)"
       />
       {/* Rặng cây xanh tròn trên đỉnh đồi xa */}
-      <Circle cx="60" cy="345" fill="#6BD28D" r="14" />
-      <Circle cx="76" cy="340" fill="#52C476" r="17" />
-      <Circle cx="92" cy="346" fill="#6BD28D" r="13" />
-      <Circle cx="295" cy="362" fill="#59C87D" r="15" />
-      <Circle cx="312" cy="356" fill="#4ABA6F" r="18" />
-      <Circle cx="330" cy="364" fill="#59C87D" r="13" />
+      <Circle cx="60" cy="420" fill="#6BD28D" r="14" />
+      <Circle cx="76" cy="415" fill="#52C476" r="17" />
+      <Circle cx="92" cy="421" fill="#6BD28D" r="13" />
+      <Circle cx="295" cy="436" fill="#59C87D" r="15" />
+      <Circle cx="312" cy="430" fill="#4ABA6F" r="18" />
+      <Circle cx="330" cy="438" fill="#59C87D" r="13" />
 
       {/* 6. Đồi xanh trung cảnh & Cây cối (Lớp 2) */}
       <Path
-        d="M-20 435 Q90 400 210 440 T420 395 L420 850 L-20 850 Z"
+        d="M-20 505 Q90 470 210 510 T420 465 L420 850 L-20 850 Z"
         fill="url(#dayMidHills)"
       />
       {/* Cây thông bên phải */}
-      <Polygon fill="#229D52" points="350,378 342,398 358,398" />
-      <Polygon fill="#1C8645" points="350,390 340,410 360,410" />
-      <Polygon fill="#157037" points="350,402 338,424 362,424" />
-      <Rect fill="#78350F" height="8" rx="1" width="4" x="348" y="424" />
+      <Polygon fill="#229D52" points="350,448 342,468 358,468" />
+      <Polygon fill="#1C8645" points="350,460 340,480 360,480" />
+      <Polygon fill="#157037" points="350,472 338,494 362,494" />
+      <Rect fill="#78350F" height="8" rx="1" width="4" x="348" y="494" />
 
       {/* Cây tán tròn xinh xắn bên trái */}
-      <Rect fill="#854D0E" height="12" rx="1" width="4" x="43" y="425" />
-      <Circle cx="45" cy="415" fill="#2FC166" r="17" />
-      <Circle cx="40" cy="410" fill="#46D87D" r="11" />
-      <Circle cx="51" cy="418" fill="#23A856" r="10" />
+      <Rect fill="#854D0E" height="12" rx="1" width="4" x="43" y="495" />
+      <Circle cx="45" cy="485" fill="#2FC166" r="17" />
+      <Circle cx="40" cy="480" fill="#46D87D" r="11" />
+      <Circle cx="51" cy="488" fill="#23A856" r="10" />
 
       {/* Bụi cây xanh mướt */}
-      <Circle cx="120" cy="438" fill="#30B967" r="10" />
-      <Circle cx="132" cy="436" fill="#4ADE80" r="12" />
-      <Circle cx="144" cy="439" fill="#259D54" r="9" />
+      <Circle cx="120" cy="508" fill="#30B967" r="10" />
+      <Circle cx="132" cy="506" fill="#4ADE80" r="12" />
+      <Circle cx="144" cy="509" fill="#259D54" r="9" />
 
       {/* 7. Đồi cỏ tiền cảnh ngay dưới linh vật (Lớp 3) */}
       <Path
-        d="M-20 480 Q80 445 200 475 T420 450 L420 850 L-20 850 Z"
+        d="M-20 545 Q80 515 200 545 T420 520 L420 850 L-20 850 Z"
         fill="url(#dayForeHills)"
       />
-
-      {/* Thảm cỏ bên dưới cùng */}
-      <Rect fill="url(#dayGroundBase)" height="344" width="420" x="-10" y="500" />
 
       {/* Cụm cỏ xanh tươi tốt vươn lên viền đồi */}
       {/* Cụm 1 */}
       <Path
-        d="M28 468 Q24 456 20 452 M29 468 Q30 452 31 448 M30 468 Q35 455 40 453"
+        d="M28 538 Q24 526 20 522 M29 538 Q30 522 31 518 M30 538 Q35 525 40 523"
         fill="none"
         stroke="#86EFAC"
         strokeLinecap="round"
@@ -301,7 +293,7 @@ function DayScene() {
       />
       {/* Cụm 2 */}
       <Path
-        d="M113 460 Q109 448 105 444 M114 460 Q115 444 116 440 M115 460 Q120 447 125 445"
+        d="M113 530 Q109 518 105 514 M114 530 Q115 514 116 510 M115 530 Q120 517 125 515"
         fill="none"
         stroke="#A7F3D0"
         strokeLinecap="round"
@@ -309,7 +301,7 @@ function DayScene() {
       />
       {/* Cụm 3 */}
       <Path
-        d="M178 476 Q174 464 170 460 M179 476 Q180 460 181 456 M180 476 Q185 463 190 461"
+        d="M178 546 Q174 534 170 530 M179 546 Q180 530 181 526 M180 546 Q185 533 190 531"
         fill="none"
         stroke="#4ADE80"
         strokeLinecap="round"
@@ -317,7 +309,7 @@ function DayScene() {
       />
       {/* Cụm 4 */}
       <Path
-        d="M268 466 Q264 454 260 450 M269 466 Q270 450 271 446 M270 466 Q275 453 280 451"
+        d="M268 536 Q264 524 260 520 M269 536 Q270 520 271 516 M270 536 Q275 523 280 521"
         fill="none"
         stroke="#86EFAC"
         strokeLinecap="round"
@@ -325,7 +317,7 @@ function DayScene() {
       />
       {/* Cụm 5 */}
       <Path
-        d="M348 460 Q344 448 340 444 M349 460 Q350 444 351 440 M350 460 Q355 447 360 445"
+        d="M348 530 Q344 518 340 514 M349 530 Q350 514 351 510 M350 530 Q355 517 360 515"
         fill="none"
         stroke="#A7F3D0"
         strokeLinecap="round"
@@ -335,44 +327,44 @@ function DayScene() {
       {/* 8. Những bông hoa cúc trắng nhụy vàng & hoa dại tươi vui */}
       {/* Hoa cúc 1 */}
       <G>
-        <Circle cx="66" cy="475" fill="#FFFFFF" r="3.5" />
-        <Circle cx="74" cy="475" fill="#FFFFFF" r="3.5" />
-        <Circle cx="70" cy="471" fill="#FFFFFF" r="3.5" />
-        <Circle cx="70" cy="479" fill="#FFFFFF" r="3.5" />
-        <Circle cx="70" cy="475" fill="#FBBF24" r="2.8" />
+        <Circle cx="66" cy="548" fill="#FFFFFF" r="3.5" />
+        <Circle cx="74" cy="548" fill="#FFFFFF" r="3.5" />
+        <Circle cx="70" cy="544" fill="#FFFFFF" r="3.5" />
+        <Circle cx="70" cy="552" fill="#FFFFFF" r="3.5" />
+        <Circle cx="70" cy="548" fill="#FBBF24" r="2.8" />
       </G>
 
       {/* Hoa cúc 2 */}
       <G>
-        <Circle cx="226" cy="480" fill="#FFFFFF" r="3.5" />
-        <Circle cx="234" cy="480" fill="#FFFFFF" r="3.5" />
-        <Circle cx="230" cy="476" fill="#FFFFFF" r="3.5" />
-        <Circle cx="230" cy="484" fill="#FFFFFF" r="3.5" />
-        <Circle cx="230" cy="480" fill="#FBBF24" r="2.8" />
+        <Circle cx="226" cy="552" fill="#FFFFFF" r="3.5" />
+        <Circle cx="234" cy="552" fill="#FFFFFF" r="3.5" />
+        <Circle cx="230" cy="548" fill="#FFFFFF" r="3.5" />
+        <Circle cx="230" cy="556" fill="#FFFFFF" r="3.5" />
+        <Circle cx="230" cy="552" fill="#FBBF24" r="2.8" />
       </G>
 
       {/* Hoa cúc 3 */}
       <G>
-        <Circle cx="317" cy="477" fill="#FFFFFF" r="3" />
-        <Circle cx="323" cy="477" fill="#FFFFFF" r="3" />
-        <Circle cx="320" cy="474" fill="#FFFFFF" r="3" />
-        <Circle cx="320" cy="480" fill="#FFFFFF" r="3" />
-        <Circle cx="320" cy="477" fill="#F59E0B" r="2.3" />
+        <Circle cx="317" cy="549" fill="#FFFFFF" r="3" />
+        <Circle cx="323" cy="549" fill="#FFFFFF" r="3" />
+        <Circle cx="320" cy="546" fill="#FFFFFF" r="3" />
+        <Circle cx="320" cy="552" fill="#FFFFFF" r="3" />
+        <Circle cx="320" cy="549" fill="#F59E0B" r="2.3" />
       </G>
 
       {/* Hoa dại màu hồng pastel */}
-      <Circle cx="140" cy="486" fill="#F472B6" r="3.5" />
-      <Circle cx="140" cy="486" fill="#FEF08A" r="1.5" />
+      <Circle cx="140" cy="558" fill="#F472B6" r="3.5" />
+      <Circle cx="140" cy="558" fill="#FEF08A" r="1.5" />
 
       {/* Hoa dại màu vàng rực */}
-      <Circle cx="285" cy="488" fill="#FDE047" r="3.5" />
-      <Circle cx="285" cy="488" fill="#F59E0B" r="1.5" />
+      <Circle cx="285" cy="558" fill="#FDE047" r="3.5" />
+      <Circle cx="285" cy="558" fill="#F59E0B" r="1.5" />
 
       {/* Bông bồ công anh lấp lánh trôi trong gió */}
-      <Circle cx="85" cy="420" fill="#FFFFFF" opacity="0.6" r="1.6" />
-      <Circle cx="160" cy="390" fill="#FFFFFF" opacity="0.75" r="2" />
-      <Circle cx="240" cy="415" fill="#FFFFFF" opacity="0.5" r="1.5" />
-      <Circle cx="300" cy="385" fill="#FFFFFF" opacity="0.7" r="1.8" />
+      <Circle cx="85" cy="480" fill="#FFFFFF" opacity="0.6" r="1.6" />
+      <Circle cx="160" cy="450" fill="#FFFFFF" opacity="0.75" r="2" />
+      <Circle cx="240" cy="475" fill="#FFFFFF" opacity="0.5" r="1.5" />
+      <Circle cx="300" cy="445" fill="#FFFFFF" opacity="0.7" r="1.8" />
     </Svg>
   );
 }
@@ -421,17 +413,12 @@ function NightScene() {
           <Stop offset="100%" stopColor="#0E281F" />
         </LinearGradient>
 
-        {/* Đồi tiền cảnh sẫm màu dưới ánh trăng - cây cỏ sẫm màu hơn một tí */}
+        {/* Đồi tiền cảnh sẫm màu dưới ánh trăng - mượt mà huyền ảo */}
         <LinearGradient id="nightForeHills" x1="0%" x2="0%" y1="0%" y2="100%">
-          <Stop offset="0%" stopColor="#1B4D36" />
-          <Stop offset="40%" stopColor="#133827" />
+          <Stop offset="0%" stopColor="#2D6A4F" />
+          <Stop offset="20%" stopColor="#1B4D36" />
+          <Stop offset="50%" stopColor="#133827" />
           <Stop offset="100%" stopColor="#0B2117" />
-        </LinearGradient>
-
-        {/* Thảm cỏ chân trang đêm */}
-        <LinearGradient id="nightGroundBase" x1="0%" x2="0%" y1="0%" y2="100%">
-          <Stop offset="0%" stopColor="#0B2117" />
-          <Stop offset="100%" stopColor="#06140E" />
         </LinearGradient>
       </Defs>
 
@@ -519,52 +506,49 @@ function NightScene() {
 
       {/* 5. Dãy đồi xa ban đêm (Lớp 1) - Cây cỏ sẫm màu huyền bí */}
       <Path
-        d="M-20 400 Q70 330 180 370 T410 350 L410 850 L-20 850 Z"
+        d="M-20 470 Q70 405 180 445 T410 425 L410 850 L-20 850 Z"
         fill="url(#nightBackHills)"
       />
       {/* Bóng cây sẫm màu in bóng lên bầu trời đêm */}
-      <Circle cx="60" cy="345" fill="#0F2420" r="14" />
-      <Circle cx="76" cy="340" fill="#0C1D1A" r="17" />
-      <Circle cx="92" cy="346" fill="#0F2420" r="13" />
-      <Circle cx="295" cy="362" fill="#0F2420" r="15" />
-      <Circle cx="312" cy="356" fill="#0C1D1A" r="18" />
-      <Circle cx="330" cy="364" fill="#0F2420" r="13" />
+      <Circle cx="60" cy="420" fill="#0F2420" r="14" />
+      <Circle cx="76" cy="415" fill="#0C1D1A" r="17" />
+      <Circle cx="92" cy="421" fill="#0F2420" r="13" />
+      <Circle cx="295" cy="436" fill="#0F2420" r="15" />
+      <Circle cx="312" cy="430" fill="#0C1D1A" r="18" />
+      <Circle cx="330" cy="438" fill="#0F2420" r="13" />
 
       {/* 6. Đồi trung cảnh sẫm màu & Rừng cây đêm (Lớp 2) */}
       <Path
-        d="M-20 435 Q90 400 210 440 T420 395 L420 850 L-20 850 Z"
+        d="M-20 505 Q90 470 210 510 T420 465 L420 850 L-20 850 Z"
         fill="url(#nightMidHills)"
       />
       {/* Cây thông đêm bên phải */}
-      <Polygon fill="#163C2E" points="350,378 342,398 358,398" />
-      <Polygon fill="#112E23" points="350,390 340,410 360,410" />
-      <Polygon fill="#0C231B" points="350,402 338,424 362,424" />
-      <Rect fill="#1C1917" height="8" rx="1" width="4" x="348" y="424" />
+      <Polygon fill="#163C2E" points="350,448 342,468 358,468" />
+      <Polygon fill="#112E23" points="350,460 340,480 360,480" />
+      <Polygon fill="#0C231B" points="350,472 338,494 362,494" />
+      <Rect fill="#1C1917" height="8" rx="1" width="4" x="348" y="494" />
 
       {/* Cây đêm tán tròn bên trái */}
-      <Rect fill="#1C1917" height="12" rx="1" width="4" x="43" y="425" />
-      <Circle cx="45" cy="415" fill="#133729" r="17" />
-      <Circle cx="40" cy="410" fill="#1A4735" r="11" />
-      <Circle cx="51" cy="418" fill="#102E23" r="10" />
+      <Rect fill="#1C1917" height="12" rx="1" width="4" x="43" y="495" />
+      <Circle cx="45" cy="485" fill="#133729" r="17" />
+      <Circle cx="40" cy="480" fill="#1A4735" r="11" />
+      <Circle cx="51" cy="488" fill="#102E23" r="10" />
 
       {/* Bụi cây đêm */}
-      <Circle cx="120" cy="438" fill="#113326" r="10" />
-      <Circle cx="132" cy="436" fill="#194534" r="12" />
-      <Circle cx="144" cy="439" fill="#0E2B20" r="9" />
+      <Circle cx="120" cy="508" fill="#113326" r="10" />
+      <Circle cx="132" cy="506" fill="#194534" r="12" />
+      <Circle cx="144" cy="509" fill="#0E2B20" r="9" />
 
       {/* 7. Đồi tiền cảnh sẫm màu dưới chân linh vật (Lớp 3) */}
       <Path
-        d="M-20 480 Q80 445 200 475 T420 450 L420 850 L-20 850 Z"
+        d="M-20 545 Q80 515 200 545 T420 520 L420 850 L-20 850 Z"
         fill="url(#nightForeHills)"
       />
-
-      {/* Thảm cỏ bên dưới ban đêm */}
-      <Rect fill="url(#nightGroundBase)" height="344" width="420" x="-10" y="500" />
 
       {/* Cụm cỏ đêm với viền lấp lánh ánh trăng */}
       {/* Cụm 1 */}
       <Path
-        d="M28 468 Q24 456 20 452 M29 468 Q30 452 31 448 M30 468 Q35 455 40 453"
+        d="M28 538 Q24 526 20 522 M29 538 Q30 522 31 518 M30 538 Q35 525 40 523"
         fill="none"
         stroke="#2D6A4F"
         strokeLinecap="round"
@@ -572,7 +556,7 @@ function NightScene() {
       />
       {/* Cụm 2 */}
       <Path
-        d="M113 460 Q109 448 105 444 M114 460 Q115 444 116 440 M115 460 Q120 447 125 445"
+        d="M113 530 Q109 518 105 514 M114 530 Q115 514 116 510 M115 530 Q120 517 125 515"
         fill="none"
         stroke="#40916C"
         strokeLinecap="round"
@@ -580,7 +564,7 @@ function NightScene() {
       />
       {/* Cụm 3 */}
       <Path
-        d="M178 476 Q174 464 170 460 M179 476 Q180 460 181 456 M180 476 Q185 463 190 461"
+        d="M178 546 Q174 534 170 530 M179 546 Q180 530 181 526 M180 546 Q185 533 190 531"
         fill="none"
         stroke="#2D6A4F"
         strokeLinecap="round"
@@ -588,7 +572,7 @@ function NightScene() {
       />
       {/* Cụm 4 */}
       <Path
-        d="M268 466 Q264 454 260 450 M269 466 Q270 450 271 446 M270 466 Q275 453 280 451"
+        d="M268 536 Q264 524 260 520 M269 536 Q270 520 271 516 M270 536 Q275 523 280 521"
         fill="none"
         stroke="#40916C"
         strokeLinecap="round"
@@ -596,7 +580,7 @@ function NightScene() {
       />
       {/* Cụm 5 */}
       <Path
-        d="M348 460 Q344 448 340 444 M349 460 Q350 444 351 440 M350 460 Q355 447 360 445"
+        d="M348 530 Q344 518 340 514 M349 530 Q350 514 351 510 M350 530 Q355 517 360 515"
         fill="none"
         stroke="#2D6A4F"
         strokeLinecap="round"
@@ -606,29 +590,29 @@ function NightScene() {
       {/* 8. Hoa dạ nguyệt (Moonflowers) nở tỏa sáng dịu mát trong đêm */}
       {/* Hoa dạ nguyệt 1 */}
       <G>
-        <Circle cx="66" cy="475" fill="#BAE6FD" opacity="0.8" r="3.2" />
-        <Circle cx="74" cy="475" fill="#BAE6FD" opacity="0.8" r="3.2" />
-        <Circle cx="70" cy="471" fill="#BAE6FD" opacity="0.8" r="3.2" />
-        <Circle cx="70" cy="479" fill="#BAE6FD" opacity="0.8" r="3.2" />
-        <Circle cx="70" cy="475" fill="#FEF08A" r="2.2" />
+        <Circle cx="66" cy="548" fill="#BAE6FD" opacity="0.8" r="3.2" />
+        <Circle cx="74" cy="548" fill="#BAE6FD" opacity="0.8" r="3.2" />
+        <Circle cx="70" cy="544" fill="#BAE6FD" opacity="0.8" r="3.2" />
+        <Circle cx="70" cy="552" fill="#BAE6FD" opacity="0.8" r="3.2" />
+        <Circle cx="70" cy="548" fill="#FEF08A" r="2.2" />
       </G>
 
       {/* Hoa thạch thảo tím đêm 2 */}
       <G>
-        <Circle cx="226" cy="480" fill="#DDD6FE" opacity="0.85" r="3.2" />
-        <Circle cx="234" cy="480" fill="#DDD6FE" opacity="0.85" r="3.2" />
-        <Circle cx="230" cy="476" fill="#DDD6FE" opacity="0.85" r="3.2" />
-        <Circle cx="230" cy="484" fill="#DDD6FE" opacity="0.85" r="3.2" />
-        <Circle cx="230" cy="480" fill="#A7F3D0" r="2.2" />
+        <Circle cx="226" cy="552" fill="#DDD6FE" opacity="0.85" r="3.2" />
+        <Circle cx="234" cy="552" fill="#DDD6FE" opacity="0.85" r="3.2" />
+        <Circle cx="230" cy="548" fill="#DDD6FE" opacity="0.85" r="3.2" />
+        <Circle cx="230" cy="556" fill="#DDD6FE" opacity="0.85" r="3.2" />
+        <Circle cx="230" cy="552" fill="#A7F3D0" r="2.2" />
       </G>
 
       {/* Hoa dạ nguyệt 3 */}
       <G>
-        <Circle cx="317" cy="477" fill="#BAE6FD" opacity="0.75" r="2.8" />
-        <Circle cx="323" cy="477" fill="#BAE6FD" opacity="0.75" r="2.8" />
-        <Circle cx="320" cy="474" fill="#BAE6FD" opacity="0.75" r="2.8" />
-        <Circle cx="320" cy="480" fill="#BAE6FD" opacity="0.75" r="2.8" />
-        <Circle cx="320" cy="477" fill="#FEF9C3" r="1.8" />
+        <Circle cx="317" cy="549" fill="#BAE6FD" opacity="0.75" r="2.8" />
+        <Circle cx="323" cy="549" fill="#BAE6FD" opacity="0.75" r="2.8" />
+        <Circle cx="320" cy="546" fill="#BAE6FD" opacity="0.75" r="2.8" />
+        <Circle cx="320" cy="552" fill="#BAE6FD" opacity="0.75" r="2.8" />
+        <Circle cx="320" cy="549" fill="#FEF9C3" r="1.8" />
       </G>
     </Svg>
   );
