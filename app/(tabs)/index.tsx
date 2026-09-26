@@ -1,21 +1,23 @@
-import RoutineTodayCard from '@/src/components/home/routinetodaycard';
+import DayNightBackground from '@/src/components/home/day-night-background';
 import {
   InsufficientRubyModal,
   PurchaseSuccessModal,
 } from '@/src/components/home/purchase-success-modal';
+import RoutineTodayCard from '@/src/components/home/routinetodaycard';
 import { ShopSheet } from '@/src/components/home/shop-sheet';
+import { useDayNightTheme } from '@/src/hooks/use-day-night-theme';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
 import { authService } from '@/src/services/authService';
 import { onboardingService } from '@/src/services/onboardingService';
 import { shopService } from '@/src/services/shopService';
-import { socialService, type SocialNotification } from '@/src/services/socialService';
 import { skinService } from '@/src/services/skinService';
+import { socialService, type SocialNotification } from '@/src/services/socialService';
 import { taskService } from '@/src/services/taskService';
+import type { ShopItem } from '@/src/types/api/shop';
 import type { AvatarLayer } from '@/src/types/api/skin';
 import type { DailyTaskStatus } from '@/src/types/api/task';
-import type { ShopItem } from '@/src/types/api/shop';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
@@ -74,6 +76,7 @@ function getNotificationKey(notification: SocialNotification) {
 
 export default function HomeScreen() {
   const { data } = useOnboarding();
+  const { mode: themeMode, isNight, toggleDayNight, cycleMode } = useDayNightTheme();
   const [profileName, setProfileName] = useState('');
   const displayName = profileName.trim() || data.name.trim() || 'bạn';
   const [currentGoal, setCurrentGoal] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export default function HomeScreen() {
   const [avatarLayers, setAvatarLayers] = useState<AvatarLayer[] | null>(null);
   const [dailyStatus, setDailyStatus] = useState<DailyTaskStatus | null>(null);
   const [isDailyStatusVisible, setIsDailyStatusVisible] = useState(false);
-  const [isDailyStatusLoading, setIsDailyStatusLoading] = useState(false);
+  const [, setIsDailyStatusLoading] = useState(false);
   const [isConfirmingDailyTasks, setIsConfirmingDailyTasks] = useState(false);
 
   const [isShopVisible, setIsShopVisible] = useState(false);
@@ -414,125 +417,172 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}>
-        <View style={styles.headerContainer}>
-          <View style={styles.headerRow}>
-            <Text style={styles.greeting}>Chào {displayName}</Text>
-            <View style={styles.headerActions}>
-              <Pressable accessibilityLabel="Thông báo" onPress={() => void toggleNotifications()} style={styles.notificationButton}>
-                <Ionicons color={Design.colors.black} name="notifications-outline" size={24} />
-                {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
-              </Pressable>
-              <Pressable onPress={() => router.push('/settings' as any)} style={styles.avatar}>
-                <Text style={styles.avatarText}>{displayName.charAt(0).toUpperCase()}</Text>
-              </Pressable>
-            </View>
-          </View>
-          <View style={styles.headerStatsRow}>
-            <View style={styles.streakCard}>
-              <View style={styles.streakIconWrap}>
-                <Animated.View style={animatedFlameStyle}>
-                  <Image
-                    contentFit="contain"
-                    source={
-                      currentStreak > 0
-                        ? require('@/assets/images/streak.png')
-                        : require('@/assets/images/gray_streak.png')
-                    }
-                    style={styles.streakImage}
+    <View style={[styles.rootContainer, { backgroundColor: isNight ? '#0B132B' : '#68B6F2' }]}>
+      <DayNightBackground isNight={isNight} />
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}>
+          <View style={styles.headerContainer}>
+            <View style={styles.headerRow}>
+              <Text
+                numberOfLines={1}
+                style={[styles.greeting, isNight && styles.greetingNight]}>
+                Chào {displayName}
+              </Text>
+              <View style={styles.headerActions}>
+                {/* Nút chuyển đổi Ngày / Đêm */}
+                <Pressable
+                  accessibilityLabel={
+                    themeMode === 'auto'
+                      ? `Chế độ tự động (${isNight ? 'Đêm' : 'Ngày'}). Bấm để chuyển`
+                      : `Chế độ ${isNight ? 'Ban đêm' : 'Ban ngày'}. Bấm để chuyển`
+                  }
+                  accessibilityRole="button"
+                  onPress={toggleDayNight}
+                  onLongPress={cycleMode}
+                  style={({ pressed }) => [
+                    styles.themeToggleButton,
+                    isNight && styles.themeToggleButtonNight,
+                    pressed && { opacity: 0.8 },
+                  ]}>
+                  <Ionicons
+                    color={isNight ? '#FDE047' : '#F59E0B'}
+                    name={isNight ? 'moon' : 'sunny'}
+                    size={16}
                   />
-                </Animated.View>
-              </View>
-              <View style={styles.streakTextWrap}>
-                <Text style={styles.streakLabel}>Chuỗi hiện tại</Text>
-                <Text style={styles.streakValue}>{currentStreak} ngày</Text>
-              </View>
-              <View style={styles.streakDivider} />
-              <View>
-                <Text style={styles.streakLabel}>Kỷ lục</Text>
-                <Text style={styles.streakBest}>{longestStreak} ngày</Text>
-              </View>
-            </View>
-            <View
-              accessibilityLabel={
-                isRubyBalanceLoading
-                  ? 'Đang tải số dư Ruby'
-                  : rubyBalance === null
-                    ? 'Không thể tải số dư Ruby'
-                    : `Số dư Ruby: ${rubyBalance}`
-              }
-              style={styles.rubyCard}>
-              <Image
-                contentFit="contain"
-                source={require('@/assets/images/ruby.png')}
-                style={styles.rubyImage}
-              />
-              <View>
-                {/* <Text style={styles.rubyLabel}>Ruby</Text> */}
-                <Text style={styles.rubyValue}>
-                  {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
-                </Text>
-              </View>
-            </View>
-          </View>
-        </View>
+                  <Text style={[styles.themeToggleText, isNight && styles.themeToggleTextNight]}>
+                    {themeMode === 'auto' ? (isNight ? 'Đêm ⏰' : 'Ngày ⏰') : (isNight ? 'Đêm' : 'Ngày')}
+                  </Text>
+                </Pressable>
 
-        <View style={styles.mascotCard}>
-          <Animated.View style={animatedMascotStyle}>
-            <View accessibilityLabel="Avatar hiện tại" style={styles.mascot}>
-              {avatarLayers ? (
-                avatarLayers.map((layer) => (
-                  <Image
-                    key={`${layer.layerOrder}-${layer.code}`}
-                    contentFit="contain"
-                    source={{ uri: layer.imageUrl }}
-                    style={[
-                      StyleSheet.absoluteFill,
-                      {
-                        transform: [
-                          { translateY: layer.slot === 'BASE' ? 0 : -19 },
-                        ],
-                        zIndex: layer.layerOrder,
-                      },
-                    ]}
+                <Pressable
+                  accessibilityLabel="Thông báo"
+                  onPress={() => void toggleNotifications()}
+                  style={[styles.notificationButton, isNight && styles.notificationButtonNight]}>
+                  <Ionicons
+                    color={isNight ? Design.colors.white : Design.colors.black}
+                    name="notifications-outline"
+                    size={22}
                   />
-                ))
-              ) : (
+                  {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
+                </Pressable>
+                <Pressable
+                  onPress={() => router.push('/settings' as any)}
+                  style={[styles.avatar, isNight && styles.avatarNight]}>
+                  <Text style={[styles.avatarText, isNight && styles.avatarTextNight]}>
+                    {displayName.charAt(0).toUpperCase()}
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+            <View style={styles.headerStatsRow}>
+              <View style={[styles.streakCard, isNight && styles.streakCardNight]}>
+                <View style={styles.streakIconWrap}>
+                  <Animated.View style={animatedFlameStyle}>
+                    <Image
+                      contentFit="contain"
+                      source={
+                        currentStreak > 0
+                          ? require('@/assets/images/streak.png')
+                          : require('@/assets/images/gray_streak.png')
+                      }
+                      style={styles.streakImage}
+                    />
+                  </Animated.View>
+                </View>
+                <View style={styles.streakTextWrap}>
+                  <Text style={styles.streakValue}>{currentStreak}</Text>
+                </View>
+                <View style={styles.streakDivider} />
+                <View>
+                  <Text style={styles.streakLabel}>Kỷ lục</Text>
+                  <Text style={styles.streakBest}>{longestStreak}</Text>
+                </View>
+              </View>
+              <View
+                accessibilityLabel={
+                  isRubyBalanceLoading
+                    ? 'Đang tải số dư Ruby'
+                    : rubyBalance === null
+                      ? 'Không thể tải số dư Ruby'
+                      : `Số dư Ruby: ${rubyBalance}`
+                }
+                style={[styles.rubyCard, isNight && styles.rubyCardNight]}>
                 <Image
                   contentFit="contain"
-                  source={require('@/assets/images/onboarding/cat-loading.png')}
-                  style={StyleSheet.absoluteFill}
+                  source={require('@/assets/images/ruby.png')}
+                  style={styles.rubyImage}
                 />
-              )}
-            </View>
-          </Animated.View>
-        </View>
-
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => router.push('/wardrobe' as any)}
-          style={({ pressed }) => [styles.wardrobeButton, pressed && { opacity: 0.8 }]}>
-          <Ionicons color={Design.colors.primaryGreen} name="shirt-outline" size={22} />
-          <Text style={styles.wardrobeButtonText}>Kho trang phục</Text>
-          <Ionicons color={Design.colors.primaryGreen} name="chevron-forward" size={18} />
-        </Pressable>
-
-        <RoutineTodayCard goalId={currentGoalId} />
-
-        <View style={styles.weekCard}>
-
-          <View style={styles.weekHeader}>
-            <Text style={styles.weekEmoji}>🌙</Text>
-            <View style={styles.weekTextWrap}>
-              <Text style={styles.weekTitle}>{currentGoal ?? 'Đang tải mục tiêu...'}</Text>
+                <View>
+                  {/* <Text style={styles.rubyLabel}>Ruby</Text> */}
+                  <Text style={styles.rubyValue}>
+                    {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
+                  </Text>
+                </View>
+              </View>
             </View>
           </View>
 
-        </View>
-      </ScrollView>
+          <View style={styles.mascotCard}>
+            <Animated.View style={animatedMascotStyle}>
+              <View accessibilityLabel="Avatar hiện tại" style={styles.mascot}>
+                {avatarLayers ? (
+                  avatarLayers.map((layer) => (
+                    <Image
+                      key={`${layer.layerOrder}-${layer.code}`}
+                      contentFit="contain"
+                      source={{ uri: layer.imageUrl }}
+                      style={[
+                        StyleSheet.absoluteFill,
+                        {
+                          transform: [
+                            { translateY: layer.slot === 'BASE' ? 0 : -19 },
+                          ],
+                          zIndex: layer.layerOrder,
+                        },
+                      ]}
+                    />
+                  ))
+                ) : (
+                  <Image
+                    contentFit="contain"
+                    source={require('@/assets/images/onboarding/cat-loading.png')}
+                    style={StyleSheet.absoluteFill}
+                  />
+                )}
+              </View>
+            </Animated.View>
+            {/* Đổ bóng nhẹ chân linh vật trên thảm cỏ */}
+            <View style={[styles.mascotShadow, isNight && styles.mascotShadowNight]} />
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/wardrobe' as any)}
+            style={({ pressed }) => [
+              styles.wardrobeButton,
+              isNight && styles.wardrobeButtonNight,
+              pressed && { opacity: 0.8 },
+            ]}>
+            <Ionicons color={Design.colors.primaryGreen} name="shirt-outline" size={22} />
+            <Text style={styles.wardrobeButtonText}>Kho trang phục</Text>
+            <Ionicons color={Design.colors.primaryGreen} name="chevron-forward" size={18} />
+          </Pressable>
+
+          <RoutineTodayCard goalId={currentGoalId} />
+
+          <View style={styles.weekCard}>
+
+            <View style={styles.weekHeader}>
+              <Text style={styles.weekEmoji}>🌙</Text>
+              <View style={styles.weekTextWrap}>
+                <Text style={styles.weekTitle}>{currentGoal ?? 'Đang tải mục tiêu...'}</Text>
+              </View>
+            </View>
+
+          </View>
+        </ScrollView>
 
       <Modal
         animationType="fade"
@@ -671,14 +721,18 @@ export default function HomeScreen() {
         swapSuccessVisible={false}
         yesterdayTasks={dailyStatus?.yesterdayTasks ?? []}
       />
-    </SafeAreaView>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  rootContainer: {
+    flex: 1,
+  },
   safeArea: {
     flex: 1,
-    backgroundColor: Design.colors.white,
+    backgroundColor: 'transparent',
   },
   scrollContent: {
     flexGrow: 1,
@@ -703,14 +757,58 @@ const styles = StyleSheet.create({
   headerActions: {
     alignItems: 'center',
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
+  },
+  themeToggleButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+    borderRadius: 20,
+    borderWidth: 1,
+    elevation: 2,
+    flexDirection: 'row',
+    gap: 4,
+    minHeight: 36,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+  },
+  themeToggleButtonNight: {
+    backgroundColor: 'rgba(30, 41, 59, 0.82)',
+    borderColor: 'rgba(253, 224, 71, 0.45)',
+    elevation: 3,
+    shadowOpacity: 0.25,
+  },
+  themeToggleText: {
+    color: '#92400E',
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 11,
+  },
+  themeToggleTextNight: {
+    color: '#FEF08A',
   },
   notificationButton: {
     alignItems: 'center',
-    height: 40,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    borderColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 18,
+    borderWidth: 1,
+    elevation: 2,
+    height: 36,
     justifyContent: 'center',
     position: 'relative',
-    width: 40,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.06,
+    shadowRadius: 3,
+    width: 36,
+  },
+  notificationButtonNight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   notificationBadge: {
     backgroundColor: '#E34D59',
@@ -719,15 +817,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: 10,
     position: 'absolute',
-    right: 6,
-    top: 5,
+    right: 5,
+    top: 4,
     width: 10,
   },
   greeting: {
     fontFamily: FontFamily.beVietnamSemiBold,
     fontSize: Design.fontSize.h2 - 2,
-    color: Design.colors.black,
-    marginBottom: 8,
+    color: '#0F291E',
+    marginBottom: 4,
+    flexShrink: 1,
+  },
+  greetingNight: {
+    color: '#FFFFFF',
+    textShadowColor: 'rgba(0, 0, 0, 0.75)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   streakCard: {
     flex: 1,
@@ -738,11 +843,23 @@ const styles = StyleSheet.create({
     borderColor: '#F5D8CE',
     paddingHorizontal: 9,
     paddingVertical: 7,
-    backgroundColor: '#FFF7F3',
+    backgroundColor: 'rgba(255, 247, 243, 0.94)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  streakCardNight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    borderColor: 'rgba(255, 255, 255, 0.98)',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
   rubyCard: {
     alignItems: 'center',
-    backgroundColor: '#FFF4F6',
+    backgroundColor: 'rgba(255, 244, 246, 0.94)',
     borderColor: '#F3D3DA',
     borderRadius: 18,
     borderWidth: 1,
@@ -750,6 +867,18 @@ const styles = StyleSheet.create({
     gap: 6,
     minHeight: 48,
     paddingHorizontal: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  rubyCardNight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    borderColor: 'rgba(255, 255, 255, 0.98)',
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 3,
   },
   rubyLabel: {
     color: '#9B6A5B',
@@ -803,29 +932,53 @@ const styles = StyleSheet.create({
     color: Design.colors.black,
   },
   avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: '#F3D9C6',
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.9)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  avatarNight: {
+    borderColor: 'rgba(255, 255, 255, 0.65)',
   },
   avatarText: {
     fontFamily: FontFamily.beVietnamSemiBold,
     fontSize: Design.fontSize.body,
     color: Design.colors.black,
   },
+  avatarTextNight: {
+    color: Design.colors.black,
+  },
   mascotCard: {
     alignItems: 'center',
-    marginVertical: 24,
+    marginVertical: 18,
   },
   mascot: {
     width: 330,
     height: 340,
   },
+  mascotShadow: {
+    width: 190,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(15, 60, 30, 0.18)',
+    alignSelf: 'center',
+    marginTop: -16,
+  },
+  mascotShadowNight: {
+    backgroundColor: 'rgba(0, 0, 0, 0.38)',
+  },
   wardrobeButton: {
     alignItems: 'center',
-    backgroundColor: '#F0F7EF',
+    backgroundColor: 'rgba(240, 247, 239, 0.94)',
     borderColor: '#D6E8D3',
     borderRadius: 16,
     borderWidth: 1,
@@ -834,6 +987,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 16,
     paddingVertical: 14,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  wardrobeButtonNight: {
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    borderColor: '#A7F3D0',
+    shadowOpacity: 0.12,
   },
   wardrobeButtonText: {
     color: Design.colors.primaryGreen,
