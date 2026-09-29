@@ -73,6 +73,38 @@ Quy tắc:
 - API DTO đặt trong `src/types/api/task.ts` hoặc file API tương ứng.
 - Không đưa task UI props vào `src/types/api`.
 
+## Home feature
+
+Home route chỉ nên compose màn hình và phối hợp dữ liệu/điều hướng:
+
+```text
+app/(tabs)/index.tsx
+src/features/home/
+  home.styles.ts
+  components/
+    home-header.tsx
+    home-avatar-stage.tsx
+    home-routine-section.tsx
+    home-bottom-navigation.tsx
+    home-notifications-modal.tsx
+  hooks/
+    use-home-avatar.ts
+    use-home-daily-tasks.ts
+    use-home-dashboard.ts
+    use-home-notifications.ts
+  types/
+    home-components.ts
+  utils/
+    home-notification-utils.ts
+```
+
+Quy tắc:
+
+- Component Home render một vùng UI rõ ràng; không gọi service trực tiếp.
+- Hook Home sở hữu logic tải dữ liệu/stream và trạng thái liên quan theo chức năng.
+- Type props riêng của Home đặt trong `src/features/home/types/`.
+- Dùng lại `DailyTaskModals`, `ShopSheet` và các component home dùng chung sẵn có; không sao chép UI.
+
 ## Cache và tài khoản người dùng
 
 Cache local phải tách theo `userId`. Không dùng key AsyncStorage chung cho nhiều tài khoản.

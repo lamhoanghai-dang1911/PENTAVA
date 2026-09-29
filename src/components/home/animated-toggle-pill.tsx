@@ -1,6 +1,6 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import * as Haptics from 'expo-haptics';
-import React, { useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import {
   LayoutChangeEvent,
   Pressable,
