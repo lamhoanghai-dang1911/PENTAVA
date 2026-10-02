@@ -59,8 +59,7 @@ export function AnimatedTogglePill({
 
   const handlePress = (tab: ToggleTab) => {
     if (isNavigatingRef.current) return;
-    if (activeTab === tab) return;
-
+    
     try {
       void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch {

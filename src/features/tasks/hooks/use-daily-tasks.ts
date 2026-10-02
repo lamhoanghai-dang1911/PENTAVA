@@ -75,7 +75,7 @@ export function useDailyTasks({
           startDate,
           endDate,
         );
-        if (isActive && cachedHistory) {
+        if (isActive && cachedHistory?.length) {
           setTaskHistory(cachedHistory);
           setIsLoading(false);
           return;
@@ -115,10 +115,7 @@ export function useDailyTasks({
         const userId = await getCurrentUserId();
         cachedStatus = await getCachedDailyStatus(userId, goalId);
         const cachedTasks = cachedStatus
-          ? [
-            ...cachedStatus.todayTasks,
-            ...cachedStatus.yesterdayTasks,
-          ]
+          ? [...cachedStatus.todayTasks, ...cachedStatus.yesterdayTasks]
           : [];
         cacheHasProgressIds = cachedTasks.every(
           (task) => task.progressId != null,
@@ -191,6 +188,7 @@ export function useDailyTasks({
         );
 
       setDailyStatus(status);
+      //fix cái này, có thể lỗi sai khi không bắt được ngày hôm qua nằm ở đây.
       await cacheDailyStatus(await getCurrentUserId(), currentGoalId, status);
       if (status.hasConfirmedToday) return;
       if (status.yesterdayTasks.length > 0) setIsDailyStatusVisible(true);
@@ -245,7 +243,9 @@ export function useDailyTasks({
         : null;
       const serverStatus = statusResponse?.dailyTaskStatus;
       if (!serverStatus) {
-        throw new Error("Không nhận được trạng thái nhiệm vụ sau khi hoàn thành.");
+        throw new Error(
+          "Không nhận được trạng thái nhiệm vụ sau khi hoàn thành.",
+        );
       }
 
       // POST complete is authoritative. Merge it into GET in case daily-status
@@ -282,13 +282,13 @@ export function useDailyTasks({
       if (/đã (được )?hoàn thành trước đó/i.test(errorMessage)) {
         const updatedStatus = dailyStatus
           ? {
-            ...dailyStatus,
-            todayTasks: dailyStatus.todayTasks.map((item) =>
-              item.progressId === task.progressId
-                ? { ...item, isCompleted: true }
-                : item,
-            ),
-          }
+              ...dailyStatus,
+              todayTasks: dailyStatus.todayTasks.map((item) =>
+                item.progressId === task.progressId
+                  ? { ...item, isCompleted: true }
+                  : item,
+              ),
+            }
           : null;
 
         setDailyStatus(updatedStatus);
