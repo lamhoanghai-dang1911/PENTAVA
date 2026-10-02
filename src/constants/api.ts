@@ -34,9 +34,11 @@ export const API_ENDPOINTS = {
   },
   SHOP: {
     ITEMS: "/api/shop/items",
+    THUMBNAILS: "/api/shop/thumbnails",
     BUY_ITEM: (skinItemId: number) => `/api/shop/items/${skinItemId}/buy`,
     MY_WALLET: "/api/shop/wallet/me",
     INIT_TOPUP: "/api/shop/topup/init",
+    TOPUP_PACKAGES: "/api/shop/topup/packages",
     TOPUP_HISTORY: "/api/shop/topup/history",
   },
   SKIN: {

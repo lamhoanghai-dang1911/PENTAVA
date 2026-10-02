@@ -20,6 +20,14 @@ function getErrorMessage(error: unknown, fallback: string) {
     return error instanceof Error ? error.message : fallback;
 }
 
+function getShopThumbnailLayers(item: ShopItem) {
+    return Array.from(new Set([
+        ...(item.thumbnailLayers ?? []),
+        item.thumbnailUrl ?? item.imageUrl,
+    ].filter((imageUrl): imageUrl is string =>
+        Boolean(imageUrl) && imageUrl !== item.itemBackgroundUrl)));
+}
+
 export function ShopSheet({
     visible,
     balance,
@@ -122,24 +130,27 @@ export function ShopSheet({
                         <Pressable
                             accessibilityRole="button"
                             accessibilityLabel="Đóng cửa hàng"
-                            hitSlop={8}
-                            onPress={onClose}>
-                            <Ionicons color={Design.colors.black} name="chevron-back" size={22} />
+                            hitSlop={10}
+                            onPress={onClose}
+                            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
+                            <Ionicons color="#1E293B" name="chevron-back" size={22} />
                         </Pressable>
-                        <Text style={styles.title}>Cửa hàng vật phẩm</Text>
-                        <View style={styles.headerSpacer} />
+                        <View style={styles.titleWrap}>
+                            <Text style={styles.title}>Cửa hàng PENTAVA</Text>
+                            <Text style={styles.subtitle}>Thời trang cho bé mèo cưng ✨</Text>
+                        </View>
+                        <View style={styles.balanceChip}>
+                            <Image
+                                contentFit="contain"
+                                source={require('@/assets/images/ruby.png')}
+                                style={styles.rubyImage}
+                            />
+                            <Text style={styles.balanceText}>
+                                {isLoadingWallet && balance === null ? '...' : `${balance ?? 0}`}
+                            </Text>
+                        </View>
                     </View>
 
-                    <View style={styles.balanceChip}>
-                        <Image
-                            contentFit="contain"
-                            source={require('@/assets/images/ruby.png')}
-                            style={styles.rubyImage}
-                        />
-                        <Text style={styles.balanceText}>
-                            {isLoadingWallet && balance === null ? 'Đang tải Ruby...' : `${balance ?? '—'}`}
-                        </Text>
-                    </View>
                     {walletError ? (
                         <View style={styles.walletErrorRow}>
                             <Text accessibilityRole="alert" style={styles.errorText}>{walletError}</Text>
@@ -149,7 +160,6 @@ export function ShopSheet({
                         </View>
                     ) : null}
 
-                    <Text style={styles.sectionTitle}>Skin cửa hàng</Text>
                     <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
                         {isLoadingItems ? (
                             <ActivityIndicator color={Design.colors.primaryGreen} size="large" style={styles.loading} />
@@ -174,28 +184,42 @@ export function ShopSheet({
                                     styles.productBadge,
                                     item.owned ? styles.ownedBadge : styles.notOwnedBadge,
                                 ]}>
+                                    <Ionicons
+                                        color={item.owned ? '#059669' : '#D97706'}
+                                        name={item.owned ? 'checkmark-circle' : 'sparkles'}
+                                        size={11}
+                                    />
                                     <Text style={[
                                         styles.productBadgeText,
                                         item.owned ? styles.ownedBadgeText : styles.notOwnedBadgeText,
                                     ]}>
-                                        {item.owned ? 'Đã sở hữu' : 'Chưa sở hữu'}
+                                        {item.owned ? 'Đã có' : 'Mới'}
                                     </Text>
                                 </View>
-                                <Image
-                                    contentFit="contain"
-                                    source={{ uri: item.imageUrl }}
-                                    style={styles.productImage}
-                                />
-                                <Text numberOfLines={2} style={styles.productName}>{item.name}</Text>
+                                <View style={styles.imageShowcase}>
+                                    {getShopThumbnailLayers(item).map((imageUrl, layerIndex) => (
+                                        <Image
+                                            key={`${item.id}-${layerIndex}`}
+                                            contentFit="contain"
+                                            source={{ uri: imageUrl }}
+                                            style={[
+                                                styles.thumbnailLayer,
+                                                layerIndex > 0 && styles.thumbnailItemLayer,
+                                                { zIndex: layerIndex },
+                                            ]}
+                                        />
+                                    ))}
+                                </View>
+                                <Text numberOfLines={1} style={styles.productName}>{item.name}</Text>
                                 <Text numberOfLines={2} style={styles.productDescription}>{item.description}</Text>
                                 <View style={styles.productBottomRow}>
                                     <View style={styles.productPriceWrap}>
-                                        <Text style={styles.productPrice}>{item.priceRuby}</Text>
                                         <Image
                                             contentFit="contain"
                                             source={require('@/assets/images/ruby.png')}
                                             style={styles.productRubyIcon}
                                         />
+                                        <Text style={styles.productPrice}>{item.priceRuby}</Text>
                                     </View>
                                     <Pressable
                                         accessibilityRole="button"
@@ -217,7 +241,7 @@ export function ShopSheet({
                                                 styles.buyButtonText,
                                                 item.owned && styles.buyButtonOwnedText,
                                             ]}>
-                                                {item.owned ? 'Đã sở hữu' : 'Mua'}
+                                                {item.owned ? 'Đã sở hữu' : 'Mua ngay'}
                                             </Text>
                                         )}
                                     </Pressable>
@@ -234,62 +258,84 @@ export function ShopSheet({
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.35)',
+        backgroundColor: 'rgba(15, 23, 42, 0.45)',
         justifyContent: 'flex-end',
     },
     backdrop: {
         flex: 1,
     },
     sheet: {
-        height: '75%',
-        backgroundColor: Design.colors.white,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingHorizontal: 22,
+        height: '78%',
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 28,
+        borderTopRightRadius: 28,
+        paddingHorizontal: 20,
         paddingTop: 10,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 10,
     },
     grabber: {
         alignSelf: 'center',
-        width: 42,
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: '#DDDDDD',
+        width: 44,
+        height: 5,
+        borderRadius: 3,
+        backgroundColor: '#E2E8F0',
         marginBottom: 12,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 12,
+        marginBottom: 14,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: '#F1F5F9',
     },
-    headerSpacer: {
-        width: 22,
+    backButton: {
+        width: 38,
+        height: 38,
+        borderRadius: 19,
+        backgroundColor: '#F1F5F9',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    titleWrap: {
+        flex: 1,
+        marginLeft: 10,
     },
     title: {
         fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.title,
-        color: Design.colors.black,
+        fontSize: 17,
+        color: '#0F291E',
+    },
+    subtitle: {
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: 11,
+        color: '#64748B',
+        marginTop: 1,
     },
     balanceChip: {
-        alignSelf: 'flex-start',
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        borderWidth: 1,
-        borderColor: Design.colors.optionBorder,
+        gap: 5,
+        borderWidth: 1.5,
+        borderColor: '#FDA4AF',
         borderRadius: 20,
         paddingHorizontal: 10,
         paddingVertical: 4,
-        marginBottom: 14,
+        backgroundColor: '#FFF1F2',
     },
     balanceText: {
-        fontFamily: FontFamily.beVietnamMedium,
-        fontSize: Design.fontSize.caption + 2,
-        color: '#D9556D',
+        fontFamily: FontFamily.poppinsSemiBold,
+        fontSize: 13,
+        color: '#E11D48',
     },
     rubyImage: {
-        height: 20,
-        width: 20,
+        height: 18,
+        width: 18,
     },
     errorText: {
         color: '#B33A3A',
@@ -302,17 +348,12 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 8,
     },
-    sectionTitle: {
-        fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.body,
-        color: Design.colors.black,
-        marginBottom: 12,
-    },
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        paddingBottom: 30,
+        paddingBottom: 36,
+        paddingTop: 4,
     },
     loading: {
         paddingVertical: 40,
@@ -332,9 +373,9 @@ const styles = StyleSheet.create({
     },
     retryButton: {
         backgroundColor: Design.colors.primaryGreen,
-        borderRadius: 8,
+        borderRadius: 12,
         marginTop: 8,
-        paddingHorizontal: 14,
+        paddingHorizontal: 16,
         paddingVertical: 8,
     },
     retryButtonText: {
@@ -343,103 +384,139 @@ const styles = StyleSheet.create({
         fontSize: Design.fontSize.caption,
     },
     productCard: {
-        width: '47.5%',
-        borderWidth: 1,
-        borderColor: '#E9E9E9',
-        borderRadius: 14,
-        paddingHorizontal: 12,
-        paddingTop: 10,
-        paddingBottom: 12,
+        width: '48%',
+        borderWidth: 1.5,
+        borderColor: '#E2EFE6',
+        borderRadius: 18,
+        padding: 12,
         marginBottom: 14,
-        backgroundColor: Design.colors.white,
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 8,
+        elevation: 2,
     },
     productBadge: {
-        alignSelf: 'flex-start',
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        zIndex: 2,
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 3,
         borderRadius: 8,
         paddingHorizontal: 7,
-        paddingVertical: 2,
-        marginBottom: 8,
+        paddingVertical: 2.5,
     },
     productBadgeText: {
-        fontFamily: FontFamily.beVietnamMedium,
-        fontSize: Design.fontSize.caption - 1,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 10,
     },
     ownedBadge: {
-        backgroundColor: '#EAF4EE',
+        backgroundColor: '#ECFDF5',
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
     },
     ownedBadgeText: {
-        color: Design.colors.primaryGreen,
+        color: '#059669',
     },
     notOwnedBadge: {
-        backgroundColor: '#FCE8E8',
+        backgroundColor: '#FEF3C7',
+        borderWidth: 1,
+        borderColor: '#FDE68A',
     },
     notOwnedBadgeText: {
-        color: '#C62828',
+        color: '#D97706',
+    },
+    imageShowcase: {
+        width: '100%',
+        height: 100,
+        borderRadius: 14,
+        backgroundColor: '#F8FAF8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 18,
+        marginBottom: 8,
+        overflow: 'hidden',
     },
     productImage: {
-        alignSelf: 'center',
-        height: 96,
-        marginBottom: 8,
+        height: 84,
+        width: '84%',
+    },
+    thumbnailLayer: {
+        height: '100%',
+        position: 'absolute',
         width: '100%',
+    },
+    thumbnailItemLayer: {
+        transform: [{ scale: 2.1 }],
     },
     productName: {
         fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.caption + 2,
-        color: Design.colors.black,
-        marginBottom: 4,
-        minHeight: 36,
+        fontSize: 13,
+        color: '#0F291E',
+        marginBottom: 2,
     },
     productDescription: {
-        color: Design.colors.mutedText,
+        color: '#64748B',
         fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.caption - 1,
+        fontSize: 10.5,
+        lineHeight: 14,
         marginBottom: 8,
-        minHeight: 30,
+        minHeight: 28,
     },
     productBottomRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        marginTop: 2,
     },
     buyButton: {
         alignItems: 'center',
         backgroundColor: Design.colors.primaryGreen,
-        borderRadius: 8,
+        borderRadius: 10,
         justifyContent: 'center',
-        minHeight: 32,
-        minWidth: 60,
-        paddingHorizontal: 10,
+        minHeight: 30,
+        paddingHorizontal: 12,
         paddingVertical: 5,
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 3,
+        elevation: 2,
     },
     buyButtonOwned: {
-        backgroundColor: '#EAF4EE',
+        backgroundColor: '#F1F5F9',
+        shadowOpacity: 0,
+        elevation: 0,
     },
     buyButtonDisabled: {
         opacity: 0.6,
     },
     buyButtonPressed: {
-        transform: [{ scale: 0.96 }],
+        transform: [{ scale: 0.95 }],
     },
     buyButtonText: {
         color: Design.colors.white,
-        fontFamily: FontFamily.beVietnamMedium,
-        fontSize: Design.fontSize.caption,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 11,
     },
     buyButtonOwnedText: {
-        color: Design.colors.primaryGreen,
+        color: '#94A3B8',
     },
     productPrice: {
-        fontFamily: FontFamily.beVietnamMedium,
-        fontSize: Design.fontSize.caption + 1,
-        color: '#D9556D',
+        fontFamily: FontFamily.poppinsSemiBold,
+        fontSize: 13,
+        color: '#E11D48',
     },
     productPriceWrap: {
         alignItems: 'center',
         flexDirection: 'row',
-        gap: 4,
+        gap: 3,
     },
     productRubyIcon: {
-        height: 18,
-        width: 18,
+        height: 16,
+        width: 16,
     },
 });

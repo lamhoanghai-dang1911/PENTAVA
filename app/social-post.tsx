@@ -2,8 +2,8 @@ import { Design, FontFamily } from "@/src/constants/design";
 import { cinemaService } from "@/src/services/cinemaService";
 import type { PrivacyMode } from "@/src/types/api/cinema";
 import { Ionicons } from "@expo/vector-icons";
-import { useVideoPlayer, VideoView } from "expo-video";
 import { router, useLocalSearchParams } from "expo-router";
+import { useVideoPlayer, VideoView } from "expo-video";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -113,7 +113,7 @@ export default function SocialPostScreen() {
             value={caption}
           />
 
-          <Text style={styles.sectionTitle}>Tag</Text>
+          <Text style={styles.sectionTitle}>Hashtag</Text>
           <TextInput
             onChangeText={setTags}
             placeholder="#pentava #hanhtrinhcuatoi"

@@ -1,15 +1,15 @@
-import DayNightBackground from '@/src/components/home/day-night-background';
 import { AnimatedTogglePill } from '@/src/components/home/animated-toggle-pill';
+import DayNightBackground from '@/src/components/home/day-night-background';
 import {
   InsufficientRubyModal,
   PurchaseSuccessModal,
 } from '@/src/components/home/purchase-success-modal';
 import RoutineTodayCard from '@/src/components/home/routinetodaycard';
 import { ShopSheet } from '@/src/components/home/shop-sheet';
-import { useDayNightTheme } from '@/src/hooks/use-day-night-theme';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
+import { useDayNightTheme } from '@/src/hooks/use-day-night-theme';
 import { authService } from '@/src/services/authService';
 import { onboardingService } from '@/src/services/onboardingService';
 import { shopService } from '@/src/services/shopService';
@@ -33,6 +33,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useVideoPlayer, VideoView } from 'expo-video';
 
 function getNotificationMessage(notification: SocialNotification) {
   if (notification.message) return notification.message;
@@ -74,6 +75,49 @@ function getNotificationKey(notification: SocialNotification) {
   return `${identity}|${getNotificationMessage(notification)}`;
 }
 
+function AvatarBaseAnimation({ layer }: { layer: AvatarLayer }) {
+  const player = useVideoPlayer(layer.imageUrl, (videoPlayer) => {
+    videoPlayer.loop = true;
+    videoPlayer.muted = true;
+    videoPlayer.play();
+  });
+
+  return (
+    <VideoView
+      contentFit="contain"
+      nativeControls={false}
+      player={player}
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          transform: [{ translateY: layer.slot === 'BASE' ? 0 : -20 }],
+          zIndex: layer.layerOrder,
+        },
+      ]}
+      surfaceType="textureView"
+    />
+  );
+}
+
+function AvatarLayerView({ layer }: { layer: AvatarLayer }) {
+  if (layer.slot === 'BASE') {
+    return <AvatarBaseAnimation layer={layer} />;
+  }
+
+  return (
+    <Image
+      contentFit="contain"
+      source={{ uri: layer.imageUrl }}
+      style={[
+        StyleSheet.absoluteFill,
+        {
+          transform: [{ translateY: -20 }],
+          zIndex: layer.layerOrder,
+        },
+      ]}
+    />
+  );
+}
 
 export default function HomeScreen() {
   const { data } = useOnboarding();
@@ -106,18 +150,19 @@ export default function HomeScreen() {
   const flameScale = useSharedValue(1);
 
   useEffect(() => {
+    // Hiệu ứng thở nhẹ nhàng, giữ cho chân chú mèo đứng vững trên thảm cỏ không bị bay lên
     mascotFloatY.value = withRepeat(
       withSequence(
-        withTiming(-7, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
-        withTiming(0, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+        withTiming(-1.5, { duration: 2200, easing: Easing.inOut(Easing.quad) }),
+        withTiming(0, { duration: 2200, easing: Easing.inOut(Easing.quad) }),
       ),
       -1,
       true,
     );
     mascotScale.value = withRepeat(
       withSequence(
-        withTiming(1.025, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
-        withTiming(1.0, { duration: 1800, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1.012, { duration: 2200, easing: Easing.inOut(Easing.quad) }),
+        withTiming(1.0, { duration: 2200, easing: Easing.inOut(Easing.quad) }),
       ),
       -1,
       true,
@@ -143,9 +188,12 @@ export default function HomeScreen() {
     transform: [{ scale: flameScale.value }],
   }));
 
+  const [toggleKey, setToggleKey] = useState(0);
+
   useFocusEffect(
     useCallback(() => {
       let isFocused = true;
+      setToggleKey((prev) => prev + 1);
 
       void skinService
         .getMyAvatar()
@@ -507,7 +555,7 @@ export default function HomeScreen() {
             {!isImmersiveView && (
               <View style={styles.headerStatsRow}>
                 {/* Streak flame & value */}
-                <View style={styles.statPill}>
+                <View style={[styles.statPill, isNight && styles.statPillNight]}>
                   <Animated.View style={animatedFlameStyle}>
                     <Image
                       contentFit="contain"
@@ -524,16 +572,23 @@ export default function HomeScreen() {
                   </Text>
                 </View>
 
-                {/* Ruby icon & value */}
-                <View
+                {/* Ruby icon, value & plus button */}
+                <Pressable
                   accessibilityLabel={
                     isRubyBalanceLoading
                       ? 'Đang tải số dư Ruby'
                       : rubyBalance === null
                         ? 'Không thể tải số dư Ruby'
-                        : `Số dư Ruby: ${rubyBalance}`
+                        : `Số dư Ruby: ${rubyBalance}. Nhấn để nạp thêm Ruby`
                   }
-                  style={styles.statPill}>
+                  accessibilityRole="button"
+                  onPress={() => router.push('/ruby-topup' as any)}
+                  style={({ pressed }) => [
+                    styles.statPill,
+                    styles.rubyPill,
+                    isNight && styles.statPillNight,
+                    pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+                  ]}>
                   <Image
                     contentFit="contain"
                     source={require('@/assets/images/ruby.png')}
@@ -542,7 +597,10 @@ export default function HomeScreen() {
                   <Text style={[styles.statValue, styles.rubyValue, isNight && styles.rubyValueNight]}>
                     {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
                   </Text>
-                </View>
+                  <View style={styles.plusButtonCircle}>
+                    <Ionicons color="#FFFFFF" name="add" size={14} />
+                  </View>
+                </Pressable>
               </View>
             )}
           </View>
@@ -553,19 +611,9 @@ export default function HomeScreen() {
               <View accessibilityLabel="Avatar hiện tại" style={styles.mascot}>
                 {avatarLayers ? (
                   avatarLayers.map((layer) => (
-                    <Image
+                    <AvatarLayerView
                       key={`${layer.layerOrder}-${layer.code}`}
-                      contentFit="contain"
-                      source={{ uri: layer.imageUrl }}
-                      style={[
-                        StyleSheet.absoluteFill,
-                        {
-                          transform: [
-                            { translateY: layer.slot === 'BASE' ? 0 : -19 },
-                          ],
-                          zIndex: layer.layerOrder,
-                        },
-                      ]}
+                      layer={layer}
                     />
                   ))
                 ) : (
@@ -577,8 +625,6 @@ export default function HomeScreen() {
                 )}
               </View>
             </Animated.View>
-            {/* Đổ bóng nhẹ chân linh vật trên thảm cỏ */}
-            <View style={[styles.mascotShadow, isNight && styles.mascotShadowNight]} />
           </View>
 
           {!isImmersiveView ? (
@@ -601,7 +647,7 @@ export default function HomeScreen() {
               </Pressable>
 
               {/* Routine hôm nay nằm ngay sát bên trên thanh toggle */}
-              <RoutineTodayCard goalId={currentGoalId} />
+              <RoutineTodayCard goalId={currentGoalId} isNight={isNight} />
             </View>
           ) : (
             <Pressable
@@ -624,135 +670,136 @@ export default function HomeScreen() {
           )}
         </ScrollView>
 
-      <Modal
-        animationType="fade"
-        onRequestClose={() => void toggleNotifications()}
-        presentationStyle="fullScreen"
-        statusBarTranslucent={false}
-        visible={isNotificationsVisible}>
-        <SafeAreaView edges={['right', 'bottom', 'left']} style={styles.notificationModal}>
-          <View style={styles.notificationHeader}>
-            <Text style={styles.notificationTitle}>Thông báo</Text>
-            <View style={styles.notificationHeaderActions}>
-              <Pressable
-                accessibilityLabel="Xem lời mời kết bạn"
-                onPress={() => {
-                  setIsNotificationsVisible(false);
-                  router.push('/friend-requests');
-                }}
-                style={styles.friendRequestsLink}>
-                <Ionicons color={Design.colors.primaryGreen} name="people-outline" size={18} />
-                <Text style={styles.friendRequestsLinkText}>Lời mời</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel="Đánh dấu tất cả thông báo đã đọc"
-                disabled={unreadNotificationCount === 0}
-                onPress={() => void markAllNotificationsAsRead()}
-                style={styles.markAllLink}>
-                <Text style={styles.markAllLinkText}>Đã đọc hết</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel="Đóng thông báo"
-                accessibilityRole="button"
-                hitSlop={12}
-                onPress={() => void toggleNotifications()}
-                style={styles.notificationCloseButton}>
-                <Ionicons color={Design.colors.black} name="close" size={24} />
-              </Pressable>
-            </View>
-          </View>
-          {notificationError ? <Text style={styles.notificationError}>{notificationError}</Text> : null}
-          {notifications.length === 0 ? (
-            <Text style={styles.emptyNotifications}>Đang chờ thông báo mới...</Text>
-          ) : (
-            <ScrollView>
-              {notifications.map((notification, index) => (
+        <Modal
+          animationType="fade"
+          onRequestClose={() => void toggleNotifications()}
+          presentationStyle="fullScreen"
+          statusBarTranslucent={false}
+          visible={isNotificationsVisible}>
+          <SafeAreaView edges={['right', 'bottom', 'left']} style={styles.notificationModal}>
+            <View style={styles.notificationHeader}>
+              <Text style={styles.notificationTitle}>Thông báo</Text>
+              <View style={styles.notificationHeaderActions}>
                 <Pressable
-                  key={getNotificationKey(notification)}
-                  accessibilityRole="button"
-                  onPress={() => void markNotificationAsRead(notification)}
-                  style={styles.notificationItem}>
-                  <Ionicons color={Design.colors.primaryGreen} name="notifications-outline" size={20} />
-                  <Text style={[styles.notificationText, notification.read === false && styles.unreadNotificationText]}>
-                    {getNotificationMessage(notification)}
-                  </Text>
+                  accessibilityLabel="Xem lời mời kết bạn"
+                  onPress={() => {
+                    setIsNotificationsVisible(false);
+                    router.push('/friend-requests');
+                  }}
+                  style={styles.friendRequestsLink}>
+                  <Ionicons color={Design.colors.primaryGreen} name="people-outline" size={18} />
+                  <Text style={styles.friendRequestsLinkText}>Lời mời</Text>
                 </Pressable>
-              ))}
-            </ScrollView>
-          )}
-        </SafeAreaView>
-      </Modal>
+                <Pressable
+                  accessibilityLabel="Đánh dấu tất cả thông báo đã đọc"
+                  disabled={unreadNotificationCount === 0}
+                  onPress={() => void markAllNotificationsAsRead()}
+                  style={styles.markAllLink}>
+                  <Text style={styles.markAllLinkText}>Đã đọc hết</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel="Đóng thông báo"
+                  accessibilityRole="button"
+                  hitSlop={12}
+                  onPress={() => void toggleNotifications()}
+                  style={styles.notificationCloseButton}>
+                  <Ionicons color={Design.colors.black} name="close" size={24} />
+                </Pressable>
+              </View>
+            </View>
+            {notificationError ? <Text style={styles.notificationError}>{notificationError}</Text> : null}
+            {notifications.length === 0 ? (
+              <Text style={styles.emptyNotifications}>Đang chờ thông báo mới...</Text>
+            ) : (
+              <ScrollView>
+                {notifications.map((notification, index) => (
+                  <Pressable
+                    key={getNotificationKey(notification)}
+                    accessibilityRole="button"
+                    onPress={() => void markNotificationAsRead(notification)}
+                    style={styles.notificationItem}>
+                    <Ionicons color={Design.colors.primaryGreen} name="notifications-outline" size={20} />
+                    <Text style={[styles.notificationText, notification.read === false && styles.unreadNotificationText]}>
+                      {getNotificationMessage(notification)}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            )}
+          </SafeAreaView>
+        </Modal>
 
-      <View style={styles.bottomBar}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Cửa hàng"
-          onPress={() => setIsShopVisible(true)}
-          style={({ pressed }) => [styles.roundButton, pressed && { transform: [{ scale: 0.93 }] }]}>
-          <Ionicons color={Design.colors.white} name="storefront-outline" size={22} />
-        </Pressable>
+        <View style={styles.bottomBar}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cửa hàng"
+            onPress={() => setIsShopVisible(true)}
+            style={({ pressed }) => [styles.roundButton, pressed && { transform: [{ scale: 0.93 }] }]}>
+            <Ionicons color={Design.colors.white} name="storefront-outline" size={22} />
+          </Pressable>
 
-        <AnimatedTogglePill
-          activeTab="tasks"
-          isNight={isNight}
-          onSelectCinema={() => router.push('/cinema')}
-          onSelectTasks={() => router.push('/daily-tasks')}
-          style={styles.togglePill}
+          <AnimatedTogglePill
+            key={toggleKey}
+            activeTab="tasks"
+            isNight={isNight}
+            onSelectCinema={() => router.push('/cinema')}
+            onSelectTasks={() => router.push('/daily-tasks')}
+            style={styles.togglePill}
+          />
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Cộng đồng"
+            onPress={() => router.push('/community')}
+            style={({ pressed }) => [styles.roundButton, styles.roundButtonOutline, pressed && { transform: [{ scale: 0.93 }] }]}>
+            <Ionicons color={Design.colors.black} name="globe-outline" size={22} />
+          </Pressable>
+        </View>
+
+        <ShopSheet
+          balance={rubyBalance}
+          onBalanceChange={handleWalletBalanceChange}
+          onInsufficientRuby={handleInsufficientRuby}
+          onClose={() => setIsShopVisible(false)}
+          onPurchaseSuccess={handleShopPurchaseSuccess}
+          visible={isShopVisible}
+        />
+        <PurchaseSuccessModal
+          balance={rubyBalance ?? 0}
+          onClose={() => setPurchasedShopItem(null)}
+          product={purchasedShopItem}
+        />
+        <InsufficientRubyModal
+          balance={rubyBalance}
+          message={insufficientRubyMessage}
+          onClose={() => setInsufficientRubyItem(null)}
+          onTopUp={() => {
+            setInsufficientRubyItem(null);
+            router.push('/ruby-topup');
+          }}
+          product={insufficientRubyItem}
+          visible={insufficientRubyItem !== null}
         />
 
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Cộng đồng"
-          onPress={() => router.push('/community')}
-          style={({ pressed }) => [styles.roundButton, styles.roundButtonOutline, pressed && { transform: [{ scale: 0.93 }] }]}>
-          <Ionicons color={Design.colors.black} name="globe-outline" size={22} />
-        </Pressable>
-      </View>
-
-      <ShopSheet
-        balance={rubyBalance}
-        onBalanceChange={handleWalletBalanceChange}
-        onInsufficientRuby={handleInsufficientRuby}
-        onClose={() => setIsShopVisible(false)}
-        onPurchaseSuccess={handleShopPurchaseSuccess}
-        visible={isShopVisible}
-      />
-      <PurchaseSuccessModal
-        balance={rubyBalance ?? 0}
-        onClose={() => setPurchasedShopItem(null)}
-        product={purchasedShopItem}
-      />
-      <InsufficientRubyModal
-        balance={rubyBalance}
-        message={insufficientRubyMessage}
-        onClose={() => setInsufficientRubyItem(null)}
-        onTopUp={() => {
-          setInsufficientRubyItem(null);
-          router.push('/ruby-topup');
-        }}
-        product={insufficientRubyItem}
-        visible={insufficientRubyItem !== null}
-      />
-
-      <DailyTaskModals
-        completedStreak={null}
-        dailyStatusVisible={isDailyStatusVisible}
-        isConfirmingDailyTasks={isConfirmingDailyTasks}
-        isSwapping={false}
-        isSwapLoading={false}
-        onCancelStreak={() => undefined}
-        onCloseDailyStatus={() => setIsDailyStatusVisible(false)}
-        onCloseSwap={() => undefined}
-        onCloseSwapSuccess={() => undefined}
-        onConfirmSwap={() => undefined}
-        onKeepYesterdayTasks={handleKeepYesterdayTasks}
-        onOpenMoodSelection={handleChooseNewTasks}
-        streakVisible={false}
-        swapCandidates={[]}
-        swapTask={null}
-        swapSuccessVisible={false}
-        yesterdayTasks={dailyStatus?.yesterdayTasks ?? []}
-      />
+        <DailyTaskModals
+          completedStreak={null}
+          dailyStatusVisible={isDailyStatusVisible}
+          isConfirmingDailyTasks={isConfirmingDailyTasks}
+          isSwapping={false}
+          isSwapLoading={false}
+          onCancelStreak={() => undefined}
+          onCloseDailyStatus={() => setIsDailyStatusVisible(false)}
+          onCloseSwap={() => undefined}
+          onCloseSwapSuccess={() => undefined}
+          onConfirmSwap={() => undefined}
+          onKeepYesterdayTasks={handleKeepYesterdayTasks}
+          onOpenMoodSelection={handleChooseNewTasks}
+          streakVisible={false}
+          swapCandidates={[]}
+          swapTask={null}
+          swapSuccessVisible={false}
+          yesterdayTasks={dailyStatus?.yesterdayTasks ?? []}
+        />
       </SafeAreaView>
     </View>
   );
@@ -908,30 +955,60 @@ const styles = StyleSheet.create({
   statPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    backgroundColor: 'transparent',
-    paddingVertical: 2,
-    paddingHorizontal: 4,
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 999,
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  statPillNight: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#E2E8F0',
+  },
+  rubyPill: {
+    paddingRight: 6,
   },
   statIcon: {
-    height: 22,
-    width: 22,
+    height: 28,
+    width: 28,
   },
   statValue: {
     fontFamily: FontFamily.beVietnamSemiBold,
     fontSize: 15,
+    lineHeight: 20,
   },
   streakValue: {
     color: '#EA580C',
   },
   streakValueNight: {
-    color: '#FB923C',
+    color: '#EA580C',
   },
   rubyValue: {
     color: '#E11D48',
   },
   rubyValueNight: {
-    color: '#FB7185',
+    color: '#E11D48',
+  },
+  plusButtonCircle: {
+    alignItems: 'center',
+    backgroundColor: '#10B981',
+    borderRadius: 11,
+    elevation: 2,
+    height: 22,
+    justifyContent: 'center',
+    marginLeft: 4,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.35,
+    shadowRadius: 3,
+    width: 22,
   },
   avatar: {
     width: 36,
@@ -966,19 +1043,8 @@ const styles = StyleSheet.create({
     marginVertical: 4,
   },
   mascot: {
-    width: 290,
-    height: 300,
-  },
-  mascotShadow: {
-    width: 175,
-    height: 14,
-    borderRadius: 7,
-    backgroundColor: 'rgba(15, 60, 30, 0.2)',
-    alignSelf: 'center',
-    marginTop: -14,
-  },
-  mascotShadowNight: {
-    backgroundColor: 'rgba(0, 0, 0, 0.38)',
+    width: 340,
+    height: 350,
   },
   bottomCardSection: {
     width: '100%',

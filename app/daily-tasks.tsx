@@ -151,18 +151,17 @@ export default function DailyTasksScreen() {
                     dailyTasks.isTodaySelected &&
                     !dailyTasks.dailyStatus?.hasConfirmedToday ? (
                     <View style={styles.executeCard}>
-                        <Ionicons
-                            color={Design.colors.primaryGreen}
-                            name="sparkles-outline"
-                            size={30}
-                        />
+                        <View style={styles.executeBadge}>
+                            <Ionicons color="#059669" name="sparkles" size={14} />
+                            <Text style={styles.executeBadgeText}>Mục tiêu ngày</Text>
+                        </View>
 
                         <Text style={styles.executeTitle}>
-                            Nhiệm vụ hôm nay chưa được chọn
+                            Khởi động 5 nhiệm vụ hôm nay 🌱
                         </Text>
 
                         <Text style={styles.executeDescription}>
-                            Hãy thực thi để chọn 5 nhiệm vụ cho hôm nay.
+                            Thực hiện các nhiệm vụ lành mạnh mỗi ngày để tích lũy Ruby và duy trì ngọn lửa Streak rực cháy!
                         </Text>
 
                         <Pressable
@@ -173,13 +172,12 @@ export default function DailyTasksScreen() {
                                 pressed && !dailyTasks.isDailyStatusLoading && { transform: [{ scale: 0.95 }] },
                             ]}>
                             {dailyTasks.isDailyStatusLoading ? (
-                                <ActivityIndicator
-                                    color={Design.colors.white}
-                                />
+                                <ActivityIndicator color={Design.colors.white} />
                             ) : (
-                                <Text style={styles.executeActionText}>
-                                    Thực thi
-                                </Text>
+                                <View style={styles.executeActionContent}>
+                                    <Text style={styles.executeActionText}>Thực thi ngay</Text>
+                                    <Ionicons color="#FFFFFF" name="arrow-forward" size={16} />
+                                </View>
                             )}
                         </Pressable>
                     </View>
@@ -266,13 +264,13 @@ export default function DailyTasksScreen() {
 const styles = StyleSheet.create({
     safeArea: {
         flex: 1,
-        backgroundColor: Design.colors.white,
+        backgroundColor: '#F8FAF7',
     },
 
     scrollContent: {
-        paddingHorizontal: 24,
+        paddingHorizontal: 20,
         paddingTop: 8,
-        paddingBottom: 32,
+        paddingBottom: 36,
     },
 
     diaryCard: {
@@ -280,9 +278,9 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         backgroundColor: Design.colors.primaryGreen,
-        borderRadius: 14,
+        borderRadius: 18,
         paddingHorizontal: 20,
-        paddingVertical: 24,
+        paddingVertical: 20,
         marginBottom: 16,
     },
 
@@ -295,7 +293,7 @@ const styles = StyleSheet.create({
     diaryButton: {
         backgroundColor: Design.colors.white,
         borderRadius: 20,
-        paddingHorizontal: 32,
+        paddingHorizontal: 28,
         paddingVertical: 8,
     },
 
@@ -322,43 +320,82 @@ const styles = StyleSheet.create({
 
     executeCard: {
         alignItems: 'center',
-        borderRadius: 16,
-        backgroundColor: '#F1F8F3',
+        borderRadius: 22,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1.5,
+        borderColor: '#D1FAE5',
         paddingHorizontal: 20,
-        paddingVertical: 24,
+        paddingVertical: 26,
         marginBottom: 16,
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 3 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 3,
+    },
+
+    executeBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+        backgroundColor: '#ECFDF5',
+        borderWidth: 1,
+        borderColor: '#A7F3D0',
+        borderRadius: 12,
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        marginBottom: 8,
+    },
+
+    executeBadgeText: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 12,
+        color: '#065F46',
     },
 
     executeTitle: {
-        color: Design.colors.black,
+        color: '#0F291E',
         fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.body,
-        marginTop: 10,
+        fontSize: 18,
+        marginTop: 4,
         textAlign: 'center',
     },
 
     executeDescription: {
-        color: Design.colors.mutedText,
+        color: '#64748B',
         fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.caption + 1,
-        marginTop: 4,
+        fontSize: 12.5,
+        lineHeight: 18,
+        marginTop: 6,
         textAlign: 'center',
+        paddingHorizontal: 10,
     },
 
     executeAction: {
         alignItems: 'center',
         justifyContent: 'center',
-        minWidth: 120,
+        minWidth: 160,
         minHeight: 44,
         borderRadius: 22,
-        backgroundColor: Design.colors.primaryGreen,
-        marginTop: 16,
-        paddingHorizontal: 20,
+        backgroundColor: '#10B981',
+        marginTop: 18,
+        paddingHorizontal: 24,
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+
+    executeActionContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
     },
 
     executeActionText: {
         color: Design.colors.white,
         fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.body,
+        fontSize: 14,
     },
 });

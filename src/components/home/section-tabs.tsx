@@ -12,8 +12,16 @@ export function SectionTabs({ active }: SectionTabsProps) {
     <View style={styles.container}>
       <AnimatedTogglePill
         activeTab={active}
-        onSelectCinema={() => router.replace('/cinema')}
-        onSelectTasks={() => router.replace('/daily-tasks')}
+        onSelectCinema={() => {
+          if (active !== 'cinema') {
+            router.replace('/cinema');
+          }
+        }}
+        onSelectTasks={() => {
+          if (active !== 'tasks') {
+            router.replace('/daily-tasks');
+          }
+        }}
         style={styles.pill}
       />
     </View>

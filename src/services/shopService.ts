@@ -5,6 +5,8 @@ import type {
   InitTopupRequest,
   InitTopupResponse,
   ShopItem,
+  ShopItemThumbnail,
+  TopupPackagesResponse,
   TopupHistoryItem,
   WalletResponse,
 } from "@/src/types/api/shop";
@@ -42,6 +44,15 @@ export const shopService = {
     }
   },
 
+  async getTopupPackages(): Promise<TopupPackagesResponse> {
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.SHOP.TOPUP_PACKAGES);
+      return response.data;
+    } catch (error: any) {
+      throw createShopError(error, "Không thể tải bảng giá nạp Ruby.");
+    }
+  },
+
   async buyItem(skinItemId: number): Promise<BuyShopItemResponse> {
     try {
       const response = await apiClient.post(
@@ -55,8 +66,25 @@ export const shopService = {
 
   async getItems(): Promise<ShopItem[]> {
     try {
-      const response = await apiClient.get(API_ENDPOINTS.SHOP.ITEMS);
-      return response.data;
+      const [itemsResponse, thumbnailsResponse] = await Promise.all([
+        apiClient.get<ShopItem[]>(API_ENDPOINTS.SHOP.ITEMS),
+        apiClient.get<ShopItemThumbnail[]>(API_ENDPOINTS.SHOP.THUMBNAILS),
+      ]);
+      const thumbnailsByShopItemId = new Map(
+        thumbnailsResponse.data.map((thumbnail) => [thumbnail.shopItemId, thumbnail]),
+      );
+
+      return itemsResponse.data.map((item) => {
+        const thumbnail = thumbnailsByShopItemId.get(item.id);
+        return thumbnail
+          ? {
+              ...item,
+              itemBackgroundUrl: thumbnail.itemBackgroundUrl,
+              thumbnailUrl: thumbnail.thumbnailUrl,
+              thumbnailLayers: thumbnail.thumbnailLayers,
+            }
+          : item;
+      });
     } catch (error: any) {
       throw createShopError(error, "Không thể tải danh sách skin.");
     }

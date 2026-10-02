@@ -57,6 +57,14 @@ const SLOT_ORDER: Record<SkinSlot, number> = {
   ACCESSORY: 4,
 };
 
+const SLOT_NAMES: Record<SkinSlot, string> = {
+  BASE: "Thân",
+  HEAD: "Mũ",
+  NECK: "Khăn",
+  EYES: "Kính",
+  ACCESSORY: "Phụ kiện",
+};
+
 function InventoryCard({
   item,
   isEquipped,
@@ -76,11 +84,28 @@ function InventoryCard({
 
   return (
     <View style={styles.inventoryCard}>
-      <Image
-        contentFit="contain"
-        source={{ uri: item.imageUrl }}
-        style={styles.itemImage}
-      />
+      <View style={styles.cardHeaderRow}>
+        <View style={styles.slotBadge}>
+          <Text style={styles.slotBadgeText}>{SLOT_NAMES[item.slot] ?? item.slot}</Text>
+        </View>
+        {isEquipped && (
+          <View style={styles.equippedBadge}>
+            <Ionicons color="#059669" name="checkmark-circle" size={12} />
+            <Text style={styles.equippedBadgeText}>Đang mặc</Text>
+          </View>
+        )}
+      </View>
+
+      <View style={styles.itemImageShowcase}>
+        <Image
+          contentFit="contain"
+          source={{ uri: item.imageUrl }}
+          style={styles.itemImage}
+        />
+      </View>
+
+      <Text numberOfLines={1} style={styles.itemName}>{item.name}</Text>
+
       <Pressable
         accessibilityLabel={isEquipped ? "Gỡ trang phục" : "Trang bị"}
         accessibilityRole="button"
@@ -88,32 +113,25 @@ function InventoryCard({
         onPress={isEquipped ? onUnequip : onEquip}
         style={({ pressed }) => [
           styles.itemAction,
-          isEquipped && styles.unequipAction,
+          isEquipped && (canUnequip ? styles.unequipAction : styles.baseItemAction),
           (pressed || isBusy) && styles.itemActionPressed,
         ]}
       >
         {isBusy ? (
           <ActivityIndicator color={Design.colors.white} size="small" />
         ) : (
-          <Text style={styles.itemActionText}>
+          <Text style={[
+            styles.itemActionText,
+            isEquipped && (canUnequip ? styles.unequipActionText : styles.baseItemActionText),
+          ]}>
             {isEquipped
               ? canUnequip
-                ? "Gỡ"
-                : "Đang mặc"
-              : "Trang bị"}
+                ? "Gỡ bỏ"
+                : "Mặc định"
+              : "Mặc ngay ✨"}
           </Text>
         )}
       </Pressable>
-      {isEquipped ? (
-        <View style={styles.equippedIndicator}>
-          <Ionicons
-            accessibilityLabel="Đang trang bị"
-            color={Design.colors.white}
-            name="checkmark"
-            size={14}
-          />
-        </View>
-      ) : null}
     </View>
   );
 }
@@ -249,12 +267,17 @@ export default function WardrobeScreen() {
           accessibilityRole="button"
           hitSlop={10}
           onPress={() => router.back()}
-          style={styles.backButton}
+          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
         >
-          <Ionicons color={Design.colors.black} name="arrow-back" size={23} />
+          <Ionicons color="#1E293B" name="chevron-back" size={24} />
         </Pressable>
-        <Text style={styles.headerTitle}>Kho trang phục</Text>
-        <View style={styles.headerSpacer} />
+        <View style={styles.headerTitleWrap}>
+          <Text style={styles.headerTitle}>Kho trang phục</Text>
+          <Text style={styles.headerSubtitle}>Tùy biến phong cách cho linh vật</Text>
+        </View>
+        <View style={styles.inventoryCountBadge}>
+          <Text style={styles.inventoryCountText}>🎒 {inventory.length}</Text>
+        </View>
       </View>
 
       <ScrollView
@@ -291,11 +314,16 @@ export default function WardrobeScreen() {
         ) : avatar ? (
           <>
             <View style={styles.previewCard}>
-              {/* <Text style={styles.sectionTitle}>Avatar hiện tại</Text> */}
+              <View style={styles.previewHeader}>
+                <View style={styles.previewBadge}>
+                  <Ionicons color="#059669" name="sparkles" size={13} />
+                  <Text style={styles.previewBadgeText}>Avatar hiện tại</Text>
+                </View>
+                <Text style={styles.previewLayersCount}>
+                  {avatar.layers.length} lớp trang phục
+                </Text>
+              </View>
               <AvatarPreview layers={avatar.layers} />
-              {/* <Text style={styles.previewCaption}>
-                {avatar.layers.length} lớp trang phục đang hiển thị
-              </Text> */}
             </View>
 
             <View style={styles.inventorySection}>
@@ -306,7 +334,7 @@ export default function WardrobeScreen() {
               ) : null}
               {inventory.length === 0 ? (
                 <Text style={styles.emptyInventory}>
-                  Kho đồ của bạn đang trống.
+                  Kho đồ của bạn đang trống. Hãy ghé Cửa hàng nhé!
                 </Text>
               ) : (
                 sortedInventory.map((item) => (
@@ -343,25 +371,49 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 18,
     paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#EDF5EE",
   },
   backButton: {
     alignItems: "center",
+    backgroundColor: "#F1F5F9",
+    borderRadius: 20,
     height: 40,
     justifyContent: "center",
     width: 40,
   },
-  headerTitle: {
-    color: Design.colors.black,
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: Design.fontSize.title,
+  headerTitleWrap: {
+    flex: 1,
+    marginLeft: 12,
   },
-  headerSpacer: {
-    width: 40,
+  headerTitle: {
+    color: "#0F291E",
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 18,
+  },
+  headerSubtitle: {
+    color: "#64748B",
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: 11,
+    marginTop: 1,
+  },
+  inventoryCountBadge: {
+    backgroundColor: "#ECFDF5",
+    borderColor: "#A7F3D0",
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  inventoryCountText: {
+    color: "#059669",
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 12,
   },
   content: {
-    gap: 18,
-    padding: 20,
-    paddingBottom: 32,
+    gap: 16,
+    padding: 18,
+    paddingBottom: 36,
   },
   loading: {
     alignItems: "center",
@@ -388,7 +440,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     backgroundColor: Design.colors.primaryGreen,
-    borderRadius: 18,
+    borderRadius: 14,
     paddingHorizontal: 18,
     paddingVertical: 8,
   },
@@ -398,23 +450,52 @@ const styles = StyleSheet.create({
     fontSize: Design.fontSize.caption,
   },
   previewCard: {
-    alignItems: "center",
     backgroundColor: Design.colors.white,
-    borderColor: "#E8EEE8",
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
+    borderColor: "#D1FAE5",
+    borderRadius: 22,
+    borderWidth: 1.5,
+    padding: 16,
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 3,
   },
-  sectionTitle: {
-    color: Design.colors.black,
+  previewHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  previewBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#ECFDF5",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+  },
+  previewBadgeText: {
+    color: "#065F46",
     fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: Design.fontSize.body,
+    fontSize: 12,
+  },
+  previewLayersCount: {
+    color: "#64748B",
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: 12,
   },
   avatarPreview: {
-    backgroundColor: "#F1F6EF",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F0FDF4",
+    borderColor: "#DCFCE7",
     borderRadius: 18,
-    height: 270,
-    marginTop: 16,
+    borderWidth: 1,
+    height: 280,
     overflow: "hidden",
     position: "relative",
     width: "100%",
@@ -425,94 +506,134 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.beVietnamRegular,
     marginTop: 120,
   },
-  previewCaption: {
-    color: Design.colors.mutedText,
-    fontFamily: FontFamily.beVietnamRegular,
-    fontSize: Design.fontSize.caption,
-    marginTop: 12,
-  },
   inventorySection: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 12,
-  },
-  itemCount: {
-    backgroundColor: "#E7F2E6",
-    borderRadius: 12,
-    color: Design.colors.primaryGreen,
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: Design.fontSize.caption,
-    overflow: "hidden",
-    paddingHorizontal: 9,
-    paddingVertical: 2,
+    justifyContent: "space-between",
   },
   emptyInventory: {
     backgroundColor: Design.colors.white,
-    borderRadius: 14,
-    color: Design.colors.mutedText,
-    fontFamily: FontFamily.beVietnamRegular,
-    padding: 18,
-    textAlign: "center",
-  },
-  inventoryCard: {
-    alignItems: "center",
-    backgroundColor: Design.colors.white,
-    borderColor: "#E8EEE8",
+    borderColor: "#E2EFE6",
     borderRadius: 16,
     borderWidth: 1,
-    gap: 8,
-    padding: 8,
-    width: "47%",
+    color: Design.colors.mutedText,
+    fontFamily: FontFamily.beVietnamRegular,
+    padding: 24,
+    textAlign: "center",
+    width: "100%",
+  },
+  inventoryCard: {
+    backgroundColor: Design.colors.white,
+    borderColor: "#E2EFE6",
+    borderRadius: 18,
+    borderWidth: 1.5,
+    marginBottom: 14,
+    padding: 10,
+    width: "48%",
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  cardHeaderRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 6,
+  },
+  slotBadge: {
+    backgroundColor: "#F1F5F9",
+    borderRadius: 8,
+    paddingHorizontal: 7,
+    paddingVertical: 2,
+  },
+  slotBadgeText: {
+    color: "#475569",
+    fontFamily: FontFamily.beVietnamMedium,
+    fontSize: 10,
+  },
+  equippedBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    backgroundColor: "#ECFDF5",
+    borderRadius: 8,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  equippedBadgeText: {
+    color: "#059669",
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 10,
+  },
+  itemImageShowcase: {
+    alignItems: "center",
+    backgroundColor: "#F8FAF8",
+    borderRadius: 14,
+    height: 96,
+    justifyContent: "center",
+    marginBottom: 8,
+    width: "100%",
   },
   itemImage: {
-    backgroundColor: "#F1F6EF",
-    borderRadius: 12,
-    height: 104,
-    width: 104,
+    height: 84,
+    width: "84%",
+  },
+  itemName: {
+    color: "#0F291E",
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 12.5,
+    marginBottom: 8,
+    textAlign: "center",
   },
   itemAction: {
     alignItems: "center",
     backgroundColor: Design.colors.primaryGreen,
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: "center",
-    minHeight: 36,
-    minWidth: 104,
+    minHeight: 32,
     paddingHorizontal: 10,
+    width: "100%",
+    shadowColor: "#10B981",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
   unequipAction: {
-    backgroundColor: "#A84B4B",
+    backgroundColor: "#FFF1F2",
+    borderColor: "#FECDD3",
+    borderWidth: 1,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  baseItemAction: {
+    backgroundColor: "#F1F5F9",
+    shadowOpacity: 0,
+    elevation: 0,
   },
   itemActionPressed: {
-    opacity: 0.7,
+    transform: [{ scale: 0.96 }],
   },
   itemActionText: {
     color: Design.colors.white,
     fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: Design.fontSize.caption,
+    fontSize: 11,
   },
-  equippedIndicator: {
-    alignItems: "center",
-    backgroundColor: Design.colors.primaryGreen,
-    borderColor: Design.colors.white,
-    borderRadius: 11,
-    borderWidth: 2,
-    height: 22,
-    justifyContent: "center",
-    position: "absolute",
-    right: 12,
-    top: 12,
-    width: 22,
+  unequipActionText: {
+    color: "#E11D48",
   },
-  equippedCheck: {
-    color: Design.colors.white,
-    fontSize: 13,
-    fontWeight: "700",
+  baseItemActionText: {
+    color: "#64748B",
   },
   actionError: {
     backgroundColor: "#FFF1F0",
-    borderRadius: 10,
+    borderRadius: 12,
     color: "#A93232",
     fontFamily: FontFamily.beVietnamRegular,
+    marginBottom: 12,
     padding: 12,
+    width: "100%",
   },
 });

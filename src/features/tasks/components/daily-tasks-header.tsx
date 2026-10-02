@@ -13,31 +13,33 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
                 <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Quay lại"
-                    hitSlop={8}
+                    hitSlop={10}
                     onPress={() => router.replace('/(tabs)')}
                     style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-                    <Ionicons color={Design.colors.black} name="chevron-back" size={28} />
+                    <Ionicons color="#1E293B" name="chevron-back" size={24} />
                 </Pressable>
                 <SectionTabs active="tasks" />
             </View>
 
             <View style={styles.titleRow}>
-                <Text style={styles.title}>Nhiệm vụ{'\n'}hàng ngày</Text>
+                <View style={styles.titleWrap}>
+                    <Text style={styles.title}>Nhiệm vụ{'\n'}hàng ngày</Text>
+                </View>
                 <View style={styles.weekControl}>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Tuần trước"
                         onPress={() => onChangeWeek(weekNumber - 1)}
-                        style={({ pressed }) => [pressed && { transform: [{ scale: 0.85 }] }]}>
-                        <Ionicons color={Design.colors.black} name="chevron-back" size={18} />
+                        style={({ pressed }) => [styles.weekArrow, pressed && { transform: [{ scale: 0.85 }] }]}>
+                        <Ionicons color="#065F46" name="chevron-back" size={16} />
                     </Pressable>
                     <Text style={styles.weekLabel}>Tuần {weekNumber}</Text>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Tuần sau"
                         onPress={() => onChangeWeek(weekNumber + 1)}
-                        style={({ pressed }) => [pressed && { transform: [{ scale: 0.85 }] }]}>
-                        <Ionicons color={Design.colors.black} name="chevron-forward" size={18} />
+                        style={({ pressed }) => [styles.weekArrow, pressed && { transform: [{ scale: 0.85 }] }]}>
+                        <Ionicons color="#065F46" name="chevron-forward" size={16} />
                     </Pressable>
                 </View>
             </View>
@@ -55,12 +57,12 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
                                 styles.dateCell,
                                 isSelected && styles.dateCellToday,
                                 isFuture && styles.dateCellDisabled,
-                                pressed && !isFuture && { transform: [{ scale: 0.92 }] },
+                                pressed && !isFuture && { transform: [{ scale: 0.94 }] },
                             ]}>
-                            <Text style={[styles.weekdayText, isSelected && styles.dateTextToday]}>{item.weekday}</Text>
-                            <Text style={[styles.dateText, isSelected && styles.dateTextToday]}>{item.day}</Text>
+                            <Text style={[styles.weekdayText, isSelected && styles.dateTextSelected]}>{item.weekday}</Text>
+                            <Text style={[styles.dateText, isSelected && styles.dateTextSelected]}>{item.day}</Text>
                             {isSelected ? (
-                                <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.dateDot, styles.dateDotToday]} />
+                                <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.dateDot, styles.dateDotSelected]} />
                             ) : (
                                 <View style={styles.dateDot} />
                             )}
@@ -73,25 +75,109 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
 }
 
 const styles = StyleSheet.create({
-    header: { marginBottom: 8 },
+    header: {
+        marginBottom: 6,
+    },
     backButton: {
         width: 40,
         height: 40,
+        borderRadius: 20,
+        backgroundColor: '#F1F5F9',
         justifyContent: 'center',
-        alignItems: 'flex-start',
-        marginBottom: 10,
+        alignItems: 'center',
+        marginBottom: 8,
     },
-    titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-    title: { fontFamily: FontFamily.beVietnamSemiBold, fontSize: Design.fontSize.h2 + 2, color: Design.colors.black, lineHeight: 34, marginBottom: 16 },
-    weekControl: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 12 },
-    weekLabel: { fontFamily: FontFamily.beVietnamSemiBold, fontSize: Design.fontSize.body, color: Design.colors.black },
-    dateStrip: { flexDirection: 'row', justifyContent: 'space-between', borderWidth: 1, borderColor: '#E9E9E9', borderRadius: 14, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 16 },
-    dateCell: { alignItems: 'center', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 10 },
-    dateCellToday: { backgroundColor: '#FBEFD8' },
-    dateCellDisabled: { opacity: 0.35 },
-    dateText: { fontFamily: FontFamily.beVietnamMedium, fontSize: Design.fontSize.caption + 2, color: Design.colors.mutedText, marginBottom: 3 },
-    weekdayText: { fontFamily: FontFamily.beVietnamRegular, fontSize: Design.fontSize.caption - 1, color: Design.colors.mutedText, marginBottom: 2, textTransform: 'capitalize' },
-    dateTextToday: { color: Design.colors.black, fontFamily: FontFamily.beVietnamSemiBold },
-    dateDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: 'transparent' },
-    dateDotToday: { backgroundColor: '#F2B544' },
+    titleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    titleWrap: {
+        flex: 1,
+    },
+    title: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 26,
+        color: '#0F291E',
+        lineHeight: 32,
+    },
+    weekControl: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#ECFDF5',
+        borderColor: '#A7F3D0',
+        borderWidth: 1,
+        borderRadius: 20,
+        paddingHorizontal: 8,
+        paddingVertical: 5,
+        gap: 6,
+    },
+    weekArrow: {
+        padding: 2,
+    },
+    weekLabel: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 13,
+        color: '#065F46',
+    },
+    dateStrip: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        borderWidth: 1.5,
+        borderColor: '#E2EFE6',
+        borderRadius: 20,
+        paddingHorizontal: 8,
+        paddingVertical: 8,
+        marginBottom: 16,
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    dateCell: {
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 7,
+        borderRadius: 14,
+        minWidth: 38,
+    },
+    dateCellToday: {
+        backgroundColor: '#10B981',
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 3,
+    },
+    dateCellDisabled: {
+        opacity: 0.35,
+    },
+    dateText: {
+        fontFamily: FontFamily.poppinsSemiBold,
+        fontSize: 15,
+        color: '#0F291E',
+        marginBottom: 2,
+    },
+    weekdayText: {
+        fontFamily: FontFamily.beVietnamMedium,
+        fontSize: 10.5,
+        color: '#64748B',
+        marginBottom: 3,
+        textTransform: 'capitalize',
+    },
+    dateTextSelected: {
+        color: '#FFFFFF',
+    },
+    dateDot: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        backgroundColor: 'transparent',
+    },
+    dateDotSelected: {
+        backgroundColor: '#FEF08A',
+    },
 });
