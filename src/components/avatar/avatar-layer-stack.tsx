@@ -1,6 +1,6 @@
 import type { AvatarLayer } from '@/src/types/api/skin';
 import { Image } from 'expo-image';
-import { useVideoPlayer, VideoView } from 'expo-video';
+import LottieView from 'lottie-react-native';
 import { StyleSheet, View } from 'react-native';
 
 type AvatarLayerStackProps = {
@@ -8,24 +8,28 @@ type AvatarLayerStackProps = {
 };
 
 function BaseAvatarLayer({ layer }: { layer: AvatarLayer }) {
-  const player = useVideoPlayer(layer.imageUrl, (videoPlayer) => {
-    videoPlayer.loop = true;
-    videoPlayer.muted = true;
-    videoPlayer.play();
-  });
-
   return (
-    <VideoView
-      contentFit="contain"
-      nativeControls={false}
-      player={player}
+    <LottieView
+      autoPlay
+      loop
+      onAnimationFailure={(error) => {
+        console.error('Unable to load the avatar Lottie animation.', error);
+      }}
+      resizeMode="contain"
+      source={require('@/assets/avatar/pentava_cat_idle1.json')}
       style={[
-        StyleSheet.absoluteFill,
         {
           zIndex: layer.layerOrder,
         },
       ]}
-      surfaceType="textureView"
+      webStyle={{
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        bottom: 0,
+        left: 0,
+        zIndex: layer.layerOrder,
+      }}
     />
   );
 }
@@ -38,7 +42,7 @@ function AccessoryAvatarLayer({ layer }: { layer: AvatarLayer }) {
       style={[
         StyleSheet.absoluteFill,
         {
-          transform: [{ translateY: -20 }],
+          transform: [{ translateY: 0 }],
           zIndex: layer.layerOrder,
         },
       ]}

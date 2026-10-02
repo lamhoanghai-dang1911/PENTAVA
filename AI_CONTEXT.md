@@ -62,7 +62,7 @@ src/features/home/
   utils/
     home-notifications.ts    # Tạo message và key ổn định cho thông báo
 src/components/avatar/
-  avatar-layer-stack.tsx     # Render chung video BASE và các layer phụ kiện
+  avatar-layer-stack.tsx     # Render chung Lottie BASE và các layer phụ kiện
 ```
 
 Quy tắc:
@@ -74,8 +74,10 @@ Quy tắc:
 - Logic thuần theo feature đặt tại `src/features/home/utils/`; state và side effect màn hình hiện nằm trong `home-screen.tsx`.
 - Style Home dùng chung đặt trong `home-screen.styles.ts`, không nhân bản style giữa component con.
 - Khi tách module hiện có, giữ nguyên route, thứ tự gọi service, xử lý lỗi và tương tác của người dùng.
-- Home và wardrobe dùng chung `src/components/avatar/avatar-layer-stack.tsx` để render BASE, phụ kiện, thứ tự layer và offset. Không tạo renderer riêng cho từng màn hình.
-- Home/wardrobe lấy BASE URL từ avatar API và phát bằng `expo-video`; WebM hiện tại không mở được trên iOS. `assets/ezgif.com-video-to-webp-converter.webp` chỉ là file thử nghiệm, có nền đen đục (alpha = 255), chưa được dùng làm avatar trong suốt.
+- Home và wardrobe dùng chung `src/components/avatar/avatar-layer-stack.tsx` để render Lottie BASE, phụ kiện, thứ tự layer và offset. Không tạo renderer riêng cho từng màn hình.
+- BASE hiện dùng asset local `assets/avatar/pentava_cat_idle1.json` qua `lottie-react-native`; JSON có embedded PNG alpha, tự chạy và loop. Phụ kiện vẫn lấy image URL từ avatar API.
+- Web của `lottie-react-native` cần `@lottiefiles/dotlottie-react`; dependency này được cài để hỗ trợ web.
+- `assets/ezgif.com-video-to-webp-converter.webp` chỉ là asset thử nghiệm, có nền đen đục (alpha = 255), không dùng làm avatar trong suốt.
 
 ## Feature Wardrobe
 
