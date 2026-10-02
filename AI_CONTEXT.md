@@ -37,10 +37,42 @@ src/features/<feature>/      # Feature modules
   components/                # UI riêng của feature
   hooks/                     # Logic React riêng của feature
   types/                     # Props và type riêng của feature
+  utils/                     # Hàm thuần dùng riêng trong feature
 src/services/                # API services và local persistence
 src/types/                   # Type dùng chung
 src/types/api/               # Request/response DTO của backend
 ```
+
+## Feature Home
+
+Màn hình Home được chia theo feature để route chỉ làm nhiệm vụ kết nối màn hình:
+
+```text
+app/(tabs)/index.tsx
+src/features/home/
+  home-screen.tsx            # State, lifecycle, xử lý sự kiện và ghép giao diện
+  home-screen.styles.ts      # StyleSheet dùng trong các phần giao diện Home
+  components/
+    home-header.tsx          # Lời chào, điều khiển theme, streak và Ruby
+    home-scene-content.tsx   # Avatar, routine và chế độ xem toàn cảnh
+    home-avatar.tsx          # Hiển thị avatar xếp lớp và animation linh vật
+    home-bottom-bar.tsx      # Điều hướng nhanh ở cuối màn hình
+    home-shop-and-task-modals.tsx
+    home-notifications-modal.tsx
+  utils/
+    home-notifications.ts    # Tạo message và key ổn định cho thông báo
+```
+
+Quy tắc:
+
+- Giữ `app/(tabs)/index.tsx` mỏng; không đặt nghiệp vụ hoặc JSX màn hình lớn trong route.
+- UI chỉ dùng trong Home đặt tại `src/features/home/components/`.
+- `home-screen.tsx` giữ state và xử lý sự kiện, ghép các component Home qua props callback.
+- Tách khu vực UI độc lập (header, nội dung linh vật, thanh điều hướng, modal) thành component riêng.
+- Logic thuần theo feature đặt tại `src/features/home/utils/`; state và side effect màn hình hiện nằm trong `home-screen.tsx`.
+- Style Home dùng chung đặt trong `home-screen.styles.ts`, không nhân bản style giữa component con.
+- Khi tách module hiện có, giữ nguyên route, thứ tự gọi service, xử lý lỗi và tương tác của người dùng.
+- Avatar BASE hiện thử asset animated WebP local `assets/ezgif.com-video-to-webp-converter.webp` qua `expo-image`. Asset này đang có nền đen đục (alpha = 255), chưa đáp ứng yêu cầu nền trong suốt; chỉ thay bằng asset khác sau khi xác nhận animation và alpha channel.
 
 ## Feature tasks hiện tại
 
