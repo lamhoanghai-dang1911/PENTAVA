@@ -61,6 +61,8 @@ src/features/home/
     home-notifications-modal.tsx
   utils/
     home-notifications.ts    # Tạo message và key ổn định cho thông báo
+src/components/avatar/
+  avatar-layer-stack.tsx     # Render chung video BASE và các layer phụ kiện
 ```
 
 Quy tắc:
@@ -72,7 +74,36 @@ Quy tắc:
 - Logic thuần theo feature đặt tại `src/features/home/utils/`; state và side effect màn hình hiện nằm trong `home-screen.tsx`.
 - Style Home dùng chung đặt trong `home-screen.styles.ts`, không nhân bản style giữa component con.
 - Khi tách module hiện có, giữ nguyên route, thứ tự gọi service, xử lý lỗi và tương tác của người dùng.
-- Avatar BASE hiện thử asset animated WebP local `assets/ezgif.com-video-to-webp-converter.webp` qua `expo-image`. Asset này đang có nền đen đục (alpha = 255), chưa đáp ứng yêu cầu nền trong suốt; chỉ thay bằng asset khác sau khi xác nhận animation và alpha channel.
+- Home và wardrobe dùng chung `src/components/avatar/avatar-layer-stack.tsx` để render BASE, phụ kiện, thứ tự layer và offset. Không tạo renderer riêng cho từng màn hình.
+- Home/wardrobe lấy BASE URL từ avatar API và phát bằng `expo-video`; WebM hiện tại không mở được trên iOS. `assets/ezgif.com-video-to-webp-converter.webp` chỉ là file thử nghiệm, có nền đen đục (alpha = 255), chưa được dùng làm avatar trong suốt.
+
+## Feature Wardrobe
+
+Màn hình kho trang phục được chia theo feature:
+
+```text
+app/wardrobe.tsx
+src/features/wardrobe/
+  wardrobe-screen.tsx         # Ghép route screen và các thành phần wardrobe
+  wardrobe.styles.ts          # Style dùng chung của màn hình wardrobe
+  constants.ts                # Thứ tự slot và tên hiển thị
+  components/
+    wardrobe-header.tsx
+    wardrobe-content.tsx      # Trạng thái loading/error, preview và danh sách
+    avatar-preview.tsx
+    inventory-card.tsx
+  hooks/
+    use-wardrobe.ts           # Tải avatar/inventory, trang bị và gỡ vật phẩm
+  types/
+    wardrobe.ts               # Props component và kiểu trả về của hook
+```
+
+Quy tắc:
+
+- `app/wardrobe.tsx` chỉ làm entry point cho Expo Router.
+- Giữ tải dữ liệu, sắp xếp inventory và nghiệp vụ trang bị/gỡ đồ trong `use-wardrobe.ts`.
+- Component trong `components/` chỉ render UI và nhận dữ liệu/callback qua props.
+- Khi chỉnh sửa cấu trúc, giữ nguyên lời gọi service, refresh/retry, trạng thái loading/error và hành vi trang bị/gỡ đồ.
 
 ## Feature tasks hiện tại
 

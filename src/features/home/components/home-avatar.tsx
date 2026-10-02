@@ -1,6 +1,5 @@
 import type { AvatarLayer } from '@/src/types/api/skin';
 import { Image } from 'expo-image';
-import { useVideoPlayer, VideoView } from 'expo-video';
 import { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
@@ -11,49 +10,8 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { AvatarLayerStack } from '@/src/components/avatar/avatar-layer-stack';
 import { styles } from '../home-screen.styles';
-
-function AvatarBaseAnimation({ layer }: { layer: AvatarLayer }) {
-  const player = useVideoPlayer(layer.imageUrl, (videoPlayer) => {
-    videoPlayer.loop = true;
-    videoPlayer.muted = true;
-    videoPlayer.play();
-  });
-
-  return (
-    <VideoView
-      contentFit="contain"
-      player={player}
-      style={[
-        {
-          transform: [{ translateY: layer.slot === 'BASE' ? 0 : -20 }],
-          zIndex: layer.layerOrder,
-        },
-      ]}
-      surfaceType="textureView"
-    />
-  );
-}
-
-function AvatarLayerView({ layer }: { layer: AvatarLayer }) {
-  if (layer.slot === 'BASE') {
-    return <AvatarBaseAnimation layer={layer} />;
-  }
-
-  return (
-    <Image
-      contentFit="contain"
-      source={{ uri: layer.imageUrl }}
-      style={[
-        StyleSheet.absoluteFill,
-        {
-          transform: [{ translateY: -20 }],
-          zIndex: layer.layerOrder,
-        },
-      ]}
-    />
-  );
-}
 
 type HomeAvatarProps = {
   avatarLayers: AvatarLayer[] | null;
@@ -95,12 +53,7 @@ export function HomeAvatar({ avatarLayers, isImmersiveView }: HomeAvatarProps) {
       <Animated.View style={animatedMascotStyle}>
         <View accessibilityLabel="Avatar hiện tại" style={styles.mascot}>
           {avatarLayers ? (
-            avatarLayers.map((layer) => (
-              <AvatarLayerView
-                key={`${layer.layerOrder}-${layer.code}`}
-                layer={layer}
-              />
-            ))
+            <AvatarLayerStack layers={avatarLayers} />
           ) : (
             <Image
               contentFit="contain"
