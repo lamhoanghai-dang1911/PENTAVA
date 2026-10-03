@@ -18,6 +18,8 @@ function BaseAvatarLayer({ layer }: { layer: AvatarLayer }) {
       resizeMode="contain"
       source={require('@/assets/avatar/pentava_cat_idle1.json')}
       style={[
+        StyleSheet.absoluteFill,
+
         {
           zIndex: layer.layerOrder,
         },
