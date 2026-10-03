@@ -241,6 +241,7 @@ export const styles = StyleSheet.create({
   mascot: {
     width: 340,
     height: 350,
+    top: 130,
   },
   bottomCardSection: {
     width: '100%',

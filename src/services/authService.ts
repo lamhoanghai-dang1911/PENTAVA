@@ -59,14 +59,15 @@ function getErrorMessage(error: any, fallback: string) {
   );
 }
 
-function getAccessTokenFromResponse(responseData: any) {
-  return (
+function getAccessTokenFromResponse(responseData: any): string | null {
+  const token =
     responseData?.data?.accessToken ??
     responseData?.accessToken ??
     responseData?.data?.token ??
     responseData?.token ??
-    null
-  );
+    null;
+
+  return typeof token === "string" && token.length > 0 ? token : null;
 }
 
 export const authService = {
@@ -183,10 +184,11 @@ export const authService = {
       });
 
       const accessToken = getAccessTokenFromResponse(response.data);
-      setAccessToken(accessToken ?? null);
-      if (accessToken) {
-        await saveAccessToken(accessToken);
+      if (!accessToken) {
+        throw new Error("Máy chủ không trả về access token sau khi đăng nhập.");
       }
+      await saveAccessToken(accessToken);
+      setAccessToken(accessToken);
       await saveCurrentUser(response.data, data.email);
       return response.data;
     } catch (error: any) {
@@ -207,10 +209,11 @@ export const authService = {
       });
 
       const accessToken = getAccessTokenFromResponse(response.data);
-      setAccessToken(accessToken ?? null);
-      if (accessToken) {
-        await saveAccessToken(accessToken);
+      if (!accessToken) {
+        throw new Error("Máy chủ không trả về access token sau khi đăng nhập Google.");
       }
+      await saveAccessToken(accessToken);
+      setAccessToken(accessToken);
 
       await saveCurrentUser(response.data);
 

@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState } from 'react';
 
 import { authService } from '@/src/services/authService';
+import { useAuth } from '@/src/context/auth-context';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -21,6 +22,7 @@ type LoginModal = {
 
 export function useLogin() {
   const router = useRouter();
+  const { markAuthenticated } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -162,6 +164,7 @@ export function useLogin() {
     try {
       setLoading(true);
       const result = await authService.googleLogin(idToken);
+      markAuthenticated();
       const responseData = result.data ?? result;
 
       showModal(
@@ -198,6 +201,7 @@ export function useLogin() {
     try {
       setLoading(true);
       const result = await authService.login({ email: trimmedEmail, password });
+      markAuthenticated();
       showModal(
         'Đăng nhập thành công',
         result.data?.message || result.message || 'Chào mừng bạn quay trở lại.',

@@ -7,7 +7,7 @@ import type {
 } from "@/src/types/api/checkin";
 
 const CHECKIN_BUCKET =
-  process.env.EXPO_PUBLIC_SUPABASE_CHECKIN_BUCKET || "checkins";
+  process.env.EXPO_PUBLIC_SUPABASE_CHECKIN_BUCKET || "pentava-checkin-images";
 
 function getImageInfo(uri: string) {
   const dataUriMatch = uri.match(

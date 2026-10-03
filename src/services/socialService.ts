@@ -1,7 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL, API_ENDPOINTS } from "@/src/constants/api";
 import { getCurrentUserId } from "@/src/services/authStorage";
-import apiClient, { getAccessToken } from "@/src/services/apiClient";
+import apiClient, {
+  clearAuthenticationSession,
+  getAccessToken,
+} from "@/src/services/apiClient";
 import type {
   ForYouFeedResponse,
   HighFiveResponse,
@@ -127,6 +130,17 @@ export const socialService = {
           headers: { Accept: "text/event-stream", Authorization: `Bearer ${token}` },
           signal: controller.signal,
         });
+        if (response.status === 401) {
+          closed = true;
+          controller.abort();
+          try {
+            await clearAuthenticationSession();
+          } catch (storageError) {
+            console.error("Unable to clear the expired authentication session.", storageError);
+          }
+          onError(new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại."));
+          return;
+        }
         if (!response.ok || !response.body) {
           throw new Error(`Không thể kết nối thông báo (${response.status}).`);
         }
