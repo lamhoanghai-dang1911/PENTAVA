@@ -177,21 +177,25 @@ export default function MembershipScreen() {
                                     </View>
 
                                     <View style={styles.featuresBox}>
-                                        {pkg.features.map((feature) => (
-                                            <View
-                                                key={feature.featureId || feature.featureCode}
-                                                style={styles.featureRow}
-                                            >
-                                                <Text
-                                                    style={[
-                                                        styles.featureText,
-                                                        !feature.isEnabled && styles.featureTextDisabled,
-                                                    ]}
+                                        {pkg.features.map((feature) => {
+                                            const isFeatureEnabled =
+                                                (feature as any).isEnabled ?? (feature as any).enabled ?? false;
+                                            return (
+                                                <View
+                                                    key={feature.featureId || feature.featureCode}
+                                                    style={styles.featureRow}
                                                 >
-                                                    {feature.displayLabel || feature.name}
-                                                </Text>
-                                            </View>
-                                        ))}
+                                                    <Text
+                                                        style={[
+                                                            styles.featureText,
+                                                            !isFeatureEnabled && styles.featureTextDisabled,
+                                                        ]}
+                                                    >
+                                                        {feature.displayLabel || feature.name}
+                                                    </Text>
+                                                </View>
+                                            );
+                                        })}
                                     </View>
                                 </View>
                             </Pressable>
