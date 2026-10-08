@@ -108,3 +108,6 @@ export const shopService = {
     }
   },
 };
+
+export { subscriptionService, SubscriptionServiceError } from "./subscriptionService";
+

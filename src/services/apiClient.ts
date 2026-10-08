@@ -26,7 +26,7 @@ export async function restoreAccessToken() {
 }
 
 apiClient.interceptors.request.use(async (config) => {
-  const publicAuthEndpoints = [
+  const publicEndpoints = [
     "/api/auth/register",
     "/api/auth/login",
     "/api/auth/google",
@@ -35,18 +35,21 @@ apiClient.interceptors.request.use(async (config) => {
     "/api/auth/forgot-password",
     "/api/auth/verify-reset-otp",
     "/api/auth/reset-password",
+    "/api/shop/subscription/plans",
   ];
-  const isPublicAuthRequest = publicAuthEndpoints.includes(config.url ?? "");
+  const isPublicRequest =
+    publicEndpoints.includes(config.url ?? "") ||
+    config.url?.startsWith("/api/shop/subscription/entitlement");
 
-  if (!isPublicAuthRequest && !accessToken) {
+  if (!accessToken) {
     accessToken = await getStoredAccessToken();
   }
 
-  if (!isPublicAuthRequest && accessToken) {
+  if (accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
-  if (!isPublicAuthRequest && !accessToken) {
+  if (!isPublicRequest && !accessToken) {
     throw new Error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
   }
 

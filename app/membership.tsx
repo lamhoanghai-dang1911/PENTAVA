@@ -1,70 +1,61 @@
-import { Design, FontFamily } from '@/src/constants/design';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { NotificationModal } from '@/src/components/ui/notification-modal';
 import { PrimaryButton } from '@/src/components/ui/primary-button';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
-import { useState } from 'react';
+import { Design, FontFamily } from '@/src/constants/design';
+import { SubscriptionQrModal } from '@/src/features/subscription/components/subscription-qr-modal';
+import { useSubscription } from '@/src/features/subscription/hooks/use-subscription';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { ActivityIndicator, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 
-type PackageId = 'premium' | 'plus' | 'basic';
+function formatVnd(amount: number): string {
+    return `${amount.toLocaleString('vi-VN')}đ`;
+}
 
-const PACKAGES: Array<{
-    id: PackageId;
-    title: string;
-    subtitle: string;
-    price: string;
-    features: { text: string; enabled: boolean }[];
-    crownBg: string;
-}> = [
-        {
-            id: 'premium',
-            title: 'Gói Premium',
-            subtitle: 'Nhận nhiều tính năng hữu ích mỗi ngày',
-            price: '99.000đ /tháng',
-            features: [
-                { text: 'Nhận 100 Ruby mỗi tháng', enabled: true },
-                { text: 'Mở khóa tất cả phụ kiện', enabled: true },
-                { text: 'Thử thách độc quyền', enabled: true },
-                { text: 'Không quảng cáo', enabled: true },
-                { text: 'Hỗ trợ ưu tiên', enabled: true },
-            ],
-            crownBg: '#FFF3CD',
-        },
-        {
-            id: 'plus',
-            title: 'Gói Plus',
-            subtitle: 'Nhận nhiều tính năng hữu ích mỗi ngày',
-            price: '59.000đ /tháng',
-            features: [
-                { text: 'Nhận 50 Ruby mỗi tháng', enabled: true },
-                { text: 'Mở khóa một số phụ kiện', enabled: true },
-                { text: 'Thử thách nâng cao', enabled: true },
-                { text: 'Không quảng cáo', enabled: true },
-                { text: 'Hỗ trợ ưu tiên', enabled: false },
-            ],
-            crownBg: '#E2E8F0',
-        },
-        {
-            id: 'basic',
-            title: 'Gói Basic',
-            subtitle: 'Nhận nhiều tính năng hữu ích mỗi ngày',
-            price: '19.000đ /tháng',
-            features: [
-                { text: 'Nhận 50 Ruby mỗi tháng', enabled: true },
-                { text: 'Mở khóa một số phụ kiện', enabled: true },
-                { text: 'Thử thách nâng cao', enabled: true },
-                { text: 'Không quảng cáo', enabled: false },
-                { text: 'Hỗ trợ ưu tiên', enabled: false },
-            ],
-            crownBg: '#FFE4D6',
-        },
-    ];
+function getPlanVisuals(code: string) {
+    const upper = code.toUpperCase();
+    if (upper === 'PREMIUM') {
+        return { crownBg: '#FFF3CD', crownEmoji: '👑' };
+    }
+    if (upper === 'GOLD') {
+        return { crownBg: '#FFE4D6', crownEmoji: '⭐' };
+    }
+    return { crownBg: '#E2E8F0', crownEmoji: '🌱' };
+}
+
+function formatDate(dateStr?: string | null): string {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('vi-VN');
+    } catch {
+        return dateStr;
+    }
+}
 
 export default function MembershipScreen() {
     const router = useRouter();
-    const [selectedId, setSelectedId] = useState<PackageId>('premium');
-
-    const selectedPackage = PACKAGES.find((pkg) => pkg.id === selectedId) ?? PACKAGES[0];
+    const {
+        plans,
+        selectedPlanCode,
+        selectedPlan,
+        mySubscription,
+        isLoading,
+        isPurchasing,
+        isCheckingStatus,
+        isMockConfirming,
+        activeTransaction,
+        errorModal,
+        notificationModal,
+        statusMessage,
+        setSelectedPlanCode,
+        initPurchase,
+        checkStatus,
+        mockConfirm,
+        closeQrModal,
+        closeErrorModal,
+        closeNotificationModal,
+    } = useSubscription();
 
     return (
         <ScreenContainer scrollable contentStyle={styles.container}>
@@ -93,91 +84,175 @@ export default function MembershipScreen() {
                 />
             </View>
 
+            {/* Current Active Subscription Banner (if any) */}
+            {mySubscription?.hasActiveSubscription ? (
+                <View style={styles.activeSubCard}>
+                    <View style={styles.activeSubHeader}>
+                        <View style={styles.activeSubTitleRow}>
+                            <Ionicons name="sparkles" size={18} color="#D97706" />
+                            <Text style={styles.activeSubTitle}>Gói cước đang kích hoạt</Text>
+                        </View>
+                        {mySubscription.badge ? (
+                            <View style={styles.badgePill}>
+                                <Text style={styles.badgeText}>{mySubscription.badge}</Text>
+                            </View>
+                        ) : null}
+                    </View>
+                    <Text style={styles.activeSubPlanName}>{mySubscription.planName}</Text>
+                    <Text style={styles.activeSubMetaText}>
+                        Còn lại {mySubscription.daysRemaining} ngày
+                        {mySubscription.endDate ? ` (hạn đến ${formatDate(mySubscription.endDate)})` : ''}
+                    </Text>
+                </View>
+            ) : null}
+
             {/* Package List */}
-            <View style={styles.packageList}>
-                {PACKAGES.map((pkg) => {
-                    const selected = pkg.id === selectedId;
-                    return (
-                        <Pressable
-                            key={pkg.id}
-                            accessibilityRole="button"
-                            onPress={() => setSelectedId(pkg.id)}
-                            style={({ pressed }) => [
-                                styles.packageCard,
-                                selected && styles.packageCardSelected,
-                                pressed && styles.packageCardPressed,
-                            ]}
-                        >
-                            {/* Selection Radio Circle at Top Right */}
-                            <View style={styles.radioContainer}>
-                                <View style={[styles.radioCircle, selected && styles.radioCircleSelected]}>
-                                    {selected && <View style={styles.radioInnerDot} />}
-                                </View>
-                            </View>
+            {isLoading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={Design.colors.primaryGreen} />
+                    <Text style={styles.loadingText}>Đang tải các gói cước...</Text>
+                </View>
+            ) : (
+                <View style={styles.packageList}>
+                    {plans.map((pkg) => {
+                        const selected = pkg.code.toUpperCase() === selectedPlanCode?.toUpperCase();
+                        const isCurrentActivePlan =
+                            mySubscription?.hasActiveSubscription &&
+                            mySubscription.planCode?.toUpperCase() === pkg.code.toUpperCase();
+                        const visuals = getPlanVisuals(pkg.code);
 
-                            <View style={styles.packageContentRow}>
-                                <View style={styles.packageLeftCol}>
-                                    <View style={[styles.crownIconContainer, { backgroundColor: pkg.crownBg }]}>
-                                        <Text style={styles.crownEmoji}>👑</Text>
+                        return (
+                            <Pressable
+                                key={pkg.code}
+                                accessibilityRole="button"
+                                onPress={() => setSelectedPlanCode(pkg.code)}
+                                style={({ pressed }) => [
+                                    styles.packageCard,
+                                    selected && styles.packageCardSelected,
+                                    pressed && styles.packageCardPressed,
+                                ]}
+                            >
+                                {/* Selection Radio Circle at Top Right */}
+                                <View style={styles.radioContainer}>
+                                    <View
+                                        style={[
+                                            styles.radioCircle,
+                                            selected && styles.radioCircleSelected,
+                                        ]}
+                                    >
+                                        {selected && <View style={styles.radioInnerDot} />}
                                     </View>
-                                    <Text style={styles.packageTitle}>{pkg.title}</Text>
-                                    <Text style={styles.packageSubtitle}>{pkg.subtitle}</Text>
-                                    <Text style={styles.packagePrice}>{pkg.price}</Text>
                                 </View>
 
-                                <View style={styles.featuresBox}>
-                                    {pkg.features.map((feature, index) => (
-                                        <View key={index} style={styles.featureRow}>
-                                            <Ionicons
-                                                name={feature.enabled ? "checkmark" : "remove"}
-                                                size={14}
-                                                color={feature.enabled ? Design.colors.primaryGreen : Design.colors.mutedText}
-                                                style={styles.featureIcon}
-                                            />
-                                            <Text
-                                                style={[
-                                                    styles.featureText,
-                                                    !feature.enabled && styles.featureTextDisabled
-                                                ]}
-                                            >
-                                                {feature.text}
-                                            </Text>
+                                <View style={styles.packageContentRow}>
+                                    <View style={styles.packageLeftCol}>
+                                        <View
+                                            style={[
+                                                styles.crownIconContainer,
+                                                { backgroundColor: visuals.crownBg },
+                                            ]}
+                                        >
+                                            <Text style={styles.crownEmoji}>{visuals.crownEmoji}</Text>
                                         </View>
-                                    ))}
+                                        <View style={styles.packageTitleRow}>
+                                            <Text style={styles.packageTitle}>{pkg.name}</Text>
+                                            {pkg.badge ? (
+                                                <View style={styles.badgePill}>
+                                                    <Text style={styles.badgeText}>{pkg.badge}</Text>
+                                                </View>
+                                            ) : null}
+                                        </View>
+                                        <Text style={styles.packagePrice}>
+                                            {formatVnd(pkg.priceVnd)}
+                                            <Text style={styles.packageDuration}>
+                                                {' '}
+                                                /{pkg.durationDays} ngày
+                                            </Text>
+                                        </Text>
+                                        {isCurrentActivePlan ? (
+                                            <View style={styles.activeTag}>
+                                                <Text style={styles.activeTagText}>Đang sử dụng</Text>
+                                            </View>
+                                        ) : null}
+                                    </View>
+
+                                    <View style={styles.featuresBox}>
+                                        {pkg.features.map((feature) => (
+                                            <View
+                                                key={feature.featureId || feature.featureCode}
+                                                style={styles.featureRow}
+                                            >
+                                                <Text
+                                                    style={[
+                                                        styles.featureText,
+                                                        !feature.isEnabled && styles.featureTextDisabled,
+                                                    ]}
+                                                >
+                                                    {feature.displayLabel || feature.name}
+                                                </Text>
+                                            </View>
+                                        ))}
+                                    </View>
                                 </View>
-                            </View>
-                        </Pressable>
-                    );
-                })}
-            </View>
+                            </Pressable>
+                        );
+                    })}
+                </View>
+            )}
 
             {/* Footer Notice & Action */}
             <View style={styles.footer}>
-                <View style={styles.noticeBox}>
+                {/* <View style={styles.noticeBox}>
                     <Ionicons name="alert-circle" size={18} color={Design.colors.primaryGreen} />
-                    <Text style={styles.noticeText}>Bạn có thể huỷ bất kỳ lúc nào</Text>
-                </View>
+                    <Text style={styles.noticeText}>Hỗ trợ kích hoạt tự động qua VietQR SePay</Text>
+                </View> */}
 
                 <PrimaryButton
-                    label="Tiếp tục thanh toán"
-                    onPress={() => {
-                        router.push({
-                            pathname: '/payment',
-                            params: {
-                                packageName: selectedPackage.title,
-                                packagePrice: selectedPackage.price.replace(' /tháng', ''),
-                                packageSubtitle: selectedPackage.subtitle,
-                            }
-                        } as any);
-                    }}
+                    label={
+                        isPurchasing
+                            ? 'Đang khởi tạo...'
+                            : selectedPlan
+                                ? `ĐĂNG KÝ GÓI`
+                                : 'Tiếp tục thanh toán'
+                    }
+                    loading={isPurchasing}
+                    onPress={() => void initPurchase()}
                     style={styles.actionButton}
                 />
 
-                <View style={styles.secureRow}>
+                {/* <View style={styles.secureRow}>
                     <Ionicons name="lock-closed-outline" size={14} color={Design.colors.mutedText} />
                     <Text style={styles.secureText}>Thanh toán an toàn & bảo mật</Text>
-                </View>
+                </View> */}
             </View>
+
+            {/* VietQR SePay Modal */}
+            <SubscriptionQrModal
+                visible={activeTransaction !== null}
+                transaction={activeTransaction}
+                onClose={closeQrModal}
+                onCheckStatus={checkStatus}
+                isCheckingStatus={isCheckingStatus}
+                onMockConfirm={mockConfirm}
+                isMockConfirming={isMockConfirming}
+                statusMessage={statusMessage}
+            />
+
+            {/* Error Notification Modal */}
+            <NotificationModal
+                visible={errorModal.visible}
+                title={errorModal.title}
+                message={errorModal.message}
+                onConfirm={closeErrorModal}
+            />
+
+            {/* Success Notification Modal */}
+            <NotificationModal
+                visible={notificationModal.visible}
+                title={notificationModal.title}
+                message={notificationModal.message}
+                onConfirm={closeNotificationModal}
+            />
         </ScreenContainer>
     );
 }
@@ -202,7 +277,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 16,
-        marginBottom: 20,
+        marginBottom: 16,
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: '#E2EFE5',
@@ -220,6 +295,51 @@ const styles = StyleSheet.create({
     bannerImage: {
         width: 110,
         height: 100,
+    },
+    activeSubCard: {
+        backgroundColor: '#FFFBEB',
+        borderColor: '#FDE68A',
+        borderWidth: 1,
+        borderRadius: 18,
+        padding: 14,
+        marginBottom: 16,
+    },
+    activeSubHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    activeSubTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    activeSubTitle: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 13,
+        color: '#92400E',
+    },
+    activeSubPlanName: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 16,
+        color: Design.colors.black,
+        marginVertical: 2,
+    },
+    activeSubMetaText: {
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: 12,
+        color: '#78350F',
+    },
+    loadingContainer: {
+        paddingVertical: 40,
+        alignItems: 'center',
+        gap: 12,
+    },
+    loadingText: {
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: 13,
+        color: Design.colors.mutedText,
     },
     packageList: {
         gap: 14,
@@ -241,9 +361,23 @@ const styles = StyleSheet.create({
     },
     radioContainer: {
         position: 'absolute',
-        top: 16,
-        right: 16,
+        top: 14,
+        right: 14,
         zIndex: 2,
+    },
+    badgePill: {
+        backgroundColor: '#DCFCE7',
+        borderColor: '#86EFAC',
+        borderWidth: 1,
+        borderRadius: 8,
+        paddingHorizontal: 6,
+        paddingVertical: 1,
+        alignSelf: 'center',
+    },
+    badgeText: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 10,
+        color: '#166534',
     },
     radioCircle: {
         width: 20,
@@ -270,8 +404,15 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
     },
     packageLeftCol: {
-        width: '42%',
-        paddingRight: 8,
+        width: '45%',
+        paddingRight: 6,
+    },
+    packageTitleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        flexWrap: 'wrap',
+        marginBottom: 6,
     },
     crownIconContainer: {
         width: 44,
@@ -286,43 +427,50 @@ const styles = StyleSheet.create({
     },
     packageTitle: {
         fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: 16,
+        fontSize: 15,
         color: Design.colors.black,
-        marginBottom: 4,
-    },
-    packageSubtitle: {
-        fontFamily: FontFamily.beVietnamRegular,
-        fontSize: 11,
-        color: Design.colors.mutedText,
-        lineHeight: 15,
-        marginBottom: 10,
     },
     packagePrice: {
         fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: 14,
         color: Design.colors.primaryGreen,
     },
+    packageDuration: {
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: 11,
+        color: Design.colors.mutedText,
+    },
+    activeTag: {
+        alignSelf: 'flex-start',
+        backgroundColor: '#E0F2FE',
+        borderRadius: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        marginTop: 6,
+    },
+    activeTagText: {
+        fontFamily: FontFamily.beVietnamMedium,
+        fontSize: 10,
+        color: '#0369A1',
+    },
     featuresBox: {
-        width: '58%',
+        width: '55%',
         backgroundColor: '#F9FAFB',
         borderRadius: 12,
         padding: 10,
-        gap: 8,
+        paddingRight: 20,
+        gap: 7,
     },
     featureRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-    },
-    featureIcon: {
-        width: 16,
-        textAlign: 'center',
     },
     featureText: {
         fontFamily: FontFamily.beVietnamRegular,
         fontSize: 11,
         color: Design.colors.black,
         flex: 1,
+        lineHeight: 16,
     },
     featureTextDisabled: {
         color: Design.colors.mutedText,
