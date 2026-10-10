@@ -10,6 +10,27 @@ export type SubscriptionModalState = {
   message: string;
 };
 
+export type SubscriptionHeaderProps = {
+  onBack: () => void;
+};
+
+export type SubscriptionActiveCardProps = {
+  subscription: UserSubscriptionDetailResponse;
+};
+
+export type SubscriptionPlanCardProps = {
+  plan: SubscriptionPlanItem;
+  selected: boolean;
+  isCurrentActivePlan?: boolean;
+  onSelect: (code: string) => void;
+};
+
+export type SubscriptionFooterProps = {
+  selectedPlan: SubscriptionPlanItem | null;
+  isPurchasing: boolean;
+  onPurchase: () => void;
+};
+
 export type SubscriptionQrModalProps = {
   visible: boolean;
   transaction: SubscriptionPurchaseInitResponse | null;

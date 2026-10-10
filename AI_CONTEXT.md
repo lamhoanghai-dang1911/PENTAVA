@@ -107,6 +107,38 @@ Quy tắc:
 - Component trong `components/` chỉ render UI và nhận dữ liệu/callback qua props.
 - Khi chỉnh sửa cấu trúc, giữ nguyên lời gọi service, refresh/retry, trạng thái loading/error và hành vi trang bị/gỡ đồ.
 
+## Feature Subscription (Hội viên)
+
+Màn hình gói cước hội viên được chia theo feature:
+
+```text
+app/membership.tsx
+src/features/subscription/
+  subscription-screen.tsx        # Ghép route screen và các thành phần subscription
+  subscription.styles.ts         # Style dùng chung của màn hình subscription
+  components/
+    subscription-header.tsx      # Nút đóng quay lại
+    subscription-banner.tsx      # Banner thông điệp hội viên
+    subscription-active-card.tsx # Thẻ thông tin gói cước đang kích hoạt
+    subscription-plan-card.tsx   # Thẻ gói cước, radio chọn và danh sách đặc quyền
+    subscription-footer.tsx      # Nút bấm tiến hành đăng ký/thanh toán
+    subscription-qr-modal.tsx    # Modal hiển thị mã VietQR SePay và kiểm tra trạng thái
+  hooks/
+    use-subscription.ts          # State chọn gói, khởi tạo giao dịch, polling/check status
+  types/
+    subscription.ts              # Props component và kiểu dữ liệu UI feature
+  utils/
+    subscription-utils.ts        # Helper format tiền VND, icon gói và định dạng ngày
+```
+
+Quy tắc:
+
+- `app/membership.tsx` chỉ làm entry point cho Expo Router.
+- Giữ logic gọi service, tạo QR và xác nhận giao dịch trong `use-subscription.ts`.
+- Component trong `components/` chỉ render UI và nhận dữ liệu/callback qua props.
+- Định dạng tiền, icon và ngày đặt trong `subscription-utils.ts`.
+- Giữ nguyên luồng xử lý giao dịch VietQR SePay, polling trạng thái và mock-confirm.
+
 ## Feature tasks hiện tại
 
 Daily tasks đã được tách theo feature:
