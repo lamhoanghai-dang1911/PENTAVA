@@ -237,6 +237,39 @@ Quy tắc:
 - API DTO đặt trong `src/types/api/task.ts` hoặc file API tương ứng.
 - Không đưa task UI props vào `src/types/api`.
 
+## Feature Community (Mạng xã hội & Cộng đồng)
+
+Màn hình bảng tin cộng đồng được chia theo feature:
+
+```text
+app/community.tsx
+src/features/community/
+  community-screen.tsx                # Ghép route screen và các thành phần cộng đồng
+  community.styles.ts                 # Style dùng chung của màn hình cộng đồng
+  components/
+    community-header.tsx              # Back button, tiêu đề và nút xem lời mời kết bạn
+    feed-tabs.tsx                     # Tab chuyển đổi "For You" và "Friend"
+    friend-suggestion-card.tsx        # Thẻ gợi ý kết bạn đơn lẻ
+    friend-suggestions-section.tsx    # Danh sách cuộn ngang gợi ý kết bạn
+    feed-post-card.tsx                # Card bài đăng feed, video expo-video, High-Five và bình luận
+    image-avatar.tsx                  # Avatar người dùng với fallback ảnh mặc định
+    community-modals.tsx              # ErrorModal và DeleteCommentModal xác nhận xóa bình luận
+  hooks/
+    use-community.ts                  # State feed, tabs, high-five, bình luận, gợi ý kết bạn và modals
+  types/
+    community.ts                      # Props component và type của feature community
+  utils/
+    community-utils.ts                # Helper xử lý lỗi, format ngày và mapper toCommunityPost
+```
+
+Quy tắc:
+
+- `app/community.tsx` chỉ làm entry point cho Expo Router (`export { default } from "@/src/features/community/community-screen"`).
+- Giữ logic gọi service `socialService`, chuyển đổi tab, gửi lời mời kết bạn, high-five và bình luận trong `use-community.ts`.
+- Component trong `components/` chỉ render UI và nhận dữ liệu/callback qua props.
+- Helper format ngày, parse error message và chuyển đổi kiểu bài viết đặt trong `community-utils.ts`.
+- Giữ nguyên video player `expo-video` (`useVideoPlayer`, `VideoView`), tương tác High-Five emoji và luồng quản lý bình luận.
+
 ## Cache và tài khoản người dùng
 
 Cache local phải tách theo `userId`. Không dùng key AsyncStorage chung cho nhiều tài khoản.
