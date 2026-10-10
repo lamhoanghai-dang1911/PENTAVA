@@ -139,6 +139,41 @@ Quy tắc:
 - Định dạng tiền, icon và ngày đặt trong `subscription-utils.ts`.
 - Giữ nguyên luồng xử lý giao dịch VietQR SePay, polling trạng thái và mock-confirm.
 
+## Feature Cinema (PENTA-CINEMA)
+
+Màn hình PENTA-CINEMA được chia theo feature:
+
+```text
+app/cinema.tsx
+src/features/cinema/
+  cinema-screen.tsx            # Ghép route screen và các thành phần cinema
+  cinema.styles.ts             # Style dùng chung của màn hình cinema
+  components/
+    cinema-header.tsx          # Back button, search mục tiêu, tiêu đề và SectionTabs
+    goal-card.tsx              # Thẻ hiển thị mục tiêu sức khỏe và trạng thái
+    week-card.tsx              # Thẻ tuần với màu sắc WEEK_COLORS
+    goal-weeks-content.tsx     # Danh sách 4 tuần của mục tiêu
+    week-options-content.tsx   # Lựa chọn: Danh sách ảnh / Danh sách video
+    clip-video-card.tsx        # Card phát video expo-video và nút chia sẻ social
+    clips-content.tsx          # Danh sách video đã tạo trong tuần
+    week-photos-content.tsx    # Lưới ảnh check-in, chọn ảnh và nút tạo video
+    cinema-modals.tsx          # ErrorAlertModal, PhotoActionModal, PhotoViewerModal
+  hooks/
+    use-cinema.ts              # State mục tiêu, tuần, ảnh, clips, modals và handlers
+  types/
+    cinema.ts                  # Props component của feature cinema
+  utils/
+    cinema-utils.ts            # Helper định dạng ngày, nhãn trạng thái và màu tuần
+```
+
+Quy tắc:
+
+- `app/cinema.tsx` chỉ làm entry point cho Expo Router.
+- Giữ logic gọi service, lọc mục tiêu, chọn ảnh và điều khiển clip trong `use-cinema.ts`.
+- Component trong `components/` chỉ render UI và nhận dữ liệu/callback qua props.
+- Helper format ngày, nhãn trạng thái và màu tuần đặt trong `cinema-utils.ts`.
+- Giữ nguyên video player `expo-video` (`useVideoPlayer`, `VideoView`) và luồng chuyển sang `social-post`.
+
 ## Feature tasks hiện tại
 
 Daily tasks đã được tách theo feature:
