@@ -174,6 +174,38 @@ Quy tắc:
 - Helper format ngày, nhãn trạng thái và màu tuần đặt trong `cinema-utils.ts`.
 - Giữ nguyên video player `expo-video` (`useVideoPlayer`, `VideoView`) và luồng chuyển sang `social-post`.
 
+## Feature Shop (Nạp Ruby & Cửa hàng)
+
+Màn hình Nạp Ruby được chia theo feature:
+
+```text
+app/ruby-topup.tsx
+src/features/shop/
+  ruby-topup-screen.tsx        # Ghép route screen và các thành phần nạp ruby
+  shop.styles.ts               # Style dùng chung của màn hình nạp ruby
+  components/
+    detail-row.tsx             # Hàng thông tin chi tiết giao dịch chuyển khoản
+    topup-header.tsx           # Back button và tiêu đề
+    topup-rate-card.tsx        # Thẻ tỷ lệ quy đổi 1 Ruby = VND
+    topup-packages-list.tsx    # Danh sách các gói nạp Ruby cố định
+    custom-topup-form.tsx      # Form nhập số Ruby tùy chọn và nút tạo QR
+    topup-transaction-card.tsx # Card mã VietQR SePay, kiểm tra trạng thái và số dư
+  hooks/
+    use-ruby-topup.ts          # State bảng giá, tính tiền, tạo QR, polling kiểm tra giao dịch
+  types/
+    shop.ts                    # Props component của feature shop
+  utils/
+    shop-utils.ts              # Helper formatVnd
+```
+
+Quy tắc:
+
+- `app/ruby-topup.tsx` chỉ làm entry point cho Expo Router.
+- Giữ logic gọi service, tạo QR nạp ruby và polling kiểm tra giao dịch trong `use-ruby-topup.ts`.
+- Component trong `components/` chỉ render UI và nhận dữ liệu/callback qua props.
+- Helper format tiền đặt trong `shop-utils.ts`.
+- Giữ nguyên cơ chế tự động polling 5s kiểm tra trạng thái giao dịch VietQR SePay.
+
 ## Feature tasks hiện tại
 
 Daily tasks đã được tách theo feature:
