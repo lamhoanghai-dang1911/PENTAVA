@@ -40,6 +40,24 @@ export const API_ENDPOINTS = {
     INIT_TOPUP: "/api/shop/topup/init",
     TOPUP_PACKAGES: "/api/shop/topup/packages",
     TOPUP_HISTORY: "/api/shop/topup/history",
+    SUBSCRIPTION_INIT: "/api/shop/subscription/init",
+    SUBSCRIPTION_PLANS: "/api/shop/subscription/plans",
+    MY_SUBSCRIPTION: "/api/shop/subscription/my-subscription",
+    SUBSCRIPTION_ENTITLEMENTS: (userId: number) =>
+      `/api/shop/subscription/entitlements/${userId}`,
+    SUBSCRIPTION_CHECK_ENTITLEMENT: "/api/shop/subscription/entitlement/check",
+    SUBSCRIPTION_MOCK_CONFIRM: (transactionCode: string) =>
+      `/api/shop/subscription/mock-confirm/${transactionCode}`,
+  },
+  SUBSCRIPTION: {
+    INIT: "/api/shop/subscription/init",
+    PLANS: "/api/shop/subscription/plans",
+    MY_SUBSCRIPTION: "/api/shop/subscription/my-subscription",
+    ENTITLEMENTS: (userId: number) =>
+      `/api/shop/subscription/entitlements/${userId}`,
+    CHECK_ENTITLEMENT: "/api/shop/subscription/entitlement/check",
+    MOCK_CONFIRM: (transactionCode: string) =>
+      `/api/shop/subscription/mock-confirm/${transactionCode}`,
   },
   SKIN: {
     MY_AVATAR: "/api/skin/avatar/my-avatar",

@@ -27,8 +27,20 @@ const publicAuthEndpoints = [
   "/api/auth/reset-password",
 ];
 
+const publicEndpoints = [
+  ...publicAuthEndpoints,
+  "/api/shop/subscription/plans",
+];
+
 function isPublicAuthRequest(url?: string) {
   return publicAuthEndpoints.includes(url ?? "");
+}
+
+function isPublicRequest(url?: string) {
+  return (
+    publicEndpoints.includes(url ?? "") ||
+    Boolean(url?.startsWith("/api/shop/subscription/entitlement"))
+  );
 }
 
 export function setAccessToken(token: string | null) {
@@ -50,13 +62,14 @@ export async function clearAuthenticationSession() {
 }
 
 apiClient.interceptors.request.use(async (config) => {
-  const isPublic = isPublicAuthRequest(config.url);
+  const isPublicAuth = isPublicAuthRequest(config.url);
+  const isPublic = isPublicRequest(config.url);
 
-  if (!isPublic && !accessToken) {
+  if (!isPublicAuth && !accessToken) {
     accessToken = await getStoredAccessToken();
   }
 
-  if (!isPublic && accessToken) {
+  if (!isPublicAuth && accessToken) {
     config.headers.Authorization = `Bearer ${accessToken}`;
   }
 
