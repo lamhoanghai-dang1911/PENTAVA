@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/src/constants/api";
 import apiClient from "@/src/services/apiClient";
+import { cacheManager } from "@/src/services/cacheManager";
 import type {
   EquipSkinRequest,
   MyAvatarResponse,
@@ -7,19 +8,36 @@ import type {
   UnequipSkinRequest,
 } from "@/src/types/api/skin";
 
+const AVATAR_CACHE_KEY = "skin:my-avatar";
+const INVENTORY_CACHE_KEY = "skin:inventory";
+
 export const skinService = {
-  async getMyAvatar(): Promise<MyAvatarResponse> {
-    const response = await apiClient.get<MyAvatarResponse>(
-      API_ENDPOINTS.SKIN.MY_AVATAR,
+  async getMyAvatar(forceRefresh = false): Promise<MyAvatarResponse> {
+    return cacheManager.fetchWithCache(
+      AVATAR_CACHE_KEY,
+      async () => {
+        const response = await apiClient.get<MyAvatarResponse>(
+          API_ENDPOINTS.SKIN.MY_AVATAR,
+        );
+        return response.data;
+      },
+      60000,
+      forceRefresh,
     );
-    return response.data;
   },
 
-  async getMyInventory(): Promise<SkinInventoryItem[]> {
-    const response = await apiClient.get<SkinInventoryItem[]>(
-      API_ENDPOINTS.SKIN.INVENTORY,
+  async getMyInventory(forceRefresh = false): Promise<SkinInventoryItem[]> {
+    return cacheManager.fetchWithCache(
+      INVENTORY_CACHE_KEY,
+      async () => {
+        const response = await apiClient.get<SkinInventoryItem[]>(
+          API_ENDPOINTS.SKIN.INVENTORY,
+        );
+        return response.data;
+      },
+      60000,
+      forceRefresh,
     );
-    return response.data;
   },
 
   async equipSkin(skinId: number): Promise<MyAvatarResponse> {
@@ -28,6 +46,8 @@ export const skinService = {
       API_ENDPOINTS.SKIN.EQUIP,
       request,
     );
+    cacheManager.set(AVATAR_CACHE_KEY, response.data, 60000);
+    cacheManager.invalidate(INVENTORY_CACHE_KEY);
     return response.data;
   },
 
@@ -37,6 +57,9 @@ export const skinService = {
       API_ENDPOINTS.SKIN.UNEQUIP,
       request,
     );
+    cacheManager.set(AVATAR_CACHE_KEY, response.data, 60000);
+    cacheManager.invalidate(INVENTORY_CACHE_KEY);
     return response.data;
   },
 };
+

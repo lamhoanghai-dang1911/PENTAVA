@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/src/constants/api";
 import apiClient from "@/src/services/apiClient";
+import { cacheManager } from "@/src/services/cacheManager";
 import type {
   ConfirmDailyTasksRequest,
   DailyTaskStatusResponse,
@@ -46,11 +47,21 @@ export const taskService = {
     return response.data;
   },
 
-  async getDailyTaskStatus(goalId: number): Promise<DailyTaskStatusResponse> {
-    const response = await apiClient.get(API_ENDPOINTS.TASK.DAILY_STATUS, {
-      params: { goalId },
-    });
-    return response.data;
+  async getDailyTaskStatus(
+    goalId: number,
+    forceRefresh = false,
+  ): Promise<DailyTaskStatusResponse> {
+    return cacheManager.fetchWithCache(
+      `task:daily-status:${goalId}`,
+      async () => {
+        const response = await apiClient.get(API_ENDPOINTS.TASK.DAILY_STATUS, {
+          params: { goalId },
+        });
+        return response.data;
+      },
+      30000,
+      forceRefresh,
+    );
   },
 
   async selectMood(
@@ -75,6 +86,7 @@ export const taskService = {
         API_ENDPOINTS.TASK.CONFIRM_DAILY,
         data,
       );
+      cacheManager.invalidate("task:daily-status:", true);
       return response.data;
     } catch (error: any) {
       throw new Error(
@@ -93,6 +105,7 @@ export const taskService = {
       }
 
       const response = await apiClient.post(API_ENDPOINTS.TASK.SWAP, data);
+      cacheManager.invalidate("task:daily-status:", true);
       return response.data;
     } catch (error: any) {
       throw new Error(
@@ -124,6 +137,7 @@ export const taskService = {
 
   async completeTask(progressId: number): Promise<TaskResponse> {
     const response = await apiClient.post(API_ENDPOINTS.TASK.COMPLETE(progressId));
+    cacheManager.invalidate("task:daily-status:", true);
     return response.data;
   },
 };

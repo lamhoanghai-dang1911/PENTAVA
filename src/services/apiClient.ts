@@ -5,6 +5,7 @@ import {
   getAccessToken as getStoredAccessToken,
   removeAccessToken,
 } from "./authStorage";
+import { cacheManager } from "./cacheManager";
 
 const apiClient = create({
   baseURL: API_BASE_URL,
@@ -58,6 +59,7 @@ export async function restoreAccessToken() {
 
 export async function clearAuthenticationSession() {
   accessToken = null;
+  cacheManager.clear();
   await Promise.all([removeAccessToken(), clearCurrentUser()]);
 }
 

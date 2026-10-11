@@ -40,14 +40,8 @@ export function useCommunity() {
 
       try {
         const response = await socialService.getFeed(tab, cursor);
-        const detailedItems = await Promise.all(
-          response.items.map((item) => socialService.getPost(item.id)),
-        );
-        setPosts((current) =>
-          append
-            ? [...current, ...detailedItems.map(toCommunityPost)]
-            : detailedItems.map(toCommunityPost),
-        );
+        const newPosts = response.items.map(toCommunityPost);
+        setPosts((current) => (append ? [...current, ...newPosts] : newPosts));
         setNextCursor(response.nextCursor);
         setHasMore(response.hasMore);
       } catch (error) {

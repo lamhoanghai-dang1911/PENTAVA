@@ -32,9 +32,11 @@ export function InventoryCard({
 
       <View style={styles.itemImageShowcase}>
         <Image
+          cachePolicy="memory-disk"
           contentFit="contain"
           source={{ uri: item.imageUrl }}
           style={styles.itemImage}
+          transition={150}
         />
       </View>
 

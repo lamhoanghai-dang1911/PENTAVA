@@ -8,10 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-const DAY_BACKGROUND_URL =
-  'https://olgtvgfgpaydkopjhern.supabase.co/storage/v1/object/public/background/day_background.png';
-const NIGHT_BACKGROUND_URL =
-  'https://olgtvgfgpaydkopjhern.supabase.co/storage/v1/object/public/background/night_background.png';
+const DAY_BACKGROUND = require('@/assets/images/home/day_background.png');
+const NIGHT_BACKGROUND = require('@/assets/images/home/night_background.png');
 
 type DayNightBackgroundProps = {
   isNight: boolean;
@@ -38,11 +36,23 @@ export default function DayNightBackground({ isNight }: DayNightBackgroundProps)
   return (
     <View pointerEvents="none" style={styles.container}>
       <Animated.View style={[StyleSheet.absoluteFill, dayAnimatedStyle]}>
-        <Image contentFit="cover" source={{ uri: DAY_BACKGROUND_URL }} style={styles.image} />
+        <Image
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          priority="high"
+          source={DAY_BACKGROUND}
+          style={styles.image}
+        />
       </Animated.View>
 
       <Animated.View style={[StyleSheet.absoluteFill, nightAnimatedStyle]}>
-        <Image contentFit="cover" source={{ uri: NIGHT_BACKGROUND_URL }} style={styles.image} />
+        <Image
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          priority="high"
+          source={NIGHT_BACKGROUND}
+          style={styles.image}
+        />
       </Animated.View>
     </View>
   );

@@ -200,6 +200,7 @@ export function ShopSheet({
                                     {getShopThumbnailLayers(item).map((imageUrl, layerIndex) => (
                                         <Image
                                             key={`${item.id}-${layerIndex}`}
+                                            cachePolicy="memory-disk"
                                             contentFit="contain"
                                             source={{ uri: imageUrl }}
                                             style={[
@@ -207,6 +208,7 @@ export function ShopSheet({
                                                 layerIndex > 0 && styles.thumbnailItemLayer,
                                                 { zIndex: layerIndex },
                                             ]}
+                                            transition={150}
                                         />
                                     ))}
                                 </View>

@@ -87,8 +87,12 @@ export default function CommunityScreen() {
             <FlatList
               contentContainerStyle={styles.scrollContent}
               data={posts}
+              initialNumToRender={3}
               keyExtractor={(post) => String(post.id)}
               keyboardShouldPersistTaps="handled"
+              maxToRenderPerBatch={3}
+              removeClippedSubviews={Platform.OS !== "web"}
+              windowSize={5}
               ListEmptyComponent={
                 <View style={styles.centerState}>
                   <Ionicons

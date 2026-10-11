@@ -27,9 +27,11 @@ export function FriendSuggestionCard({
           {suggestion.avatarUrl ? (
             <Image
               accessibilityLabel={`Ảnh đại diện của ${displayName}`}
+              cachePolicy="memory-disk"
               contentFit="cover"
               source={{ uri: suggestion.avatarUrl }}
               style={styles.suggestionAvatarImage}
+              transition={150}
             />
           ) : (
             <Text style={styles.suggestionAvatarText}>{fallback}</Text>

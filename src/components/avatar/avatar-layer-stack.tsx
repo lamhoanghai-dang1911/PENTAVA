@@ -39,8 +39,11 @@ function BaseAvatarLayer({ layer }: { layer: AvatarLayer }) {
 function AccessoryAvatarLayer({ layer }: { layer: AvatarLayer }) {
   return (
     <Image
+      cachePolicy="memory-disk"
       contentFit="contain"
+      priority="high"
       source={{ uri: layer.imageUrl }}
+      transition={150}
       style={[
         StyleSheet.absoluteFill,
         {

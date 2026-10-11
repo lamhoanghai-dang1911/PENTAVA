@@ -32,21 +32,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        try {
-          await authService.getProfile();
-          if (active) setStatus('authenticated');
-        } catch (error) {
-          if (!getAccessToken()) {
-            if (active) setStatus('unauthenticated');
-            return;
-          }
+        // Optimistically activate session to render immediately without network delay
+        if (active) setStatus('authenticated');
 
-          console.warn(
-            'Could not validate the saved session; keeping it available for retry.',
-            error,
-          );
-          if (active) setStatus('authenticated');
-        }
+        // Pre-warm profile cache and validate token in the background
+        authService.getProfile().catch((error) => {
+          if (!getAccessToken() && active) {
+            setStatus('unauthenticated');
+          } else {
+            console.warn(
+              'Could not validate the saved session; keeping it available for retry.',
+              error,
+            );
+          }
+        });
       } catch (error) {
         console.error('Unable to restore the saved authentication session.', error);
         if (active) setStatus('unauthenticated');

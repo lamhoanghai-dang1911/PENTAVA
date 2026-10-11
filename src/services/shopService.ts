@@ -1,5 +1,6 @@
 import { API_ENDPOINTS } from "@/src/constants/api";
 import apiClient from "@/src/services/apiClient";
+import { cacheManager } from "@/src/services/cacheManager";
 import type {
   BuyShopItemResponse,
   InitTopupRequest,
@@ -58,45 +59,61 @@ export const shopService = {
       const response = await apiClient.post(
         API_ENDPOINTS.SHOP.BUY_ITEM(skinItemId),
       );
+      cacheManager.invalidate("shop:wallet");
+      cacheManager.invalidate("skin:inventory");
       return response.data;
     } catch (error: any) {
       throw createShopError(error, "Không thể mua skin.");
     }
   },
 
-  async getItems(): Promise<ShopItem[]> {
-    try {
-      const [itemsResponse, thumbnailsResponse] = await Promise.all([
-        apiClient.get<ShopItem[]>(API_ENDPOINTS.SHOP.ITEMS),
-        apiClient.get<ShopItemThumbnail[]>(API_ENDPOINTS.SHOP.THUMBNAILS),
-      ]);
-      const thumbnailsByShopItemId = new Map(
-        thumbnailsResponse.data.map((thumbnail) => [thumbnail.shopItemId, thumbnail]),
-      );
+  async getItems(forceRefresh = false): Promise<ShopItem[]> {
+    return cacheManager.fetchWithCache(
+      "shop:items",
+      async () => {
+        try {
+          const [itemsResponse, thumbnailsResponse] = await Promise.all([
+            apiClient.get<ShopItem[]>(API_ENDPOINTS.SHOP.ITEMS),
+            apiClient.get<ShopItemThumbnail[]>(API_ENDPOINTS.SHOP.THUMBNAILS),
+          ]);
+          const thumbnailsByShopItemId = new Map(
+            thumbnailsResponse.data.map((thumbnail) => [thumbnail.shopItemId, thumbnail]),
+          );
 
-      return itemsResponse.data.map((item) => {
-        const thumbnail = thumbnailsByShopItemId.get(item.id);
-        return thumbnail
-          ? {
-              ...item,
-              itemBackgroundUrl: thumbnail.itemBackgroundUrl,
-              thumbnailUrl: thumbnail.thumbnailUrl,
-              thumbnailLayers: thumbnail.thumbnailLayers,
-            }
-          : item;
-      });
-    } catch (error: any) {
-      throw createShopError(error, "Không thể tải danh sách skin.");
-    }
+          return itemsResponse.data.map((item) => {
+            const thumbnail = thumbnailsByShopItemId.get(item.id);
+            return thumbnail
+              ? {
+                  ...item,
+                  itemBackgroundUrl: thumbnail.itemBackgroundUrl,
+                  thumbnailUrl: thumbnail.thumbnailUrl,
+                  thumbnailLayers: thumbnail.thumbnailLayers,
+                }
+              : item;
+          });
+        } catch (error: any) {
+          throw createShopError(error, "Không thể tải danh sách skin.");
+        }
+      },
+      120000,
+      forceRefresh,
+    );
   },
 
-  async getMyWallet(): Promise<WalletResponse> {
-    try {
-      const response = await apiClient.get(API_ENDPOINTS.SHOP.MY_WALLET);
-      return response.data;
-    } catch (error: any) {
-      throw createShopError(error, "Không thể lấy số dư Ruby.");
-    }
+  async getMyWallet(forceRefresh = false): Promise<WalletResponse> {
+    return cacheManager.fetchWithCache(
+      "shop:wallet",
+      async () => {
+        try {
+          const response = await apiClient.get(API_ENDPOINTS.SHOP.MY_WALLET);
+          return response.data;
+        } catch (error: any) {
+          throw createShopError(error, "Không thể lấy số dư Ruby.");
+        }
+      },
+      30000,
+      forceRefresh,
+    );
   },
 
   async getTopupHistory(): Promise<TopupHistoryItem[]> {

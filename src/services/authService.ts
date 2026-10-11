@@ -1,6 +1,8 @@
 import { API_ENDPOINTS } from "../constants/api";
 import apiClient, { setAccessToken } from "./apiClient";
 import { saveAccessToken, saveCurrentUser } from "./authStorage";
+import { cacheManager } from "./cacheManager";
+
 
 type RegisterData = {
   email: string;
@@ -223,18 +225,26 @@ export const authService = {
     }
   },
 
-  async getProfile(): Promise<Profile> {
-    try {
-      const response = await apiClient.get(API_ENDPOINTS.AUTH.ME);
-      return response.data;
-    } catch (error: any) {
-      throw new Error(getErrorMessage(error, "Không thể tải thông tin tài khoản."));
-    }
+  async getProfile(forceRefresh = false): Promise<Profile> {
+    return cacheManager.fetchWithCache(
+      "auth:profile",
+      async () => {
+        try {
+          const response = await apiClient.get(API_ENDPOINTS.AUTH.ME);
+          return response.data;
+        } catch (error: any) {
+          throw new Error(getErrorMessage(error, "Không thể tải thông tin tài khoản."));
+        }
+      },
+      120000,
+      forceRefresh,
+    );
   },
 
   async updateProfile(data: UpdateProfileData): Promise<Profile> {
     try {
       const response = await apiClient.put(API_ENDPOINTS.AUTH.PROFILE, data);
+      cacheManager.set("auth:profile", response.data, 120000);
       return response.data;
     } catch (error: any) {
       throw new Error(getErrorMessage(error, "Không thể cập nhật thông tin tài khoản."));

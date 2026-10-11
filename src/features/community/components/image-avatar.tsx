@@ -20,11 +20,12 @@ export function ImageAvatar({ source, fallback }: ImageAvatarProps) {
   return (
     <Image
       accessibilityLabel="Ảnh đại diện"
-      cachePolicy="none"
+      cachePolicy="memory-disk"
       contentFit="cover"
       onError={() => setHasError(true)}
       source={{ uri: source }}
       style={styles.avatarImage}
+      transition={150}
     />
   );
 }

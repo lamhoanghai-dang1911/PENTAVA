@@ -95,9 +95,11 @@ export function WeekPhotosContent({
             >
               <Image
                 accessibilityLabel={`Ảnh check-in ngày ${formatDate(photo.checkinDate)}`}
+                cachePolicy="memory-disk"
                 contentFit="cover"
                 source={photo.imageUrl}
                 style={styles.photo}
+                transition={150}
               />
               <View style={styles.photoCaption}>
                 <Ionicons color={Design.colors.primaryGreen} name="calendar-outline" size={14} />
