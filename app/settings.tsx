@@ -1,3 +1,4 @@
+import { shopService } from '@/src/services/shopService';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
 import { setAccessToken } from '@/src/services/apiClient';
@@ -47,6 +48,7 @@ export default function SettingsScreen() {
     const [selectedAvatarUri, setSelectedAvatarUri] = useState<string | null>(null);
     const [avatarLoadFailed, setAvatarLoadFailed] = useState(false);
     const [bio, setBio] = useState('');
+    const [rubyBalance, setRubyBalance] = useState<number | null>(null);
 
     const loadProfile = async () => {
         try {
@@ -57,6 +59,11 @@ export default function SettingsScreen() {
             setSelectedAvatarUri(null);
             setAvatarLoadFailed(false);
             setBio(nextProfile.bio ?? '');
+
+            void shopService
+                .getMyWallet()
+                .then((w) => setRubyBalance(w.rubyBalance))
+                .catch(() => {});
         } catch (error) {
             Alert.alert('Không thể tải tài khoản', error instanceof Error ? error.message : 'Vui lòng thử lại.');
         } finally {
@@ -203,7 +210,7 @@ export default function SettingsScreen() {
                 </View>
                 <View style={styles.statCard}>
                     <Text style={styles.statIcon}>💎</Text>
-                    <Text style={styles.statNumber}>15</Text>
+                    <Text style={styles.statNumber}>{rubyBalance !== null ? rubyBalance : '—'}</Text>
                     <Text style={styles.statLabel}>Ruby</Text>
                 </View>
                 <View style={styles.statCard}>

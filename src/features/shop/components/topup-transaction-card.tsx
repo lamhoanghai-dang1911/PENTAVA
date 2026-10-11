@@ -2,7 +2,7 @@ import React from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
 import { Design } from "@/src/constants/design";
-import { formatVnd } from "../utils/shop-utils";
+import { formatVnd, formatTopupStatus } from "../utils/shop-utils";
 import { DetailRow } from "./detail-row";
 import { styles } from "../shop.styles";
 import type { TopupTransactionCardProps } from "../types/shop";
@@ -14,6 +14,9 @@ export function TopupTransactionCard({
   statusError,
   onCheckStatus,
 }: TopupTransactionCardProps) {
+  const isSuccess = transaction.status === "SUCCESS";
+  const statusLabel = formatTopupStatus(transaction.status);
+
   return (
     <View style={styles.transactionCard}>
       <Text style={styles.transactionTitle}>Quét mã QR để chuyển khoản</Text>
@@ -34,23 +37,21 @@ export function TopupTransactionCard({
         accessibilityLiveRegion="polite"
         style={[
           styles.statusBadge,
-          transaction.status === "SUCCESS" ? styles.successStatus : styles.pendingStatus,
+          isSuccess ? styles.successStatus : styles.pendingStatus,
         ]}
       >
         <Text
           style={[
             styles.statusText,
-            transaction.status === "SUCCESS"
+            isSuccess
               ? styles.successStatusText
               : styles.pendingStatusText,
           ]}
         >
-          {transaction.status === "SUCCESS"
-            ? "Nạp Ruby thành công"
-            : `Trạng thái: ${transaction.status}`}
+          {isSuccess ? "Nạp Ruby thành công" : statusLabel}
         </Text>
       </View>
-      {transaction.status === "SUCCESS" && rubyBalance !== null ? (
+      {isSuccess && rubyBalance !== null ? (
         <View style={styles.walletBalanceRow}>
           <Text style={styles.detailLabel}>Số dư Ruby hiện tại</Text>
           <View style={styles.walletBalanceValue}>
@@ -96,7 +97,7 @@ export function TopupTransactionCard({
         <DetailRow label="Chủ tài khoản" value={transaction.accountName} />
         <DetailRow label="Nội dung chuyển khoản" value={transaction.transferContent} />
         <DetailRow label="Mã giao dịch" value={transaction.transactionCode} />
-        <DetailRow label="Trạng thái" value={transaction.status} />
+        <DetailRow label="Trạng thái" value={statusLabel} />
       </View>
       <Text style={styles.transferHint}>
         Vui lòng chuyển đúng số tiền và nội dung để hệ thống ghi nhận giao dịch.

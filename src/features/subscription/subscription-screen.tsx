@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { View, Text, ActivityIndicator } from "react-native";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { ScreenContainer } from "@/src/components/ui/screen-container";
 import { NotificationModal } from "@/src/components/ui/notification-modal";
 import { Design } from "@/src/constants/design";
@@ -23,19 +23,24 @@ export default function SubscriptionScreen() {
     isLoading,
     isPurchasing,
     isCheckingStatus,
-    isMockConfirming,
     activeTransaction,
     errorModal,
     notificationModal,
     statusMessage,
     setSelectedPlanCode,
+    loadData,
     initPurchase,
     checkStatus,
-    mockConfirm,
     closeQrModal,
     closeErrorModal,
     closeNotificationModal,
   } = useSubscription();
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadData();
+    }, [loadData]),
+  );
 
   return (
     <ScreenContainer scrollable contentStyle={styles.container}>
@@ -85,8 +90,6 @@ export default function SubscriptionScreen() {
         onClose={closeQrModal}
         onCheckStatus={checkStatus}
         isCheckingStatus={isCheckingStatus}
-        onMockConfirm={mockConfirm}
-        isMockConfirming={isMockConfirming}
         statusMessage={statusMessage}
       />
 

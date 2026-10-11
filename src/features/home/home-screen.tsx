@@ -75,6 +75,18 @@ export default function HomeScreen() {
           }
         });
 
+      void shopService
+        .getMyWallet()
+        .then((wallet) => {
+          if (isFocused) {
+            setRubyBalance(wallet.rubyBalance);
+            setIsRubyBalanceLoading(false);
+          }
+        })
+        .catch((error: Error) => {
+          console.error('Không thể tải số dư Ruby:', error);
+        });
+
       return () => {
         isFocused = false;
       };

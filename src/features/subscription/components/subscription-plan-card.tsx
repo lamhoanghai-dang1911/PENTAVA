@@ -66,25 +66,20 @@ export function SubscriptionPlanCard({
         </View>
 
         <View style={styles.featuresBox}>
-          {plan.features.map((feature) => {
-            const isFeatureEnabled =
-              (feature as any).isEnabled ?? (feature as any).enabled ?? false;
-            return (
+          {plan.features
+            ?.filter((feature) => {
+              return (feature as any).isEnabled ?? (feature as any).enabled ?? false;
+            })
+            .map((feature) => (
               <View
                 key={feature.featureId || feature.featureCode}
                 style={styles.featureRow}
               >
-                <Text
-                  style={[
-                    styles.featureText,
-                    !isFeatureEnabled && styles.featureTextDisabled,
-                  ]}
-                >
+                <Text style={styles.featureText}>
                   {feature.displayLabel || feature.name}
                 </Text>
               </View>
-            );
-          })}
+            ))}
         </View>
       </View>
     </Pressable>

@@ -61,6 +61,20 @@ export function useRubyTopup() {
     };
   }, [pricingRetryCount]);
 
+  useEffect(() => {
+    let isMounted = true;
+    void shopService
+      .getMyWallet()
+      .then((wallet) => {
+        if (isMounted) setRubyBalance(wallet.rubyBalance);
+      })
+      .catch(() => {});
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const retryLoadingPricing = () => {
     setIsLoadingPricing(true);
     setPricingError(null);
@@ -161,7 +175,7 @@ export function useRubyTopup() {
     }, 0);
     const interval = setInterval(() => {
       void checkTransactionStatus();
-    }, 5000);
+    }, 2500);
 
     return () => {
       clearTimeout(initialCheck);

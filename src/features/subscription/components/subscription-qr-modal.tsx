@@ -1,5 +1,6 @@
 import { Design, FontFamily } from "@/src/constants/design";
 import type { SubscriptionQrModalProps } from "@/src/features/subscription/types/subscription";
+import { formatSubscriptionStatus } from "../utils/subscription-utils";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import {
@@ -22,8 +23,6 @@ export function SubscriptionQrModal({
   onClose,
   onCheckStatus,
   isCheckingStatus,
-  onMockConfirm,
-  isMockConfirming,
   statusMessage,
 }: SubscriptionQrModalProps) {
   if (!visible || !transaction) return null;
@@ -94,6 +93,10 @@ export function SubscriptionQrModal({
                 value={transaction.transferContent}
               />
               <DetailRow label="Mã giao dịch" value={transaction.transactionCode} />
+              <DetailRow
+                label="Trạng thái"
+                value={formatSubscriptionStatus(transaction.status)}
+              />
             </View>
 
             <View style={styles.alertNote}>
@@ -142,37 +145,6 @@ export function SubscriptionQrModal({
                   </>
                 )}
               </Pressable>
-
-              {onMockConfirm ? (
-                <Pressable
-                  accessibilityRole="button"
-                  disabled={isMockConfirming}
-                  onPress={() => void onMockConfirm()}
-                  style={({ pressed }) => [
-                    styles.mockButton,
-                    isMockConfirming && styles.buttonDisabled,
-                    pressed && styles.buttonPressed,
-                  ]}
-                >
-                  {isMockConfirming ? (
-                    <ActivityIndicator
-                      color={Design.colors.primaryGreen}
-                      size="small"
-                    />
-                  ) : (
-                    <>
-                      <Ionicons
-                        color={Design.colors.primaryGreen}
-                        name="flash-outline"
-                        size={16}
-                      />
-                      <Text style={styles.mockButtonText}>
-                        Mô phỏng thanh toán (Test Dev)
-                      </Text>
-                    </>
-                  )}
-                </Pressable>
-              ) : null}
             </View>
           </ScrollView>
         </View>

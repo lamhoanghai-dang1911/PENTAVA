@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { subscriptionService } from "@/src/services/subscriptionService";
 import type {
   SubscriptionPlanItem,
@@ -31,6 +31,7 @@ export function useSubscription(): UseSubscriptionResult {
   const [notificationModal, setNotificationModal] =
     useState<SubscriptionModalState>(INITIAL_MODAL_STATE);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const isCheckingStatusRef = useRef(false);
 
   const selectedPlan =
     plans.find((p) => p.code.toUpperCase() === selectedPlanCode?.toUpperCase()) ??
@@ -117,44 +118,71 @@ export function useSubscription(): UseSubscriptionResult {
     }
   }, [selectedPlan]);
 
-  const checkStatus = useCallback(async () => {
+  const checkStatus = useCallback(
+    async (isManual = true) => {
+      if (!activeTransaction || isCheckingStatusRef.current) return;
+
+      isCheckingStatusRef.current = true;
+      if (isManual) {
+        setIsCheckingStatus(true);
+        setStatusMessage(null);
+      }
+      try {
+        const updatedSub = await subscriptionService.getMySubscription();
+        setMySubscription(updatedSub);
+
+        const isPurchasedPlanActive =
+          updatedSub.hasActiveSubscription &&
+          (updatedSub.planCode?.toUpperCase() === activeTransaction.planCode.toUpperCase() ||
+            updatedSub.daysRemaining > 0);
+
+        if (isPurchasedPlanActive) {
+          setActiveTransaction(null);
+          setStatusMessage(null);
+          setNotificationModal({
+            visible: true,
+            title: "Thanh toán thành công 🎉",
+            message: `Chúc mừng bạn đã kích hoạt thành công ${updatedSub.planName || activeTransaction.planName}!`,
+          });
+          void fetchSubscriptionData();
+        } else if (isManual) {
+          setStatusMessage(
+            "Hệ thống chưa nhận được thanh toán. Nếu bạn đã chuyển khoản, vui lòng đợi 1-2 phút để ngân hàng xử lý.",
+          );
+        }
+      } catch (error: any) {
+        if (isManual) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Không thể kiểm tra trạng thái gói cước.";
+          setErrorModal({
+            visible: true,
+            title: "Lỗi kiểm tra trạng thái",
+            message,
+          });
+        }
+      } finally {
+        isCheckingStatusRef.current = false;
+        if (isManual) {
+          setIsCheckingStatus(false);
+        }
+      }
+    },
+    [activeTransaction, fetchSubscriptionData],
+  );
+
+  useEffect(() => {
     if (!activeTransaction) return;
 
-    setIsCheckingStatus(true);
-    setStatusMessage(null);
-    try {
-      const updatedSub = await subscriptionService.getMySubscription();
-      setMySubscription(updatedSub);
+    const interval = setInterval(() => {
+      void checkStatus(false);
+    }, 2500);
 
-      if (
-        updatedSub.hasActiveSubscription &&
-        updatedSub.planCode?.toUpperCase() === activeTransaction.planCode.toUpperCase()
-      ) {
-        setActiveTransaction(null);
-        setNotificationModal({
-          visible: true,
-          title: "Thanh toán thành công 🎉",
-          message: `Chúc mừng bạn đã kích hoạt thành công ${updatedSub.planName || activeTransaction.planName}!`,
-        });
-      } else {
-        setStatusMessage(
-          "Hệ thống chưa nhận được thanh toán. Nếu bạn đã chuyển khoản, vui lòng đợi 1-2 phút để ngân hàng xử lý.",
-        );
-      }
-    } catch (error: any) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Không thể kiểm tra trạng thái gói cước.";
-      setErrorModal({
-        visible: true,
-        title: "Lỗi kiểm tra trạng thái",
-        message,
-      });
-    } finally {
-      setIsCheckingStatus(false);
-    }
-  }, [activeTransaction]);
+    return () => {
+      clearInterval(interval);
+    };
+  }, [activeTransaction, checkStatus]);
 
   const mockConfirm = useCallback(async () => {
     if (!activeTransaction) return;

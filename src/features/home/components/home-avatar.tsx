@@ -1,7 +1,6 @@
 import type { AvatarLayer } from '@/src/types/api/skin';
-import { Image } from 'expo-image';
 import { useEffect } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -12,6 +11,16 @@ import Animated, {
 } from 'react-native-reanimated';
 import { AvatarLayerStack } from '@/src/components/avatar/avatar-layer-stack';
 import { styles } from '../home-screen.styles';
+
+const DEFAULT_AVATAR_LAYERS: AvatarLayer[] = [
+  {
+    code: 'base',
+    layerOrder: 0,
+    slot: 'BASE',
+    name: 'Base Cat',
+    imageUrl: '',
+  },
+];
 
 type HomeAvatarProps = {
   avatarLayers: AvatarLayer[] | null;
@@ -48,19 +57,14 @@ export function HomeAvatar({ avatarLayers, isImmersiveView }: HomeAvatarProps) {
     ],
   }));
 
+  const activeLayers =
+    avatarLayers && avatarLayers.length > 0 ? avatarLayers : DEFAULT_AVATAR_LAYERS;
+
   return (
     <View style={[styles.mascotCard, isImmersiveView && styles.mascotCardImmersive]}>
       <Animated.View style={animatedMascotStyle}>
         <View accessibilityLabel="Avatar hiện tại" style={styles.mascot}>
-          {avatarLayers ? (
-            <AvatarLayerStack layers={avatarLayers} />
-          ) : (
-            <Image
-              contentFit="contain"
-              source={require('@/assets/images/onboarding/cat-loading.png')}
-              style={StyleSheet.absoluteFill}
-            />
-          )}
+          <AvatarLayerStack layers={activeLayers} />
         </View>
       </Animated.View>
     </View>
