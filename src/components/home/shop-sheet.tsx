@@ -69,8 +69,11 @@ export function ShopSheet({
     const [hasLoadedItems, setHasLoadedItems] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
     const [purchasingItemId, setPurchasingItemId] = useState<number | null>(null);
-    const isLoadingItems = visible && !hasLoadedItems && itemsError === null;
-    const isLoadingWallet = visible && balance === null && walletError === null;
+    const shopError = itemsError && walletError
+        ? 'Không thể tải danh sách skin và số dư Ruby.'
+        : (itemsError ?? walletError);
+    const isLoadingItems = visible && !hasLoadedItems && shopError === null;
+    const isLoadingWallet = visible && balance === null && shopError === null;
     const retryLoading = () => {
         setItemsError(null);
         setWalletError(null);
@@ -100,11 +103,7 @@ export function ShopSheet({
                 /không đủ|insufficient|not enough/i.test(message) ||
                 (error instanceof ShopServiceError && error.status === 402);
 
-            if (isInsufficientRuby) {
-                onInsufficientRuby(item, message);
-            } else {
-                Alert.alert('Không thể mua vật phẩm', message);
-            }
+            onInsufficientRuby(item, message);
         } finally {
             setPurchasingItemId(null);
         }
@@ -178,23 +177,14 @@ export function ShopSheet({
                         </View>
                     </View>
 
-                    {walletError ? (
-                        <View style={styles.walletErrorRow}>
-                            <Text accessibilityRole="alert" style={styles.errorText}>{walletError}</Text>
-                            <Pressable accessibilityRole="button" onPress={retryLoading} style={styles.retryButton}>
-                                <Text style={styles.retryButtonText}>Thử lại</Text>
-                            </Pressable>
-                        </View>
-                    ) : null}
-
                     <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
                         {isLoadingItems ? (
                             SKELETON_PLACEHOLDERS.map((key) => (
                                 <ShopCardSkeleton key={`skeleton-${key}`} />
                             ))
-                        ) : itemsError ? (
+                        ) : shopError ? (
                             <View style={styles.emptyState}>
-                                <Text accessibilityRole="alert" style={styles.errorText}>{itemsError}</Text>
+                                <Text accessibilityRole="alert" style={styles.errorText}>{shopError}</Text>
                                 <Pressable
                                     accessibilityRole="button"
                                     onPress={retryLoading}
@@ -374,10 +364,6 @@ const styles = StyleSheet.create({
         fontSize: Design.fontSize.caption,
         marginBottom: 8,
         textAlign: 'center',
-    },
-    walletErrorRow: {
-        alignItems: 'center',
-        marginBottom: 8,
     },
     grid: {
         flexDirection: 'row',

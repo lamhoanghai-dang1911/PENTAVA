@@ -394,9 +394,10 @@ Rules:
 Quy chuẩn thiết kế và tương tác cho màn hình Cửa hàng (`shop-sheet.tsx`) và Nạp Ruby (`ruby-topup-screen.tsx`):
 
 - **Nút xác nhận chuyển khoản:** Nút "Tôi đã chuyển khoản · Kiểm tra ngay" được thiết kế dạng nút văn bản tối giản (background trong suốt, không viền, không đổ màu pill xanh nhạt).
-- **Lottie Feedback cho giao dịch:**
-  - Thành công (`SUCCESS`): Sử dụng animation Lottie checkmark `assets/lottie/payment_success.json`.
-  - Thất bại / Hết hạn (`FAILED` / `EXPIRED`): Sử dụng animation Lottie error `assets/lottie/payment_failed.json`.
+- **Lottie Feedback cho giao dịch nạp Ruby & Mua hàng:**
+  - Thành công (`SUCCESS` / Mua thành công): Sử dụng animation Lottie checkmark `assets/lottie/payment_success.json`.
+  - Thất bại / Hết hạn (`FAILED` / `EXPIRED` / Mua thất bại / Không đủ Ruby): Sử dụng animation Lottie error `assets/lottie/payment_failed.json`.
+  - **Quy chuẩn hiển thị khi Mua hàng thất bại:** Phải hiển thị animation `payment_failed.json` trước trong card; sau khi animation diễn ra (~800ms hoặc kết thúc), mới xuất hiện khối kết quả thông báo chi tiết (tiêu đề, nội dung lỗi, số dư và nút hành động) bằng hiệu ứng `FadeIn.duration(240)` để người dùng nhận diện phản hồi trực quan trước.
 - **Skeleton Loading cho Cửa hàng:**
   - Khi mới mở `shop-sheet` và đang fetch dữ liệu skin (`isLoadingItems`), hiển thị lưới skeleton card (`ShopCardSkeleton`) thay thế cho `ActivityIndicator`.
   - Mỗi skeleton card hiển thị animation Lottie `assets/lottie/card_skeleton.json` trong khung showcase ảnh cùng các khối placeholder tiêu đề, mô tả và nút mua có kích thước đồng nhất với card thật để tránh layout shift.
