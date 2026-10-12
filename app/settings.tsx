@@ -1,10 +1,10 @@
-import { shopService } from '@/src/services/shopService';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
 import { setAccessToken } from '@/src/services/apiClient';
 import { authService, Profile } from '@/src/services/authService';
 import { clearCurrentUser, removeAccessToken } from '@/src/services/authStorage';
 import { uploadAvatar } from '@/src/services/avatarService';
+import { shopService } from '@/src/services/shopService';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -66,7 +66,7 @@ export default function SettingsScreen() {
             void shopService
                 .getMyWallet()
                 .then((w) => setRubyBalance(w.rubyBalance))
-                .catch(() => {});
+                .catch(() => { });
         } catch (error) {
             Alert.alert('Không thể tải tài khoản', error instanceof Error ? error.message : 'Vui lòng thử lại.');
         } finally {
@@ -523,6 +523,8 @@ const styles = StyleSheet.create({
         backgroundColor: Design.colors.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
+        borderBottomRightRadius: 24,
+        borderBottomLeftRadius: 24,
         paddingHorizontal: 24,
         paddingTop: 20,
         paddingBottom: 16,

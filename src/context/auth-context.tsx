@@ -1,5 +1,5 @@
 import { authService } from '@/src/services/authService';
-import { getAccessToken, restoreAccessToken } from '@/src/services/apiClient';
+import { clearAuthenticationSession, getAccessToken, restoreAccessToken } from '@/src/services/apiClient';
 import { subscribeAuthState } from '@/src/services/authStorage';
 import { useCallback, useContext, useEffect, useMemo, useState, createContext, type ReactNode } from 'react';
 import { ActivityIndicator, View } from 'react-native';
@@ -32,20 +32,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           return;
         }
 
-        // Optimistically activate session to render immediately without network delay
-        if (active) setStatus('authenticated');
+        // Validate token with backend before transitioning to authenticated state
+        try {
+          await authService.getProfile();
+          if (active) setStatus('authenticated');
+        } catch (error: any) {
+          const is401 =
+            error?.response?.status === 401 ||
+            error?.status === 401 ||
+            /unauthorized|401/i.test(error?.message || '');
 
-        // Pre-warm profile cache and validate token in the background
-        authService.getProfile().catch((error) => {
-          if (!getAccessToken() && active) {
-            setStatus('unauthenticated');
+          if (is401) {
+            await clearAuthenticationSession();
+            if (active) setStatus('unauthenticated');
           } else {
-            console.warn(
-              'Could not validate the saved session; keeping it available for retry.',
-              error,
-            );
+            // Keep session for offline or network retry
+            if (active) setStatus('authenticated');
           }
-        });
+        }
       } catch (error) {
         console.error('Unable to restore the saved authentication session.', error);
         if (active) setStatus('unauthenticated');

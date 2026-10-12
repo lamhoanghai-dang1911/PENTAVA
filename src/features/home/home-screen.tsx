@@ -16,11 +16,20 @@ import type { AvatarLayer } from '@/src/types/api/skin';
 import type { DailyTaskStatus } from '@/src/types/api/task';
 import { HomeNotificationsModal } from '@/src/features/home/components/home-notifications-modal';
 import { getNotificationKey } from '@/src/features/home/utils/home-notifications';
+import { getAccessToken } from '@/src/services/apiClient';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './home-screen.styles';
+
+function isUnauthorizedError(error: unknown): boolean {
+  if (!error) return false;
+  const status = (error as any)?.response?.status ?? (error as any)?.status;
+  if (status === 401) return true;
+  const message = error instanceof Error ? error.message : String(error);
+  return /unauthorized|401/i.test(message);
+}
 
 export default function HomeScreen() {
   const { data } = useOnboarding();
@@ -55,6 +64,12 @@ export default function HomeScreen() {
       let isFocused = true;
       setToggleKey((prev) => prev + 1);
 
+      if (!getAccessToken()) {
+        return () => {
+          isFocused = false;
+        };
+      }
+
       void skinService
         .getMyAvatar()
         .then((avatar) => {
@@ -67,7 +82,7 @@ export default function HomeScreen() {
           }
         })
         .catch((error: unknown) => {
-          if (isFocused) {
+          if (isFocused && !isUnauthorizedError(error)) {
             Alert.alert(
               'Không thể tải trang phục avatar',
               error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
@@ -84,7 +99,9 @@ export default function HomeScreen() {
           }
         })
         .catch((error: Error) => {
-          console.error('Không thể tải số dư Ruby:', error);
+          if (!isUnauthorizedError(error)) {
+            console.error('Không thể tải số dư Ruby:', error);
+          }
         });
 
       return () => {
@@ -95,6 +112,10 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let isMounted = true;
+    if (!getAccessToken()) {
+      return;
+    }
+
     const timeout = setTimeout(() => {
       void authService
         .getProfile()
@@ -104,7 +125,7 @@ export default function HomeScreen() {
           }
         })
         .catch((error: Error) => {
-          if (isMounted) {
+          if (isMounted && !isUnauthorizedError(error)) {
             Alert.alert('Không thể tải thông tin tài khoản', error.message);
           }
         });
@@ -225,6 +246,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let isMounted = true;
+    if (!getAccessToken()) {
+      return;
+    }
 
     Promise.all([onboardingService.getCurrentGoal(), onboardingService.getCurrentStreak()])
       .then(([goalResponse, streakResponse]) => {
@@ -234,7 +258,7 @@ export default function HomeScreen() {
         }
       })
       .catch((error: Error) => {
-        if (isMounted) {
+        if (isMounted && !isUnauthorizedError(error)) {
           Alert.alert('Không thể tải mục tiêu', error.message);
         }
       });
@@ -247,7 +271,7 @@ export default function HomeScreen() {
         }
       })
       .catch((error: Error) => {
-        if (isMounted) {
+        if (isMounted && !isUnauthorizedError(error)) {
           Alert.alert('Không thể tải số dư Ruby', error.message);
         }
       })
