@@ -389,6 +389,21 @@ Rules:
 - Google OAuth client IDs remain environment variables prefixed with `EXPO_PUBLIC_`; never put Google client secrets in the mobile app.
 - Preserve the existing confirmation-modal sequence: successful login or OAuth only navigates after the user confirms the notification.
 
+## Feature Shop & Topup (Cửa hàng & Nạp Ruby)
+
+Quy chuẩn thiết kế và tương tác cho màn hình Cửa hàng (`shop-sheet.tsx`) và Nạp Ruby (`ruby-topup-screen.tsx`):
+
+- **Nút xác nhận chuyển khoản:** Nút "Tôi đã chuyển khoản · Kiểm tra ngay" được thiết kế dạng nút văn bản tối giản (background trong suốt, không viền, không đổ màu pill xanh nhạt).
+- **Lottie Feedback cho giao dịch:**
+  - Thành công (`SUCCESS`): Sử dụng animation Lottie checkmark `assets/lottie/payment_success.json`.
+  - Thất bại / Hết hạn (`FAILED` / `EXPIRED`): Sử dụng animation Lottie error `assets/lottie/payment_failed.json`.
+- **Skeleton Loading cho Cửa hàng:**
+  - Khi mới mở `shop-sheet` và đang fetch dữ liệu skin (`isLoadingItems`), hiển thị lưới skeleton card (`ShopCardSkeleton`) thay thế cho `ActivityIndicator`.
+  - Mỗi skeleton card hiển thị animation Lottie `assets/lottie/card_skeleton.json` trong khung showcase ảnh cùng các khối placeholder tiêu đề, mô tả và nút mua có kích thước đồng nhất với card thật để tránh layout shift.
+- **Loại bỏ hiệu ứng nảy/giật (No spring bounce):**
+  - Không sử dụng `.springify().damping(...)` trên `FadeInDown` cho danh sách card cửa hàng để tránh hiện tượng nảy giật, rung lắc gây khó chịu.
+  - Sử dụng hiệu ứng mượt mà tĩnh tại `FadeIn.duration(200)` khi các card skin xuất hiện sau khi tải xong.
+
 ## Validation
 
 Lệnh thường dùng:

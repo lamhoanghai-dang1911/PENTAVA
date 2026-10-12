@@ -3,9 +3,36 @@ import { shopService, ShopServiceError } from '@/src/services/shopService';
 import type { ShopItem } from '@/src/types/api/shop';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import LottieView from 'lottie-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
+
+const SKELETON_PLACEHOLDERS = [1, 2, 3, 4];
+
+function ShopCardSkeleton() {
+    return (
+        <View style={styles.productCardSkeleton}>
+            <View style={styles.skeletonBadge} />
+            <View style={styles.skeletonImageShowcase}>
+                <LottieView
+                    autoPlay
+                    loop
+                    resizeMode="cover"
+                    source={require('@/assets/lottie/card_skeleton.json')}
+                    style={styles.skeletonLottie}
+                />
+            </View>
+            <View style={styles.skeletonTitle} />
+            <View style={styles.skeletonDescription} />
+            <View style={styles.skeletonDescriptionShort} />
+            <View style={styles.productBottomRow}>
+                <View style={styles.skeletonPrice} />
+                <View style={styles.skeletonButton} />
+            </View>
+        </View>
+    );
+}
 
 type ShopSheetProps = {
     visible: boolean;
@@ -162,7 +189,9 @@ export function ShopSheet({
 
                     <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
                         {isLoadingItems ? (
-                            <ActivityIndicator color={Design.colors.primaryGreen} size="large" style={styles.loading} />
+                            SKELETON_PLACEHOLDERS.map((key) => (
+                                <ShopCardSkeleton key={`skeleton-${key}`} />
+                            ))
                         ) : itemsError ? (
                             <View style={styles.emptyState}>
                                 <Text accessibilityRole="alert" style={styles.errorText}>{itemsError}</Text>
@@ -175,10 +204,10 @@ export function ShopSheet({
                             </View>
                         ) : items.length === 0 ? (
                             <Text style={styles.emptyText}>Chưa có skin nào trong cửa hàng.</Text>
-                        ) : items.map((item, index) => (
+                        ) : items.map((item) => (
                             <Animated.View
                                 key={item.id}
-                                entering={FadeInDown.delay(index * 60).springify().damping(14)}
+                                entering={FadeIn.duration(200)}
                                 style={styles.productCard}>
                                 <View style={[
                                     styles.productBadge,
@@ -384,6 +413,78 @@ const styles = StyleSheet.create({
         color: Design.colors.white,
         fontFamily: FontFamily.beVietnamMedium,
         fontSize: Design.fontSize.caption,
+    },
+    productCardSkeleton: {
+        width: '48%',
+        borderWidth: 1.5,
+        borderColor: '#E2EFE6',
+        borderRadius: 18,
+        padding: 12,
+        marginBottom: 14,
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#10B981',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    skeletonBadge: {
+        position: 'absolute',
+        top: 10,
+        left: 10,
+        zIndex: 2,
+        width: 44,
+        height: 18,
+        borderRadius: 8,
+        backgroundColor: '#F1F5F9',
+    },
+    skeletonImageShowcase: {
+        width: '100%',
+        height: 100,
+        borderRadius: 14,
+        backgroundColor: '#F8FAF8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 18,
+        marginBottom: 8,
+        overflow: 'hidden',
+    },
+    skeletonLottie: {
+        width: '100%',
+        height: '100%',
+    },
+    skeletonTitle: {
+        height: 14,
+        width: '70%',
+        borderRadius: 6,
+        backgroundColor: '#E2E8F0',
+        marginBottom: 6,
+    },
+    skeletonDescription: {
+        height: 10,
+        width: '95%',
+        borderRadius: 4,
+        backgroundColor: '#F1F5F9',
+        marginBottom: 4,
+    },
+    skeletonDescriptionShort: {
+        height: 10,
+        width: '60%',
+        borderRadius: 4,
+        backgroundColor: '#F1F5F9',
+        marginBottom: 12,
+    },
+    skeletonPrice: {
+        height: 16,
+        width: 40,
+        borderRadius: 6,
+        backgroundColor: '#F1F5F9',
+    },
+    skeletonButton: {
+        height: 28,
+        width: 60,
+        borderRadius: 10,
+        backgroundColor: '#E2EFE6',
     },
     productCard: {
         width: '48%',
