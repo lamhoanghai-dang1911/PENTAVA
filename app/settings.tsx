@@ -13,8 +13,11 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
     Modal,
+    Platform,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
@@ -275,7 +278,15 @@ export default function SettingsScreen() {
                 onRequestClose={handleCloseAccount}
                 transparent
                 visible={accountVisible}>
-                <View style={styles.modalOverlay}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={styles.modalOverlay}>
+                    <Pressable
+                        accessibilityLabel="Đóng tài khoản"
+                        disabled={savingProfile}
+                        onPress={handleCloseAccount}
+                        style={styles.modalBackdrop}
+                    />
                     <View style={styles.accountCard}>
                         <View style={styles.accountHeader}>
                             <Text style={styles.accountTitle}>Tài khoản</Text>
@@ -286,7 +297,10 @@ export default function SettingsScreen() {
                         {loadingProfile ? (
                             <ActivityIndicator color={Design.colors.primaryGreen} style={styles.loader} />
                         ) : profile ? (
-                            <>
+                            <ScrollView
+                                contentContainerStyle={styles.accountScrollContent}
+                                keyboardShouldPersistTaps="handled"
+                                showsVerticalScrollIndicator={false}>
                                 <View style={styles.accountAvatarWrapper}>
                                     <Pressable disabled={savingProfile} onPress={() => void handlePickAvatar()}>
                                         <Image
@@ -336,10 +350,10 @@ export default function SettingsScreen() {
                                         </Pressable>
                                     </>
                                 )}
-                            </>
+                            </ScrollView>
                         ) : null}
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </ScreenContainer>
     );
@@ -498,12 +512,24 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-end',
         backgroundColor: 'rgba(0, 0, 0, 0.35)',
     },
+    modalBackdrop: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
     accountCard: {
         backgroundColor: Design.colors.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        padding: 24,
-        paddingBottom: 36,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 16,
+        maxHeight: '85%',
+    },
+    accountScrollContent: {
+        paddingBottom: 24,
     },
     accountHeader: {
         flexDirection: 'row',
