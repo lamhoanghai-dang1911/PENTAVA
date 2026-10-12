@@ -9,9 +9,34 @@
       "distribution": "internal"
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.pentava.online",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "172089826941-juja2t2f64g59a4ht1fi2ulmqt50om1j.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "172089826941-so85eiurnlr2ielogpi1s6495j7km9rj.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "172089826941-ctgqcqtha95g660csgah5m4kld93raoi.apps.googleusercontent.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://olgtvgfgpaydkopjhern.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable__K9eA7bWmdJ5paaImZFA7g_E3KqU1S3",
+        "EXPO_PUBLIC_SUPABASE_CHECKIN_BUCKET": "pentava-checkin-images"
+      }
     },
-    "production": {}
+    "production": {
+      "android": {
+        "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api.pentava.online",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "172089826941-juja2t2f64g59a4ht1fi2ulmqt50om1j.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "172089826941-so85eiurnlr2ielogpi1s6495j7km9rj.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "172089826941-ctgqcqtha95g660csgah5m4kld93raoi.apps.googleusercontent.com",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://olgtvgfgpaydkopjhern.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable__K9eA7bWmdJ5paaImZFA7g_E3KqU1S3",
+        "EXPO_PUBLIC_SUPABASE_CHECKIN_BUCKET": "pentava-checkin-images"
+      }
+    }
   },
   "submit": {
     "production": {}

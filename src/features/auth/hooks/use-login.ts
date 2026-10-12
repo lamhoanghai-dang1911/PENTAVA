@@ -1,8 +1,9 @@
 import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Platform } from 'react-native';
 
 import { authService } from '@/src/services/authService';
@@ -161,7 +162,7 @@ export function useLogin() {
     }
   };
 
-  const handleBackendGoogleLogin = async (idToken: string) => {
+  const handleBackendGoogleLogin = useCallback(async (idToken: string) => {
     try {
       setLoading(true);
       const result = await authService.googleLogin(idToken);
@@ -179,15 +180,45 @@ export function useLogin() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [markAuthenticated]);
 
   const isWeb = Platform.OS === 'web';
 
+  const webClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
+    '172089826941-juja2t2f64g59a4ht1fi2ulmqt50om1j.apps.googleusercontent.com';
+  const androidClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID ||
+    '172089826941-ctgqcqtha95g660csgah5m4kld93raoi.apps.googleusercontent.com';
+  const iosClientId =
+    process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ||
+    '172089826941-so85eiurnlr2ielogpi1s6495j7km9rj.apps.googleusercontent.com';
+
+  const androidCleanId = androidClientId.replace('.apps.googleusercontent.com', '');
+  const iosCleanId = iosClientId.replace('.apps.googleusercontent.com', '');
+
+  const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+  const redirectUri = useMemo(() => {
+    if (Platform.OS === 'android') {
+      return isExpoGo
+        ? AuthSession.makeRedirectUri()
+        : `com.googleusercontent.apps.${androidCleanId}:/oauth2redirect`;
+    }
+    if (Platform.OS === 'ios') {
+      return isExpoGo
+        ? AuthSession.makeRedirectUri()
+        : `com.googleusercontent.apps.${iosCleanId}:/oauth2redirect`;
+    }
+    return AuthSession.makeRedirectUri();
+  }, [androidCleanId, iosCleanId, isExpoGo]);
+
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    clientId: webClientId,
+    androidClientId,
+    iosClientId,
+    webClientId,
+    redirectUri,
     responseType: isWeb ? AuthSession.ResponseType.IdToken : undefined,
     scopes: ['openid', 'profile', 'email'],
     selectAccount: true,
@@ -199,15 +230,23 @@ export function useLogin() {
     if (response.type === 'success') {
       const idToken = response.authentication?.idToken || response.params?.id_token;
       if (idToken) {
-        handleBackendGoogleLogin(idToken);
+        void handleBackendGoogleLogin(idToken);
+      } else {
+        showModal(
+          'Đăng nhập Google thất bại',
+          'Không nhận được mã xác thực (ID Token) từ Google. Vui lòng thử lại.',
+        );
       }
     } else if (response.type === 'error') {
-      showModal(
-        'Đăng nhập Google thất bại',
-        response.error?.description || 'Google không thể xác thực tài khoản.',
-      );
+      const errorMsg =
+        response.error?.description ||
+        response.error?.message ||
+        (response.params as any)?.error_description ||
+        (response.params as any)?.error ||
+        'Google không thể xác thực tài khoản.';
+      showModal('Đăng nhập Google thất bại', errorMsg);
     }
-  }, [response]);
+  }, [response, handleBackendGoogleLogin]);
 
   const handleLogin = async () => {
     const trimmedEmail = email.trim().toLowerCase();

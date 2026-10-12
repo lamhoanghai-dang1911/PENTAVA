@@ -1,55 +1,133 @@
-import { AnimatedTogglePill } from '@/src/components/home/animated-toggle-pill';
-import { Design } from '@/src/constants/design';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { Pressable, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { styles } from '../home-screen.styles';
 
 type HomeBottomBarProps = {
-  toggleKey: number;
   isNight: boolean;
   onOpenShop: () => void;
-  onOpenCinema: () => void;
-  onOpenTasks: () => void;
+  onOpenWardrobe: () => void;
+  onOpenHome?: () => void;
   onOpenCommunity: () => void;
+  onOpenSettings: () => void;
 };
 
 export function HomeBottomBar({
-  toggleKey,
   isNight,
   onOpenShop,
-  onOpenCinema,
-  onOpenTasks,
+  onOpenWardrobe,
+  onOpenHome,
   onOpenCommunity,
+  onOpenSettings,
 }: HomeBottomBarProps) {
+  const triggerHaptic = () => {
+    try {
+      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    } catch {
+      // ignore
+    }
+  };
+
+  const activeColor = isNight ? '#34D399' : '#10B981';
+  const inactiveColor = isNight ? '#94A3B8' : '#64748B';
+
   return (
-    <View style={styles.bottomBar}>
+    <View style={[styles.fixedBottomBar, isNight && styles.fixedBottomBarNight]}>
+      {/* 1. Shop */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Cửa hàng"
-        onPress={onOpenShop}
-        style={({ pressed }) => [styles.roundButton, pressed && { transform: [{ scale: 0.93 }] }]}>
-        <Ionicons color={Design.colors.white} name="storefront-outline" size={22} />
+        onPress={() => {
+          triggerHaptic();
+          onOpenShop();
+        }}
+        style={({ pressed }) => [
+          styles.bottomNavItem,
+          pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] },
+        ]}>
+        <View style={styles.bottomNavIconWrap}>
+          <Ionicons color={inactiveColor} name="storefront-outline" size={22} />
+        </View>
+        <Text style={[styles.bottomNavLabel, isNight && styles.bottomNavLabelNight]}>Shop</Text>
       </Pressable>
 
-      <AnimatedTogglePill
-        key={toggleKey}
-        activeTab="tasks"
-        isNight={isNight}
-        onSelectCinema={onOpenCinema}
-        onSelectTasks={onOpenTasks}
-        style={styles.togglePill}
-      />
+      {/* 2. Kho đồ */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Kho đồ"
+        onPress={() => {
+          triggerHaptic();
+          onOpenWardrobe();
+        }}
+        style={({ pressed }) => [
+          styles.bottomNavItem,
+          pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] },
+        ]}>
+        <View style={styles.bottomNavIconWrap}>
+          <Ionicons color={inactiveColor} name="shirt-outline" size={22} />
+        </View>
+        <Text style={[styles.bottomNavLabel, isNight && styles.bottomNavLabelNight]}>Kho đồ</Text>
+      </Pressable>
 
+      {/* 3. Home (Active) */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Trang chủ"
+        onPress={() => {
+          triggerHaptic();
+          onOpenHome?.();
+        }}
+        style={({ pressed }) => [
+          styles.bottomNavItem,
+          pressed && { opacity: 0.85, transform: [{ scale: 0.94 }] },
+        ]}>
+        <View style={styles.bottomNavIconWrap}>
+          <Ionicons color={activeColor} name="home" size={23} />
+        </View>
+        <Text
+          style={[
+            styles.bottomNavLabel,
+            styles.bottomNavLabelActive,
+            isNight && styles.bottomNavLabelActiveNight,
+          ]}>
+          Home
+        </Text>
+      </Pressable>
+
+      {/* 4. Social */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Cộng đồng"
-        onPress={onOpenCommunity}
+        onPress={() => {
+          triggerHaptic();
+          onOpenCommunity();
+        }}
         style={({ pressed }) => [
-          styles.roundButton,
-          styles.roundButtonOutline,
-          pressed && { transform: [{ scale: 0.93 }] },
+          styles.bottomNavItem,
+          pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] },
         ]}>
-        <Ionicons color={Design.colors.black} name="globe-outline" size={22} />
+        <View style={styles.bottomNavIconWrap}>
+          <Ionicons color={inactiveColor} name="globe-outline" size={22} />
+        </View>
+        <Text style={[styles.bottomNavLabel, isNight && styles.bottomNavLabelNight]}>Social</Text>
+      </Pressable>
+
+      {/* 5. Cài đặt (Setting) */}
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Cài đặt"
+        onPress={() => {
+          triggerHaptic();
+          onOpenSettings();
+        }}
+        style={({ pressed }) => [
+          styles.bottomNavItem,
+          pressed && { opacity: 0.7, transform: [{ scale: 0.92 }] },
+        ]}>
+        <View style={styles.bottomNavIconWrap}>
+          <Ionicons color={inactiveColor} name="settings-outline" size={22} />
+        </View>
+        <Text style={[styles.bottomNavLabel, isNight && styles.bottomNavLabelNight]}>Cài đặt</Text>
       </Pressable>
     </View>
   );

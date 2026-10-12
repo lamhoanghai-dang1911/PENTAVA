@@ -1,4 +1,4 @@
-﻿import { Design, FontFamily } from '@/src/constants/design';
+import { Design } from '@/src/constants/design';
 import type { ThemeMode } from '@/src/hooks/use-day-night-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -15,7 +15,7 @@ import Animated, {
 import { styles } from '../home-screen.styles';
 
 type HomeHeaderProps = {
-  displayName: string;
+  displayName?: string;
   currentStreak: number;
   rubyBalance: number | null;
   isRubyBalanceLoading: boolean;
@@ -31,7 +31,7 @@ type HomeHeaderProps = {
   onToggleDayNight: () => void;
   onCycleTheme: () => void;
   onToggleNotifications: () => void;
-  onOpenSettings: () => void;
+  onOpenSettings?: () => void;
   onOpenRubyTopup: () => void;
 };
 
@@ -76,15 +76,81 @@ export function HomeHeader({
 
   return (
     <View style={styles.headerContainer}>
-      <View style={[styles.headerRow, isImmersiveView && { justifyContent: 'flex-end' }]}>
-        {/* {!isImmersiveView && (
-          <Text
-            numberOfLines={1}
-            style={[styles.greeting, isNight && styles.greetingNight]}>
-            Chào {displayName}
-          </Text>
-        )} */}
-        <View style={styles.headerActions}>
+      <View style={styles.headerRow}>
+        {/* Nhóm bên TRÁI: Chuỗi & Ruby */}
+        {!isImmersiveView ? (
+          <View style={styles.headerLeftGroup}>
+            {/* 1. Chuỗi (Streak) */}
+            <Pressable
+              accessibilityLabel={`Streak hiện tại: ${currentStreak}${hasStreakProtection ? `. Khiên bảo vệ còn ${remainingFreezes} lượt` : ''}`}
+              accessibilityRole="button"
+              onPress={onOpenStreakFreeze}
+              style={({ pressed }) => [
+                styles.statPill,
+                isNight && styles.statPillNight,
+                pressed && { opacity: 0.85 },
+              ]}>
+              <Animated.View style={animatedFlameStyle}>
+                <Image
+                  contentFit="contain"
+                  source={
+                    currentStreak > 0
+                      ? require('@/assets/images/streak.png')
+                      : require('@/assets/images/gray_streak.png')
+                  }
+                  style={styles.statIcon}
+                />
+              </Animated.View>
+              <Text style={[styles.statValue, styles.streakValue, isNight && styles.streakValueNight]}>
+                {currentStreak}
+              </Text>
+              {hasStreakProtection && (
+                <View style={[styles.freezeBadge, isNight && styles.freezeBadgeNight]}>
+                  <Ionicons name="snow" size={11} color={isNight ? '#BAE6FD' : '#0284C7'} />
+                  <Text style={[styles.freezeBadgeText, isNight && styles.freezeBadgeTextNight]}>
+                    {remainingFreezes}/2
+                  </Text>
+                </View>
+              )}
+            </Pressable>
+
+            {/* 2. Ruby */}
+            <Pressable
+              accessibilityLabel={
+                isRubyBalanceLoading
+                  ? 'Đang tải số dư Ruby'
+                  : rubyBalance === null
+                    ? 'Không thể tải số dư Ruby'
+                    : `Số dư Ruby: ${rubyBalance}. Nhấn để nạp thêm Ruby`
+              }
+              accessibilityRole="button"
+              onPress={onOpenRubyTopup}
+              style={({ pressed }) => [
+                styles.statPill,
+                styles.rubyPill,
+                isNight && styles.statPillNight,
+                pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
+              ]}>
+              <Image
+                contentFit="contain"
+                source={require('@/assets/images/ruby.png')}
+                style={styles.statIcon}
+              />
+              <Text style={[styles.statValue, styles.rubyValue, isNight && styles.rubyValueNight]}>
+                {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
+              </Text>
+              <View style={styles.plusButtonCircle}>
+                <Ionicons color="#FFFFFF" name="add" size={13} />
+              </View>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={{ flex: 1 }} />
+        )}
+
+        {/* Nhóm bên PHẢI: Con mắt, Đổi ngày đêm, Thông báo */}
+        <View style={styles.headerRightGroup}>
+          {/* 1. Nút con mắt (Immersive View) */}
           <Pressable
             accessibilityLabel={
               isImmersiveView
@@ -110,6 +176,7 @@ export function HomeHeader({
             />
           </Pressable>
 
+          {/* 2. Nút chỉnh mode ngày/đêm */}
           <Pressable
             accessibilityLabel={
               themeMode === 'auto'
@@ -131,111 +198,22 @@ export function HomeHeader({
             />
           </Pressable>
 
+          {/* 3. Nút thông báo */}
           {!isImmersiveView && (
-            <>
-              <Pressable
-                accessibilityLabel="Thông báo"
-                onPress={onToggleNotifications}
-                style={[styles.notificationButton, isNight && styles.notificationButtonNight]}>
-                <Ionicons
-                  color={isNight ? Design.colors.white : Design.colors.black}
-                  name="notifications-outline"
-                  size={21}
-                />
-                {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
-              </Pressable>
-              <Pressable
-                onPress={onOpenSettings}
-                style={[styles.avatar, isNight && styles.avatarNight]}>
-                <Text style={[styles.avatarText, isNight && styles.avatarTextNight]}>
-                  {displayName.charAt(0).toUpperCase()}
-                </Text>
-              </Pressable>
-            </>
+            <Pressable
+              accessibilityLabel="Thông báo"
+              onPress={onToggleNotifications}
+              style={[styles.notificationButton, isNight && styles.notificationButtonNight]}>
+              <Ionicons
+                color={isNight ? Design.colors.white : Design.colors.black}
+                name="notifications-outline"
+                size={21}
+              />
+              {unreadNotificationCount > 0 ? <View style={styles.notificationBadge} /> : null}
+            </Pressable>
           )}
         </View>
       </View>
-
-      {!isImmersiveView && (
-        <View style={styles.headerStatsRow}>
-          <Pressable
-            accessibilityLabel={`Streak hiện tại: ${currentStreak}${hasStreakProtection ? `. Khiên bảo vệ còn ${remainingFreezes} lượt` : ''}`}
-            accessibilityRole="button"
-            onPress={onOpenStreakFreeze}
-            style={({ pressed }) => [
-              styles.statPill,
-              isNight && styles.statPillNight,
-              pressed && { opacity: 0.85 },
-            ]}>
-            <Animated.View style={animatedFlameStyle}>
-              <Image
-                contentFit="contain"
-                source={
-                  currentStreak > 0
-                    ? require('@/assets/images/streak.png')
-                    : require('@/assets/images/gray_streak.png')
-                }
-                style={styles.statIcon}
-              />
-            </Animated.View>
-            <Text style={[styles.statValue, styles.streakValue, isNight && styles.streakValueNight]}>
-              {currentStreak}
-            </Text>
-            {hasStreakProtection && (
-              <View
-                style={{
-                  backgroundColor: isNight ? '#0369A1' : '#E0F2FE',
-                  paddingHorizontal: 6,
-                  paddingVertical: 2,
-                  borderRadius: 10,
-                  marginLeft: 5,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 3,
-                }}>
-                <Ionicons name="snow" size={12} color={isNight ? '#BAE6FD' : '#0284C7'} />
-                <Text
-                  style={{
-                    fontSize: 11,
-                    fontFamily: FontFamily.beVietnamMedium,
-                    color: isNight ? '#BAE6FD' : '#0284C7',
-                  }}>
-                  {remainingFreezes}/2
-                </Text>
-              </View>
-            )}
-          </Pressable>
-
-          <Pressable
-            accessibilityLabel={
-              isRubyBalanceLoading
-                ? 'Đang tải số dư Ruby'
-                : rubyBalance === null
-                  ? 'Không thể tải số dư Ruby'
-                  : `Số dư Ruby: ${rubyBalance}. Nhấn để nạp thêm Ruby`
-            }
-            accessibilityRole="button"
-            onPress={onOpenRubyTopup}
-            style={({ pressed }) => [
-              styles.statPill,
-              styles.rubyPill,
-              isNight && styles.statPillNight,
-              pressed && { opacity: 0.85, transform: [{ scale: 0.97 }] },
-            ]}>
-            <Image
-              contentFit="contain"
-              source={require('@/assets/images/ruby.png')}
-              style={styles.statIcon}
-            />
-            <Text style={[styles.statValue, styles.rubyValue, isNight && styles.rubyValueNight]}>
-              {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
-            </Text>
-            <View style={styles.plusButtonCircle}>
-              <Ionicons color="#FFFFFF" name="add" size={14} />
-            </View>
-          </Pressable>
-        </View>
-      )}
     </View>
   );
 }

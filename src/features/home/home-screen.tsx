@@ -21,7 +21,7 @@ import { getNotificationKey } from '@/src/features/home/utils/home-notifications
 import { router, useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, Vibration, View } from 'react-native';
+import { Alert, ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './home-screen.styles';
 
@@ -324,8 +324,10 @@ export default function HomeScreen() {
             isImmersiveView={isImmersiveView}
             isNight={isNight}
             onExitImmersiveView={() => setIsImmersiveView(false)}
+            onOpenCinema={() => router.push('/cinema')}
             onOpenCustomRoadmap={() => router.push('/custom-roadmap' as any)}
-            onOpenWardrobe={() => router.push('/wardrobe' as any)}
+            onOpenTasks={handleExecuteGoal}
+            toggleKey={toggleKey}
           />
         </ScrollView>
 
@@ -343,14 +345,16 @@ export default function HomeScreen() {
           unreadNotificationCount={unreadNotificationCount}
         />
 
-        <HomeBottomBar
-          isNight={isNight}
-          onOpenCinema={() => router.push('/cinema')}
-          onOpenCommunity={() => router.push('/community')}
-          onOpenShop={() => setIsShopVisible(true)}
-          onOpenTasks={() => router.push('/daily-tasks')}
-          toggleKey={toggleKey}
-        />
+        {!isImmersiveView && (
+          <HomeBottomBar
+            isNight={isNight}
+            onOpenCommunity={() => router.push('/community')}
+            onOpenHome={() => {}}
+            onOpenSettings={() => router.push('/settings' as any)}
+            onOpenShop={() => setIsShopVisible(true)}
+            onOpenWardrobe={() => router.push('/wardrobe' as any)}
+          />
+        )}
 
         <HomeShopAndTaskModals
           insufficientRubyItem={insufficientRubyItem}

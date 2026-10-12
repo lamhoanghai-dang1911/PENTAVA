@@ -10,7 +10,7 @@
       }
     },
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/pentava_icon.png",
     "scheme": "pentava",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -19,18 +19,37 @@
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true
-        }
+        },
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "pentava",
+              "com.pentava",
+              "com.googleusercontent.apps.172089826941-so85eiurnlr2ielogpi1s6495j7km9rj"
+            ]
+          }
+        ]
       }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#3A8157",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundImage": "./assets/images/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.pentava"
+      "package": "com.pentava",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [
+            { "scheme": "pentava" },
+            { "scheme": "com.pentava" },
+            { "scheme": "com.googleusercontent.apps.172089826941-ctgqcqtha95g660csgah5m4kld93raoi" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "web": {
       "output": "static",

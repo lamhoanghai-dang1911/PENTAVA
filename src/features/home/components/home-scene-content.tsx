@@ -1,8 +1,8 @@
-﻿import { Design } from '@/src/constants/design';
-import RoutineTodayCard from '@/src/components/home/routinetodaycard';
+import { AnimatedTogglePill } from '@/src/components/home/animated-toggle-pill';
 import type { AvatarLayer } from '@/src/types/api/skin';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
+import { DailyTaskProgressCircle } from './daily-task-progress-circle';
 import { HomeAvatar } from './home-avatar';
 import { styles } from '../home-screen.styles';
 
@@ -11,8 +11,10 @@ type HomeSceneContentProps = {
   currentGoalId: number | null;
   isNight: boolean;
   isImmersiveView: boolean;
-  onOpenWardrobe: () => void;
+  toggleKey: number;
   onOpenCustomRoadmap: () => void;
+  onOpenCinema: () => void;
+  onOpenTasks: () => void;
   onExitImmersiveView: () => void;
 };
 
@@ -21,8 +23,10 @@ export function HomeSceneContent({
   currentGoalId,
   isNight,
   isImmersiveView,
-  onOpenWardrobe,
+  toggleKey,
   onOpenCustomRoadmap,
+  onOpenCinema,
+  onOpenTasks,
   onExitImmersiveView,
 }: HomeSceneContentProps) {
   return (
@@ -34,13 +38,21 @@ export function HomeSceneContent({
 
       {!isImmersiveView ? (
         <View style={styles.bottomCardSection}>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 10, marginBottom: 6 }}>
+          {/* Vòng tròn tiến độ hoàn thành task trong ngày (thay thế khung Routine) & Nút Bản đồ */}
+          <View style={styles.progressRow}>
+            <DailyTaskProgressCircle
+              goalId={currentGoalId}
+              isNight={isNight}
+              onPress={onOpenTasks}
+            />
+
             <Pressable
               accessibilityLabel="Lộ trình tùy chỉnh & Cộng đồng"
               accessibilityRole="button"
               onPress={onOpenCustomRoadmap}
               style={({ pressed }) => [
                 styles.wardrobeIconButton,
+                styles.mapFloatingButton,
                 isNight && styles.wardrobeIconButtonNight,
                 pressed && { transform: [{ scale: 0.9 }], opacity: 0.8 },
               ]}>
@@ -50,25 +62,19 @@ export function HomeSceneContent({
                 size={22}
               />
             </Pressable>
-
-            <Pressable
-              accessibilityLabel="Kho trang phục"
-              accessibilityRole="button"
-              onPress={onOpenWardrobe}
-              style={({ pressed }) => [
-                styles.wardrobeIconButton,
-                isNight && styles.wardrobeIconButtonNight,
-                pressed && { transform: [{ scale: 0.9 }], opacity: 0.8 },
-              ]}>
-              <Ionicons
-                color={isNight ? '#34D399' : Design.colors.primaryGreen}
-                name="shirt-outline"
-                size={22}
-              />
-            </Pressable>
           </View>
 
-          <RoutineTodayCard goalId={currentGoalId} isNight={isNight} />
+          {/* Toggle Nhiệm vụ ngày / PENTA-CINEMA được đẩy lên */}
+          <View style={styles.toggleRow}>
+            <AnimatedTogglePill
+              key={toggleKey}
+              activeTab="tasks"
+              isNight={isNight}
+              onSelectCinema={onOpenCinema}
+              onSelectTasks={onOpenTasks}
+              style={styles.togglePillElevated}
+            />
+          </View>
         </View>
       ) : (
         <Pressable
