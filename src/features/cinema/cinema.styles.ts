@@ -148,8 +148,8 @@ export const styles = StyleSheet.create({
     fontSize: Design.fontSize.caption + 1,
     marginTop: 4,
   },
-  photosContent: { paddingBottom: 32, paddingHorizontal: 24, paddingTop: 18 },
-  clipsContent: { paddingBottom: 32, paddingHorizontal: 24, paddingTop: 18 },
+  photosContent: { paddingBottom: 56, paddingHorizontal: 24, paddingTop: 18 },
+  clipsContent: { paddingBottom: 56, paddingHorizontal: 24, paddingTop: 18 },
   clipVideoCard: {
     backgroundColor: Design.colors.white,
     borderColor: "#E9E9E9",
@@ -336,6 +336,7 @@ export const styles = StyleSheet.create({
     gap: 8,
     justifyContent: "center",
     marginTop: 18,
+    marginBottom: 20,
     paddingVertical: 14,
   },
   minimumPhotosHint: {

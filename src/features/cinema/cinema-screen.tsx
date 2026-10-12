@@ -57,7 +57,7 @@ export default function CinemaScreen() {
   } = useCinema();
 
   return (
-    <SafeAreaView edges={["top"]} style={styles.safeArea}>
+    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
       <CinemaHeader
         onBack={handleBack}
         onQueryChange={setQuery}
