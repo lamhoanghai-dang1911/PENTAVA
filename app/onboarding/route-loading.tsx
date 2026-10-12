@@ -1,8 +1,8 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import { useOnboarding } from '@/src/context/onboarding-context';
 import { onboardingService } from '@/src/services/onboardingService';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import { useEffect } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -52,9 +52,11 @@ export default function RouteLoadingScreen() {
     return (
         <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
             <View style={styles.container}>
-                <Image
-                    contentFit="contain"
-                    source={require('@/assets/images/onboarding/cat-loading.png')}
+                <LottieView
+                    autoPlay
+                    loop
+                    resizeMode="contain"
+                    source={require('@/assets/avatar/pentava_cat_idle1.json')}
                     style={styles.mascot}
                 />
                 <Text style={styles.title}>LOADING...</Text>
@@ -78,9 +80,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: Design.spacing.screenHorizontal,
     },
     mascot: {
-        width: 180,
-        height: 190,
-        marginBottom: 28,
+        width: 220,
+        height: 220,
+        marginBottom: 20,
     },
     title: {
         fontFamily: FontFamily.poppinsSemiBold,

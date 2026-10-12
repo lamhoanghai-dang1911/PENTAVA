@@ -10,7 +10,7 @@ import {
   getCachedTaskHistory,
 } from "@/src/services/taskCacheStorage";
 import { taskService } from "@/src/services/taskService";
-import type { CurrentStreak } from "@/src/types/api/onboarding";
+import type { CurrentGoal, CurrentStreak } from "@/src/types/api/onboarding";
 import type {
   DailyTaskStatus,
   Task,
@@ -34,6 +34,7 @@ export function useDailyTasks({
   const [taskHistory, setTaskHistory] = useState<TaskHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
+  const [currentGoal, setCurrentGoal] = useState<CurrentGoal | null>(null);
   const [dailyStatus, setDailyStatus] = useState<DailyTaskStatus | null>(null);
   const [isDailyStatusLoaded, setIsDailyStatusLoaded] = useState(false);
   const [isDailyStatusLoading, setIsDailyStatusLoading] = useState(false);
@@ -126,6 +127,7 @@ export function useDailyTasks({
 
         const statusResponse = await taskService.getDailyTaskStatus(goalId);
         if (isActive) {
+          setCurrentGoal(goalResponse.currentGoal ?? null);
           setCurrentGoalId(goalId);
           setDailyStatus(statusResponse.dailyTaskStatus);
           setIsDailyStatusLoaded(true);
@@ -429,6 +431,8 @@ export function useDailyTasks({
     openSwap,
     handleSwapTask,
     openTask: onOpenTask,
+    currentGoalId,
+    currentGoal,
   };
 }
 

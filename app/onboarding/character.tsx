@@ -1,7 +1,7 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { router } from 'expo-router';
+import LottieView from 'lottie-react-native';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -40,9 +40,11 @@ export default function CharacterScreen() {
                 </View>
 
                 <View style={styles.content}>
-                    <Image
-                        contentFit="contain"
-                        source={require('@/assets/images/onboarding/cat-luna.png')}
+                    <LottieView
+                        autoPlay
+                        loop
+                        resizeMode="contain"
+                        source={require('@/assets/avatar/pentava_cat_idle1.json')}
                         style={styles.mascot}
                     />
                 </View>
@@ -95,8 +97,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     mascot: {
-        width: 240,
-        height: 300,
+        width: 280,
+        height: 280,
     },
     bio: {
         fontFamily: FontFamily.beVietnamRegular,

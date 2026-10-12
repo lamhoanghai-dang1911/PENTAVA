@@ -1,4 +1,4 @@
-export type GoalSummary = {
+﻿export type GoalSummary = {
   goalId: number;
   goalName: string;
   status: string;
@@ -147,4 +147,21 @@ export type SocialProfile = {
   totalFriends: number;
   friendshipStatusWithMe: string;
   me: boolean;
+};
+
+export type PhotoItem = WeekPhoto;
+
+export type CinemaStorageQuota = {
+  usedBytes: number;
+  totalBytes: number;
+  usedVideosBytes: number;
+  usedPhotosBytes: number;
+  totalClipsCount: number;
+  totalPhotosCount: number;
+  planCode: string;
+  planName: string;
+  isSubscriptionActive: boolean;
+  usagePercentage: number;
+  formattedUsed: string;
+  formattedTotal: string;
 };

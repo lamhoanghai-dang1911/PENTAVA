@@ -54,6 +54,7 @@ function RootStack() {
   const segments = useSegments();
   const firstSegment = segments[0];
   const isPublicRoute =
+    !firstSegment ||
     firstSegment === 'login' ||
     firstSegment === 'register' ||
     firstSegment === 'verify-otp';
@@ -88,7 +89,7 @@ function RootStack() {
       <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="membership" options={{ animation: 'slide_from_right' }} />
       <Stack.Screen name="payment" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="ruby-topup" options={{ animation: 'slide_from_right' }} />
+      <Stack.Screen name="ruby-topup" options={{ animation: 'fade' }} />
       <Stack.Screen name="payment-success" options={{ animation: 'fade' }} />
       <Stack.Screen name="payment-failed" options={{ animation: 'fade' }} />
       <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />

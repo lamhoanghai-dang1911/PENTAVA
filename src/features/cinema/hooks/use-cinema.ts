@@ -4,6 +4,7 @@ import { router } from "expo-router";
 import { useCinemaProgress } from "@/src/context/cinema-progress-context";
 import { cinemaService } from "@/src/services/cinemaService";
 import type {
+  CinemaStorageQuota,
   Clip,
   GoalSummary,
   GoalWeeksResponse,
@@ -31,7 +32,23 @@ export function useCinema() {
   const [isPhotoViewerVisible, setIsPhotoViewerVisible] = useState(false);
   const [selectionMessage, setSelectionMessage] = useState<string | null>(null);
 
+  // Storage Quota state
+  const [storageQuota, setStorageQuota] = useState<CinemaStorageQuota | null>(null);
+  const [isQuotaLoading, setIsQuotaLoading] = useState(false);
+
   const { clip, clearClipError, startClip } = useCinemaProgress();
+
+  const loadStorageQuota = async () => {
+    setIsQuotaLoading(true);
+    try {
+      const quota = await cinemaService.getStorageQuota();
+      setStorageQuota(quota);
+    } catch (error) {
+      console.warn("Không thể tải dung lượng lưu trữ", error);
+    } finally {
+      setIsQuotaLoading(false);
+    }
+  };
 
   useEffect(() => {
     let isActive = true;
@@ -48,6 +65,8 @@ export function useCinema() {
     };
 
     void loadGoals();
+    void loadStorageQuota();
+
     return () => {
       isActive = false;
     };
@@ -124,6 +143,26 @@ export function useCinema() {
     }
   };
 
+  const handleSelectJourneyClips = async () => {
+    if (!selectedGoal) return;
+    setSelectedWeekPhotos(null);
+    setSelectedWeek(null);
+    setSelectedWeekClips(null);
+    setIsClipsLoading(true);
+    setClipsErrorMessage(null);
+    try {
+      const response = await cinemaService.getClips(selectedGoal.goalId, 0);
+      setSelectedWeekClips(response);
+    } catch (error) {
+      setClipsErrorMessage(getErrorMessage(error));
+    } finally {
+      setIsClipsLoading(false);
+    }
+  };
+
+  const isViewingJourneyClips =
+    selectedGoal !== null && selectedWeek === null && selectedWeekClips !== null;
+
   const selectedPhoto = selectedWeekPhotos?.photos.find(
     (photo) => photo.photoId === photoActionId,
   );
@@ -180,6 +219,7 @@ export function useCinema() {
         selectedWeekPhotos.weekNumber,
         Array.from(selectedPhotoIds),
       );
+      void loadStorageQuota();
     } catch (error) {
       Alert.alert("Không thể tạo video", getErrorMessage(error));
     }
@@ -231,6 +271,7 @@ export function useCinema() {
     selectedWeek,
     selectedWeekPhotos,
     selectedWeekClips,
+    isViewingJourneyClips,
     isPhotosLoading,
     isClipsLoading,
     weekErrorMessage,
@@ -245,10 +286,14 @@ export function useCinema() {
     selectionMessage,
     selectedPhoto,
     clip,
+    storageQuota,
+    isQuotaLoading,
+    loadStorageQuota,
     handleSelectGoal,
     handleSelectWeek,
     handleSelectWeekPhotos,
     handleSelectWeekClips,
+    handleSelectJourneyClips,
     handlePhotoPress,
     handleSelectPhoto,
     handleToggleSelectAll,

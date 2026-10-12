@@ -4,6 +4,7 @@ import { HomeBottomBar } from '@/src/features/home/components/home-bottom-bar';
 import { HomeHeader } from '@/src/features/home/components/home-header';
 import { HomeSceneContent } from '@/src/features/home/components/home-scene-content';
 import { HomeShopAndTaskModals } from '@/src/features/home/components/home-shop-and-task-modals';
+import { StreakFreezeModal } from '@/src/features/home/components/streak-freeze-modal';
 import { useDayNightTheme } from '@/src/hooks/use-day-night-theme';
 import { authService } from '@/src/services/authService';
 import { onboardingService } from '@/src/services/onboardingService';
@@ -11,12 +12,14 @@ import { shopService } from '@/src/services/shopService';
 import { skinService } from '@/src/services/skinService';
 import { socialService, type SocialNotification } from '@/src/services/socialService';
 import { taskService } from '@/src/services/taskService';
+import type { CurrentStreak } from '@/src/types/api/onboarding';
 import type { ShopItem } from '@/src/types/api/shop';
 import type { AvatarLayer } from '@/src/types/api/skin';
 import type { DailyTaskStatus } from '@/src/types/api/task';
 import { HomeNotificationsModal } from '@/src/features/home/components/home-notifications-modal';
 import { getNotificationKey } from '@/src/features/home/utils/home-notifications';
 import { router, useFocusEffect } from 'expo-router';
+import { Image } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, ScrollView, Vibration, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -30,6 +33,8 @@ export default function HomeScreen() {
   const displayName = profileName.trim() || data.name.trim() || 'bạn';
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [streakData, setStreakData] = useState<CurrentStreak | null>(null);
+  const [isStreakFreezeVisible, setIsStreakFreezeVisible] = useState(false);
   const [rubyBalance, setRubyBalance] = useState<number | null>(null);
   const [isRubyBalanceLoading, setIsRubyBalanceLoading] = useState(true);
   const [avatarLayers, setAvatarLayers] = useState<AvatarLayer[] | null>(null);
@@ -59,32 +64,13 @@ export default function HomeScreen() {
         .getMyAvatar()
         .then((avatar) => {
           if (isFocused) {
-            setAvatarLayers(
-              [...avatar.layers].sort(
-                (left, right) => left.layerOrder - right.layerOrder,
-              ),
-            );
+            setAvatarLayers(avatar.layers ?? []);
           }
         })
-        .catch((error: unknown) => {
+        .catch(() => {
           if (isFocused) {
-            Alert.alert(
-              'Không thể tải trang phục avatar',
-              error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
-            );
+            setAvatarLayers(null);
           }
-        });
-
-      void shopService
-        .getMyWallet()
-        .then((wallet) => {
-          if (isFocused) {
-            setRubyBalance(wallet.rubyBalance);
-            setIsRubyBalanceLoading(false);
-          }
-        })
-        .catch((error: Error) => {
-          console.error('Không thể tải số dư Ruby:', error);
         });
 
       return () => {
@@ -95,91 +81,35 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let isMounted = true;
-    const timeout = setTimeout(() => {
-      void authService
-        .getProfile()
-        .then((profile) => {
-          if (isMounted) {
-            setProfileName(profile.name);
-          }
-        })
-        .catch((error: Error) => {
-          if (isMounted) {
-            Alert.alert('Không thể tải thông tin tài khoản', error.message);
-          }
-        });
-    }, 0);
-
+    void authService
+      .getProfile()
+      .then((profile) => {
+        if (isMounted && profile?.name) {
+          setProfileName(profile.name);
+        }
+      })
+      .catch(() => {
+        // Fallback silently to onboarding name
+      });
     return () => {
       isMounted = false;
-      clearTimeout(timeout);
     };
-  }, []);
-
-  useEffect(() => {
-    let disposed = false;
-    let closeStream: (() => void) | null = null;
-
-    void socialService.openNotificationStream(
-      () => {
-        if (disposed) return;
-        Vibration.vibrate([0, 220, 100, 220]);
-        // Tăng ngay số lượng chưa đọc để chuông hiện chấm đỏ
-        setUnreadNotificationCount((count) => count + 1);
-        // Đồng bộ lại số lượng chưa đọc chuẩn từ server
-        void socialService.getUnreadNotificationCount()
-          .then((count) => {
-            if (!disposed) setUnreadNotificationCount(count);
-          })
-          .catch(() => { });
-      },
-      (error) => {
-        if (!disposed) setNotificationError(error.message);
-      },
-    ).then((close) => {
-      if (disposed) close();
-      else closeStream = close;
-    }).catch((error: unknown) => {
-      if (!disposed) {
-        setNotificationError(error instanceof Error ? error.message : "Không thể kết nối thông báo.");
-      }
-    });
-
-    return () => {
-      disposed = true;
-      closeStream?.();
-    };
-  }, []);
-
-  useEffect(() => {
-    void socialService.getUnreadNotificationCount()
-      .then(setUnreadNotificationCount)
-      .catch((error: unknown) => {
-        setNotificationError(error instanceof Error ? error.message : 'Không thể tải số thông báo chưa đọc.');
-      });
   }, []);
 
   const toggleNotifications = async () => {
-    if (isNotificationsVisible) {
-      setIsNotificationsVisible(false);
-      return;
-    }
+    const nextState = !isNotificationsVisible;
+    setIsNotificationsVisible(nextState);
+    if (!nextState) return;
 
-    if (isLoadingNotificationsRef.current) {
-      return;
-    }
-
+    if (isLoadingNotificationsRef.current) return;
     isLoadingNotificationsRef.current = true;
     setNotificationError(null);
-    setIsNotificationsVisible(true);
+
     try {
-      const [storedNotifications, unreadCount] = await Promise.all([
-        socialService.getAllNotifications(),
-        socialService.getUnreadNotificationCount(),
-      ]);
+      const storedNotifications = await socialService.getNotifications();
+      const unreadCount = storedNotifications.filter((item) => item.read === false).length;
       setUnreadNotificationCount(unreadCount);
 
-      // Loại bỏ trùng lặp từ kết quả API get
       const uniqueMap = new Map<string, SocialNotification>();
       storedNotifications.forEach((notification) => {
         const key = getNotificationKey(notification);
@@ -231,6 +161,13 @@ export default function HomeScreen() {
         if (isMounted) {
           setCurrentGoalId(goalResponse.currentGoal?.goalId ?? null);
           setCurrentStreak(streakResponse.streak?.currentStreak ?? 0);
+          setStreakData(streakResponse.streak ?? null);
+          if (streakResponse.streak?.streakFrozenYesterday) {
+            Alert.alert(
+              'Khiên Bảo Vệ Đã Kích Hoạt ❄️',
+              'Chuỗi Streak của bạn đã được đóng băng và bảo vệ thành công cho ngày hôm qua!',
+            );
+          }
         }
       })
       .catch((error: Error) => {
@@ -256,6 +193,25 @@ export default function HomeScreen() {
           setIsRubyBalanceLoading(false);
         }
       });
+
+    // Background prefetch shop catalog & images so shop opens instantaneously
+    void shopService
+      .getItems()
+      .then((catalog) => {
+        const urls: string[] = [];
+        catalog.forEach((item) => {
+          if (item.imageUrl) urls.push(item.imageUrl);
+          if (item.thumbnailUrl) urls.push(item.thumbnailUrl);
+          if (item.itemBackgroundUrl) urls.push(item.itemBackgroundUrl);
+          item.thumbnailLayers?.forEach((layer) => {
+            if (layer) urls.push(layer);
+          });
+        });
+        if (urls.length > 0) {
+          void Image.prefetch(Array.from(new Set(urls)));
+        }
+      })
+      .catch(() => {});
 
     return () => {
       isMounted = false;
@@ -327,31 +283,33 @@ export default function HomeScreen() {
   const handleShopPurchaseSuccess = useCallback((item: ShopItem, remainingRuby: number) => {
     setRubyBalance(remainingRuby);
     setPurchasedShopItem(item);
-    setIsShopVisible(false);
   }, []);
 
   const handleInsufficientRuby = useCallback((item: ShopItem, message: string) => {
     setInsufficientRubyMessage(message);
     setInsufficientRubyItem(item);
-    setIsShopVisible(false);
   }, []);
 
   return (
     <View style={[styles.rootContainer, { backgroundColor: isNight ? '#0B132B' : '#68B6F2' }]}>
       <DayNightBackground isNight={isNight} />
-      <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <ScrollView
           contentContainerStyle={[styles.scrollContent, isImmersiveView && styles.scrollContentImmersive]}
           showsVerticalScrollIndicator={false}>
           <HomeHeader
             currentStreak={currentStreak}
             displayName={displayName}
+            freezesUsedThisMonth={streakData?.freezesUsedThisMonth}
+            hasStreakProtection={streakData?.hasStreakProtection}
             isImmersiveView={isImmersiveView}
             isNight={isNight}
             isRubyBalanceLoading={isRubyBalanceLoading}
+            maxFreezesPerMonth={streakData?.maxFreezesPerMonth}
             onCycleTheme={cycleMode}
             onOpenRubyTopup={() => router.push('/ruby-topup' as any)}
             onOpenSettings={() => router.push('/settings' as any)}
+            onOpenStreakFreeze={() => setIsStreakFreezeVisible(true)}
             onToggleDayNight={toggleDayNight}
             onToggleImmersiveView={() => setIsImmersiveView((prev) => !prev)}
             onToggleNotifications={() => void toggleNotifications()}
@@ -366,6 +324,7 @@ export default function HomeScreen() {
             isImmersiveView={isImmersiveView}
             isNight={isNight}
             onExitImmersiveView={() => setIsImmersiveView(false)}
+            onOpenCustomRoadmap={() => router.push('/custom-roadmap' as any)}
             onOpenWardrobe={() => router.push('/wardrobe' as any)}
           />
         </ScrollView>
@@ -415,6 +374,15 @@ export default function HomeScreen() {
           purchasedShopItem={purchasedShopItem}
           rubyBalance={rubyBalance}
           yesterdayTasks={dailyStatus?.yesterdayTasks ?? []}
+        />
+
+        <StreakFreezeModal
+          freezesUsedThisMonth={streakData?.freezesUsedThisMonth ?? 0}
+          hasStreakProtection={streakData?.hasStreakProtection ?? false}
+          maxFreezesPerMonth={streakData?.maxFreezesPerMonth ?? 2}
+          onClose={() => setIsStreakFreezeVisible(false)}
+          streakFrozenYesterday={streakData?.streakFrozenYesterday}
+          visible={isStreakFreezeVisible}
         />
       </SafeAreaView>
     </View>

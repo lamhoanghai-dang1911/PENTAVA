@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     videoThumbnail: {
-        ...StyleSheet.absoluteFillObject,
+        ...StyleSheet.absoluteFill,
     },
     playButton: {
         width: 56,

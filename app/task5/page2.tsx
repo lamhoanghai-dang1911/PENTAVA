@@ -27,7 +27,7 @@ export default function Page3() {
         <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/task5/page3')}>
           <Text style={styles.primaryButtonText}>Chụp ảnh check-in</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.secondaryButton} onPress={() => alert('Đã lưu tiến độ!')}>
+        <TouchableOpacity style={styles.secondaryButton} onPress={() => router.replace('/daily-tasks')}>
           <Text style={styles.secondaryButtonText}>Để sau</Text>
         </TouchableOpacity>
       </View>

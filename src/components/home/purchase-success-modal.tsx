@@ -3,7 +3,7 @@ import { Design, FontFamily } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, ZoomIn } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 type PurchaseSuccessModalProps = {
     product: ShopItem | null;
@@ -15,11 +15,11 @@ export function PurchaseSuccessModal({ product, balance, onClose }: PurchaseSucc
     if (!product) return null;
 
     return (
-        <Animated.View entering={FadeIn.duration(180)} style={styles.overlay}>
-            <Animated.View entering={ZoomIn.springify().damping(15)} style={styles.card}>
-                <Animated.View entering={ZoomIn.springify().damping(10).delay(120)} style={styles.checkWrap}>
+        <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(100)} style={styles.overlay}>
+            <Animated.View entering={FadeIn.duration(150)} style={styles.card}>
+                <View style={styles.checkWrap}>
                     <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={44} />
-                </Animated.View>
+                </View>
 
                 <Text style={styles.title}>Mua thành công!</Text>
                 <Text style={styles.subtitle}>
@@ -44,7 +44,6 @@ export function PurchaseSuccessModal({ product, balance, onClose }: PurchaseSucc
                     onPress={onClose}
                     style={({ pressed }) => [
                         styles.closeButton,
-                        pressed && { transform: [{ scale: 0.96 }] },
                         pressed && styles.closeButtonPressed,
                     ]}>
                     <Text style={styles.closeLabel}>Đóng</Text>
@@ -171,11 +170,11 @@ export function InsufficientRubyModal({
     if (!visible || !product) return null;
 
     return (
-        <Animated.View entering={FadeIn.duration(180)} style={styles.overlay}>
-            <Animated.View entering={ZoomIn.springify().damping(15)} style={styles.card}>
-                <Animated.View entering={ZoomIn.springify().damping(10).delay(120)} style={styles.warningWrap}>
+        <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(100)} style={styles.overlay}>
+            <Animated.View entering={FadeIn.duration(150)} style={styles.card}>
+                <View style={styles.warningWrap}>
                     <Ionicons color="#C62828" name="close-circle" size={44} />
-                </Animated.View>
+                </View>
                 <Text style={styles.title}>Không đủ Ruby</Text>
                 <Text style={styles.subtitle}>
                     {message || `Bạn chưa đủ Ruby để mua ${product.name}.`}
@@ -197,7 +196,7 @@ export function InsufficientRubyModal({
                     style={({ pressed }) => [
                         styles.closeButton,
                         styles.topUpButton,
-                        pressed && { transform: [{ scale: 0.96 }] },
+                        pressed && { opacity: 0.8 },
                     ]}>
                     <Text style={styles.closeLabel}>Nạp Ruby</Text>
                 </Pressable>
@@ -207,7 +206,7 @@ export function InsufficientRubyModal({
                     style={({ pressed }) => [
                         styles.closeButton,
                         styles.warningButton,
-                        pressed && { transform: [{ scale: 0.96 }] },
+                        pressed && { opacity: 0.8 },
                     ]}>
                     <Text style={styles.closeLabel}>Đã hiểu</Text>
                 </Pressable>

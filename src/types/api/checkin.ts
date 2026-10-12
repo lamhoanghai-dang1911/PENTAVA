@@ -1,5 +1,6 @@
-export type CheckinRequestDTO = {
+﻿export type CheckinRequestDTO = {
   imageUrl: string;
+  fileSizeBytes?: number;
 };
 
 export type CheckinResponse = {
@@ -8,3 +9,4 @@ export type CheckinResponse = {
   imageUrl: string;
   checkinDate: string;
 };
+

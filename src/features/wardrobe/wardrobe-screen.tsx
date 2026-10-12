@@ -20,7 +20,7 @@ export default function WardrobeScreen() {
   } = useWardrobe();
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
       <WardrobeHeader
         inventoryCount={inventory.length}
         onBack={() => router.back()}

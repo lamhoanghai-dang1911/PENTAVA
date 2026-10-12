@@ -24,6 +24,8 @@ export function SubscriptionQrModal({
   onCheckStatus,
   isCheckingStatus,
   statusMessage,
+  onMockConfirm,
+  isMockConfirming,
 }: SubscriptionQrModalProps) {
   if (!visible || !transaction) return null;
 
@@ -39,9 +41,9 @@ export function SubscriptionQrModal({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.headerTitleBox}>
-              <Text style={styles.headerTitle}>Thanh toán VietQR</Text>
+              <Text style={styles.headerTitle}>Thanh toán gói cước</Text>
               <Text style={styles.headerSubtitle}>
-                {transaction.planName} · {formatVnd(transaction.amountVnd)}
+                {transaction.planName} ({transaction.durationDays} ngày)
               </Text>
             </View>
             <Pressable
@@ -49,7 +51,7 @@ export function SubscriptionQrModal({
               onPress={onClose}
               style={styles.closeButton}
             >
-              <Ionicons name="close" size={22} color={Design.colors.mutedText} />
+              <Ionicons color={Design.colors.black} name="close" size={20} />
             </Pressable>
           </View>
 
@@ -140,11 +142,42 @@ export function SubscriptionQrModal({
                       size={18}
                     />
                     <Text style={styles.checkButtonText}>
-                      Tôi đã chuyển khoản · Kiểm tra ngay
+                      Tôi đã chuyển khoản • Kiểm tra ngay
                     </Text>
                   </>
                 )}
               </Pressable>
+
+              {onMockConfirm && (
+                <Pressable
+                  accessibilityRole="button"
+                  disabled={isMockConfirming}
+                  onPress={() => void onMockConfirm()}
+                  style={({ pressed }) => [
+                    styles.mockButton,
+                    isMockConfirming && styles.buttonDisabled,
+                    pressed && styles.buttonPressed,
+                  ]}
+                >
+                  {isMockConfirming ? (
+                    <ActivityIndicator
+                      color={Design.colors.primaryGreen}
+                      size="small"
+                    />
+                  ) : (
+                    <>
+                      <Ionicons
+                        color={Design.colors.primaryGreen}
+                        name="flask-outline"
+                        size={16}
+                      />
+                      <Text style={styles.mockButtonText}>
+                        Mô phỏng thanh toán thành công (Dev Test)
+                      </Text>
+                    </>
+                  )}
+                </Pressable>
+              )}
             </View>
           </ScrollView>
         </View>

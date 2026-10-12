@@ -5,6 +5,7 @@ import { PrimaryButton } from '@/src/components/ui/primary-button';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
 import { useLogin } from '@/src/features/auth/hooks/use-login';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
@@ -59,19 +60,27 @@ export default function LoginScreen() {
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}>
-        <Text style={styles.headerTitle}>Đăng nhập</Text>
-
-        <View style={styles.mascotWrapper}>
-          <Image
-            contentFit="contain"
-            source={require('@/assets/images/auth/mascot.png')}
-            style={styles.mascot}
-          />
+        <View style={styles.topBar}>
+          <Pressable
+            accessibilityLabel="Quay lại"
+            accessibilityRole="button"
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            onPress={() => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/');
+              }
+            }}
+            style={styles.backButton}>
+            <Ionicons color={Design.colors.black} name="arrow-back" size={22} />
+          </Pressable>
         </View>
 
-        <Text style={styles.greeting}>
-          Chào mừng{'\n'}bạn trở lại!!
-        </Text>
+        <View style={styles.headerArea}>
+          <Text style={styles.welcomeTitle}>CHÀO MỪNG TRỞ LẠI</Text>
+          <Text style={styles.welcomeSubtitle}>Đăng nhập để tiếp tục hành trình của bạn</Text>
+        </View>
 
         <View style={styles.form}>
           <PillTextInput
@@ -89,6 +98,13 @@ export default function LoginScreen() {
             onTogglePassword={() => setIsPasswordVisible((prev) => !prev)}
             value={password}
           />
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={{ top: 8, bottom: 8, left: 12, right: 12 }}
+            onPress={openForgotPassword}
+            style={styles.forgotPasswordLink}>
+            <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+          </Pressable>
         </View>
 
         <PrimaryButton
@@ -97,17 +113,6 @@ export default function LoginScreen() {
           onPress={handleLogin}
           style={styles.loginButton}
         />
-
-        <View style={styles.linksRow}>
-          <Pressable accessibilityRole="link" onPress={openForgotPassword}>
-            <Text style={styles.linkText}>Quên mật khẩu?</Text>
-          </Pressable>
-          <Pressable accessibilityRole="link" onPress={() => router.push('/register')}>
-            <Text style={styles.linkText}>
-              Chưa có tài khoản? <Text style={styles.linkAccent}>Đăng ký</Text>
-            </Text>
-          </Pressable>
-        </View>
 
         <DividerWithText />
 
@@ -119,6 +124,17 @@ export default function LoginScreen() {
             style={styles.socialButton}>
             <Image contentFit="contain" source={require('@/assets/images/auth/google.png')} style={styles.socialIcon} />
             <Text style={styles.socialButtonText}>Đăng nhập bằng Google</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.registerRow}>
+          <Text style={styles.registerPrompt}>Chưa có tài khoản? </Text>
+          <Pressable
+            accessibilityRole="link"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            onPress={() => router.push('/register')}
+            style={styles.registerPressable}>
+            <Text style={styles.registerAction}>Đăng ký ngay</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -211,60 +227,90 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
     alignItems: 'center',
   },
-  headerTitle: {
-    alignSelf: 'flex-start',
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: Design.fontSize.title,
-    color: Design.colors.black,
-    marginBottom: 16,
-  },
-  mascotWrapper: {
-    width: 172,
-    height: 185,
-    marginBottom: 8,
-  },
-  mascot: {
+  topBar: {
     width: '100%',
-    height: '100%',
-  },
-  greeting: {
-    fontFamily: FontFamily.beVietnamSemiBold,
-    fontSize: Design.fontSize.h2,
-    color: Design.colors.black,
-    textAlign: 'center',
-    lineHeight: 32,
+    maxWidth: Design.spacing.contentWidth,
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 24,
+    marginTop: 4,
+  },
+  backButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F4F6',
+  },
+  headerArea: {
+    width: '100%',
+    maxWidth: Design.spacing.contentWidth,
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  welcomeTitle: {
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 26,
+    color: Design.colors.black,
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    marginBottom: 6,
+  },
+  welcomeSubtitle: {
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: 14,
+    color: Design.colors.mutedText,
+    textAlign: 'center',
   },
   form: {
     width: '100%',
     maxWidth: Design.spacing.contentWidth,
-    gap: 15,
-    marginBottom: 24,
+    gap: 12,
+    marginBottom: 20,
+  },
+  forgotPasswordLink: {
+    alignSelf: 'flex-end',
+    marginTop: -2,
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  forgotPasswordText: {
+    fontFamily: FontFamily.beVietnamMedium,
+    fontSize: 13,
+    color: Design.colors.mutedText,
   },
   loginButton: {
     width: '100%',
     maxWidth: Design.spacing.contentWidth,
     marginBottom: 16,
   },
-  linksRow: {
-    width: '100%',
-    maxWidth: Design.spacing.contentWidth,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  linkText: {
-    fontFamily: FontFamily.beVietnamRegular,
-    fontSize: Design.fontSize.caption,
-    color: Design.colors.disabled,
-  },
-  linkAccent: {
-    color: Design.colors.primaryGreen,
-  },
   socialRow: {
     width: '100%',
     maxWidth: Design.spacing.contentWidth,
     marginTop: 20,
+  },
+  registerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    paddingVertical: 8,
+  },
+  registerPrompt: {
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: 15,
+    color: '#4B5563',
+  },
+  registerPressable: {
+    paddingVertical: 4,
+    paddingHorizontal: 2,
+  },
+  registerAction: {
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 15,
+    color: Design.colors.primaryGreen,
+    textDecorationLine: 'underline',
   },
   socialButton: {
     width: '100%',

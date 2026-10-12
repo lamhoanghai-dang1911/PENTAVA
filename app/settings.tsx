@@ -1,10 +1,10 @@
-import { shopService } from '@/src/services/shopService';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
 import { setAccessToken } from '@/src/services/apiClient';
 import { authService, Profile } from '@/src/services/authService';
 import { clearCurrentUser, removeAccessToken } from '@/src/services/authStorage';
 import { uploadAvatar } from '@/src/services/avatarService';
+import { shopService } from '@/src/services/shopService';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    Linking,
     Modal,
     Pressable,
     StyleSheet,
@@ -28,7 +29,7 @@ type MenuItem = {
 };
 
 const MENU_ITEMS: MenuItem[] = [
-    { label: 'Thông báo', icon: 'notifications-outline', path: null },
+    // { label: 'Thông báo', icon: 'notifications-outline', path: null },
     { label: 'Quyền riêng tư', icon: 'lock-closed-outline', path: null },
     { label: 'Tài khoản', icon: 'person-outline', path: null },
     { label: 'Thành viên', icon: 'trophy-outline', path: '/membership' },
@@ -63,7 +64,7 @@ export default function SettingsScreen() {
             void shopService
                 .getMyWallet()
                 .then((w) => setRubyBalance(w.rubyBalance))
-                .catch(() => {});
+                .catch(() => { });
         } catch (error) {
             Alert.alert('Không thể tải tài khoản', error instanceof Error ? error.message : 'Vui lòng thử lại.');
         } finally {
@@ -176,12 +177,12 @@ export default function SettingsScreen() {
                 <Text style={styles.headerTitle}>Hồ sơ của tôi</Text>
             </View>
 
-            {/* Profile Card with Cat Avatar */}
+            {/* Profile Card with Default User Avatar */}
             <View style={styles.profileCard}>
                 <Image
                     cachePolicy="none"
                     onError={() => setAvatarLoadFailed(true)}
-                    source={avatarUrl && !avatarLoadFailed ? { uri: avatarUrl } : require('@/assets/images/onboarding/cat-luna.png')}
+                    source={avatarUrl && !avatarLoadFailed ? { uri: avatarUrl } : require('@/assets/images/default-avatar.png')}
                     style={styles.avatarImage}
                 />
                 <Pressable
@@ -202,7 +203,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* Stats Grid */}
-            <View style={styles.statsContainer}>
+            {/* <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <Text style={styles.statIcon}>📋</Text>
                     <Text style={styles.statNumber}>15</Text>
@@ -218,25 +219,15 @@ export default function SettingsScreen() {
                     <Text style={styles.statNumber}>15</Text>
                     <Text style={styles.statLabel}>Video</Text>
                 </View>
-            </View>
+            </View> */}
 
-            <View style={styles.statsContainer}>
+            {/* <View style={styles.statsContainer}>
                 <View style={styles.statCard}>
                     <Text style={styles.statIcon}>🔥</Text>
                     <Text style={styles.statNumber}>15</Text>
                     <Text style={styles.statLabel}>Streak</Text>
                 </View>
-                {/* <View style={styles.statCard}>
-                    <Text style={styles.statIcon}>🏅</Text>
-                    <Text style={styles.statNumber}>40</Text>
-                    <Text style={styles.statLabel}>Điểm</Text>
-                </View> */}
-                {/* <View style={styles.statCard}>
-                    <Text style={styles.statIcon}>📖</Text>
-                    <Text style={styles.statNumber}>15</Text>
-                    <Text style={styles.statLabel}>Nhật ký</Text>
-                </View> */}
-            </View>
+            </View> */}
 
             {/* Menu List */}
             <View style={styles.menuSectionHeader}>
@@ -255,6 +246,11 @@ export default function SettingsScreen() {
 
                             if (item.label === 'Tài khoản') {
                                 void openAccount();
+                                return;
+                            }
+
+                            if (item.label === 'Quyền riêng tư') {
+                                void Linking.openURL('https://pentava.online/privacy');
                                 return;
                             }
 
@@ -297,7 +293,7 @@ export default function SettingsScreen() {
                                                     ? { uri: selectedAvatarUri }
                                                     : avatarUrl && !avatarLoadFailed
                                                         ? { uri: avatarUrl }
-                                                        : require('@/assets/images/onboarding/cat-luna.png')
+                                                        : require('@/assets/images/default-avatar.png')
                                             }
                                             style={styles.accountAvatar}
                                         />
@@ -383,7 +379,7 @@ const styles = StyleSheet.create({
     avatarImage: {
         width: 72,
         height: 72,
-        borderRadius: 16,
+        borderRadius: 36,
         marginRight: 16,
     },
     profileInfo: {

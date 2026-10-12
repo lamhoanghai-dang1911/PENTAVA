@@ -7,9 +7,17 @@ import type {
   Clip,
   SocialPost,
   WeekPhotosResponse,
+  CinemaStorageQuota,
 } from "@/src/types/api/cinema";
 
 export const cinemaService = {
+  
+  async getStorageQuota(): Promise<CinemaStorageQuota> {
+    const response = await apiClient.get<CinemaStorageQuota>(
+      API_ENDPOINTS.CINEMA.STORAGE_QUOTA,
+    );
+    return response.data;
+  },
   async getGoals(): Promise<GoalSummary[]> {
     const response = await apiClient.get<GoalSummary[]>(
       API_ENDPOINTS.CINEMA.GOALS,
@@ -30,6 +38,15 @@ export const cinemaService = {
   ): Promise<WeekPhotosResponse> {
     const response = await apiClient.get<WeekPhotosResponse>(
       API_ENDPOINTS.CINEMA.GOAL_WEEK_PHOTOS(goalId, weekNumber),
+    );
+    return response.data;
+  },
+
+
+  async createJourneyClip(goalId: number, photoIds: number[]): Promise<Clip> {
+    const response = await apiClient.post<Clip>(
+      API_ENDPOINTS.CINEMA.CREATE_JOURNEY_CLIP(goalId),
+      { photoIds },
     );
     return response.data;
   },

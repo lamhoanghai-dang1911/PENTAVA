@@ -23,8 +23,8 @@ export function TaskPhotoReviewScreen() {
 
     try {
       setIsSaving(true);
-      const imageUrl = await checkinService.uploadImage(imageUri, progressId);
-      await checkinService.saveImage(progressId, imageUrl);
+      const uploadResult = await checkinService.uploadImage(imageUri, progressId);
+      await checkinService.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
       setIsSuccessModalVisible(true);
     } catch (error) {
       Alert.alert('Không thể lưu check-in', error instanceof Error ? error.message : 'Đã có lỗi xảy ra.');

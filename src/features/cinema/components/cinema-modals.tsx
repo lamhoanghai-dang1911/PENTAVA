@@ -7,6 +7,7 @@ import { formatDate } from "../utils/cinema-utils";
 import { styles } from "../cinema.styles";
 import type {
   ErrorAlertModalProps,
+  NoticeModalProps,
   PhotoActionModalProps,
   PhotoViewerModalProps,
 } from "../types/cinema";
@@ -40,6 +41,81 @@ export function ErrorAlertModal({
           >
             <Text style={styles.modalButtonText}>Đã hiểu</Text>
           </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+export function NoticeModal({
+  visible,
+  title,
+  message,
+  iconName = "information-circle-outline",
+  iconColor = Design.colors.primaryGreen,
+  buttonText = "Đã hiểu",
+  onClose,
+  onAction,
+  actionButtonText,
+}: NoticeModalProps) {
+  return (
+    <Modal
+      animationType="fade"
+      onRequestClose={onClose}
+      transparent
+      visible={visible}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.resultModal}>
+          <View
+            style={[
+              styles.resultIcon,
+              iconColor === "#B33A3A" && styles.resultIconFailed,
+            ]}
+          >
+            <Ionicons color={iconColor} name={iconName} size={30} />
+          </View>
+          <Text style={styles.errorModalTitle}>{title}</Text>
+          <Text style={styles.errorModalMessage}>{message}</Text>
+          <View
+            style={{
+              flexDirection: "row",
+              gap: 12,
+              marginTop: 20,
+              width: "100%",
+              justifyContent: "center",
+            }}
+          >
+            <Pressable
+              onPress={onClose}
+              style={[
+                styles.modalButton,
+                onAction
+                  ? { backgroundColor: "#F3F4F6", minWidth: 100, marginTop: 0 }
+                  : { marginTop: 0 },
+              ]}
+            >
+              <Text
+                style={[
+                  styles.modalButtonText,
+                  onAction ? { color: Design.colors.black } : null,
+                ]}
+              >
+                {buttonText}
+              </Text>
+            </Pressable>
+            {onAction && actionButtonText ? (
+              <Pressable
+                onPress={onAction}
+                style={[
+                  styles.modalButton,
+                  { backgroundColor: Design.colors.primaryGreen, minWidth: 140, marginTop: 0 },
+                ]}
+              >
+                <Text style={styles.modalButtonText}>{actionButtonText}</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
       </View>
     </Modal>

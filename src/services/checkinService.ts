@@ -50,7 +50,7 @@ export const checkinService = {
     return response.data;
   },
 
-  async uploadImage(imageUri: string, progressId: number) {
+  async uploadImage(imageUri: string, progressId: number): Promise<{ publicUrl: string; fileSizeBytes: number }> {
     try {
       const { extension, contentType } = getImageInfo(imageUri);
       const response = await fetch(imageUri);
@@ -77,7 +77,7 @@ export const checkinService = {
       const { data } = supabase.storage
         .from(CHECKIN_BUCKET)
         .getPublicUrl(filePath);
-      return data.publicUrl;
+      return { publicUrl: data.publicUrl, fileSizeBytes: fileData.byteLength };
     } catch (error) {
       throw new Error(
         error instanceof Error
@@ -87,8 +87,8 @@ export const checkinService = {
     }
   },
 
-  async saveImage(progressId: number, imageUrl: string): Promise<CheckinResponse> {
-    const payload: CheckinRequestDTO = { imageUrl };
+  async saveImage(progressId: number, imageUrl: string, fileSizeBytes?: number): Promise<CheckinResponse> {
+    const payload: CheckinRequestDTO = { imageUrl, fileSizeBytes };
     const response = await apiClient.post(
       API_ENDPOINTS.CHECKIN.SAVE_IMAGE(progressId),
       payload,

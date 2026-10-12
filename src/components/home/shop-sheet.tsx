@@ -1,19 +1,23 @@
 import { Design, FontFamily } from '@/src/constants/design';
+import { cacheManager } from '@/src/services/cacheManager';
 import { shopService, ShopServiceError } from '@/src/services/shopService';
 import type { ShopItem } from '@/src/types/api/shop';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import { InsufficientRubyModal, PurchaseSuccessModal } from './purchase-success-modal';
 
 type ShopSheetProps = {
     visible: boolean;
     balance: number | null;
     onBalanceChange: (balance: number) => void;
-    onPurchaseSuccess: (item: ShopItem, remainingRuby: number) => void;
-    onInsufficientRuby: (item: ShopItem, message: string) => void;
+    onPurchaseSuccess?: (item: ShopItem, remainingRuby: number) => void;
+    onInsufficientRuby?: (item: ShopItem, message: string) => void;
     onClose: () => void;
+    onTopUpRuby?: () => void;
 };
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -35,23 +39,48 @@ export function ShopSheet({
     onPurchaseSuccess,
     onInsufficientRuby,
     onClose,
+    onTopUpRuby,
 }: ShopSheetProps) {
-    const [items, setItems] = useState<ShopItem[]>([]);
+    // Fast cache-first initialization to eliminate loading spinner whenever cached
+    const [items, setItems] = useState<ShopItem[]>(() => {
+        return cacheManager.get<ShopItem[]>('shop:items') ?? [];
+    });
+    const [hasLoadedItems, setHasLoadedItems] = useState(() => {
+        return (cacheManager.get<ShopItem[]>('shop:items')?.length ?? 0) > 0;
+    });
     const [itemsError, setItemsError] = useState<string | null>(null);
     const [walletError, setWalletError] = useState<string | null>(null);
-    const [hasLoadedItems, setHasLoadedItems] = useState(false);
     const [retryCount, setRetryCount] = useState(0);
     const [purchasingItemId, setPurchasingItemId] = useState<number | null>(null);
+
+    // Inline modals to prevent conflicting modal slide transitions and double-jank
+    const [insufficientItem, setInsufficientItem] = useState<{
+        item: ShopItem;
+        message: string;
+    } | null>(null);
+    const [successItem, setSuccessItem] = useState<ShopItem | null>(null);
+
     const isLoadingItems = visible && !hasLoadedItems && itemsError === null;
     const isLoadingWallet = visible && balance === null && walletError === null;
+
     const retryLoading = () => {
         setItemsError(null);
         setWalletError(null);
         setHasLoadedItems(false);
         setRetryCount((count) => count + 1);
     };
+
     const handleBuy = async (item: ShopItem) => {
         if (item.owned || purchasingItemId !== null) return;
+
+        // Instant check: if user already has insufficient ruby, show immediately without waiting for server 402
+        if (balance !== null && balance < item.priceRuby) {
+            const diff = item.priceRuby - balance;
+            const message = `Bạn cần thêm ${diff} Ruby để mua ${item.name}.`;
+            setInsufficientItem({ item, message });
+            onInsufficientRuby?.(item, message);
+            return;
+        }
 
         setPurchasingItemId(item.id);
         try {
@@ -66,7 +95,8 @@ export function ShopSheet({
                     currentItem.id === item.id ? { ...currentItem, owned: true } : currentItem,
                 ),
             );
-            onPurchaseSuccess(item, purchase.remainingRuby);
+            setSuccessItem(item);
+            onPurchaseSuccess?.(item, purchase.remainingRuby);
         } catch (error: unknown) {
             const message = getErrorMessage(error, 'Không thể mua skin.');
             const isInsufficientRuby =
@@ -74,7 +104,8 @@ export function ShopSheet({
                 (error instanceof ShopServiceError && error.status === 402);
 
             if (isInsufficientRuby) {
-                onInsufficientRuby(item, message);
+                setInsufficientItem({ item, message });
+                onInsufficientRuby?.(item, message);
             } else {
                 Alert.alert('Không thể mua vật phẩm', message);
             }
@@ -94,6 +125,19 @@ export function ShopSheet({
                     setItems(catalog);
                     setItemsError(null);
                 }
+                // Background prefetch all images so they are ready instantly
+                const urls: string[] = [];
+                catalog.forEach((item) => {
+                    if (item.imageUrl) urls.push(item.imageUrl);
+                    if (item.thumbnailUrl) urls.push(item.thumbnailUrl);
+                    if (item.itemBackgroundUrl) urls.push(item.itemBackgroundUrl);
+                    item.thumbnailLayers?.forEach((layer) => {
+                        if (layer) urls.push(layer);
+                    });
+                });
+                if (urls.length > 0) {
+                    void Image.prefetch(Array.from(new Set(urls)));
+                }
             })
             .catch((error: unknown) => {
                 if (isMounted) setItemsError(getErrorMessage(error, 'Không thể tải danh sách skin.'));
@@ -111,8 +155,7 @@ export function ShopSheet({
             })
             .catch((error: unknown) => {
                 if (isMounted) setWalletError(getErrorMessage(error, 'Không thể tải số dư Ruby.'));
-            })
-            ;
+            });
 
         return () => {
             isMounted = false;
@@ -120,8 +163,8 @@ export function ShopSheet({
     }, [visible, retryCount, onBalanceChange]);
 
     return (
-        <Modal animationType="slide" onRequestClose={onClose} transparent visible={visible}>
-            <View style={styles.overlay}>
+        <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
+            <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(100)} style={styles.overlay}>
                 <Pressable accessibilityLabel="Đóng cửa hàng" onPress={onClose} style={styles.backdrop} />
 
                 <View style={styles.sheet}>
@@ -175,84 +218,108 @@ export function ShopSheet({
                             </View>
                         ) : items.length === 0 ? (
                             <Text style={styles.emptyText}>Chưa có skin nào trong cửa hàng.</Text>
-                        ) : items.map((item, index) => (
-                            <Animated.View
-                                key={item.id}
-                                entering={FadeInDown.delay(index * 60).springify().damping(14)}
-                                style={styles.productCard}>
-                                <View style={[
-                                    styles.productBadge,
-                                    item.owned ? styles.ownedBadge : styles.notOwnedBadge,
-                                ]}>
-                                    <Ionicons
-                                        color={item.owned ? '#059669' : '#D97706'}
-                                        name={item.owned ? 'checkmark-circle' : 'sparkles'}
-                                        size={11}
-                                    />
-                                    <Text style={[
-                                        styles.productBadgeText,
-                                        item.owned ? styles.ownedBadgeText : styles.notOwnedBadgeText,
-                                    ]}>
-                                        {item.owned ? 'Đã có' : 'Mới'}
-                                    </Text>
-                                </View>
-                                <View style={styles.imageShowcase}>
-                                    {getShopThumbnailLayers(item).map((imageUrl, layerIndex) => (
-                                        <Image
-                                            key={`${item.id}-${layerIndex}`}
-                                            cachePolicy="memory-disk"
-                                            contentFit="contain"
-                                            source={{ uri: imageUrl }}
-                                            style={[
-                                                styles.thumbnailLayer,
-                                                layerIndex > 0 && styles.thumbnailItemLayer,
-                                                { zIndex: layerIndex },
-                                            ]}
-                                            transition={150}
-                                        />
-                                    ))}
-                                </View>
-                                <Text numberOfLines={1} style={styles.productName}>{item.name}</Text>
-                                <Text numberOfLines={2} style={styles.productDescription}>{item.description}</Text>
-                                <View style={styles.productBottomRow}>
-                                    <View style={styles.productPriceWrap}>
-                                        <Image
-                                            contentFit="contain"
-                                            source={require('@/assets/images/ruby.png')}
-                                            style={styles.productRubyIcon}
-                                        />
-                                        <Text style={styles.productPrice}>{item.priceRuby}</Text>
-                                    </View>
-                                    <Pressable
-                                        accessibilityRole="button"
-                                        accessibilityState={{
-                                            disabled: item.owned || purchasingItemId !== null,
-                                        }}
-                                        disabled={item.owned || purchasingItemId !== null}
-                                        onPress={() => void handleBuy(item)}
-                                        style={({ pressed }) => [
-                                            styles.buyButton,
-                                            item.owned && styles.buyButtonOwned,
-                                            purchasingItemId !== null && styles.buyButtonDisabled,
-                                            pressed && purchasingItemId === null && !item.owned && styles.buyButtonPressed,
+                        ) : (
+                            <Animated.View entering={FadeIn.duration(150)} style={styles.cardsContainer}>
+                                {items.map((item) => (
+                                    <View key={item.id} style={styles.productCard}>
+                                        <View style={[
+                                            styles.productBadge,
+                                            item.owned ? styles.ownedBadge : styles.notOwnedBadge,
                                         ]}>
-                                        {purchasingItemId === item.id ? (
-                                            <ActivityIndicator color={Design.colors.white} size="small" />
-                                        ) : (
+                                            <Ionicons
+                                                color={item.owned ? '#059669' : '#D97706'}
+                                                name={item.owned ? 'checkmark-circle' : 'sparkles'}
+                                                size={11}
+                                            />
                                             <Text style={[
-                                                styles.buyButtonText,
-                                                item.owned && styles.buyButtonOwnedText,
+                                                styles.productBadgeText,
+                                                item.owned ? styles.ownedBadgeText : styles.notOwnedBadgeText,
                                             ]}>
-                                                {item.owned ? 'Đã sở hữu' : 'Mua ngay'}
+                                                {item.owned ? 'Đã có' : 'Mới'}
                                             </Text>
-                                        )}
-                                    </Pressable>
-                                </View>
+                                        </View>
+                                        <View style={styles.imageShowcase}>
+                                            {getShopThumbnailLayers(item).map((imageUrl, layerIndex) => (
+                                                <Image
+                                                    key={`${item.id}-${layerIndex}`}
+                                                    cachePolicy="memory-disk"
+                                                    contentFit="contain"
+                                                    priority="high"
+                                                    source={{ uri: imageUrl }}
+                                                    style={[
+                                                        styles.thumbnailLayer,
+                                                        layerIndex > 0 && styles.thumbnailItemLayer,
+                                                        { zIndex: layerIndex },
+                                                    ]}
+                                                />
+                                            ))}
+                                        </View>
+                                        <Text numberOfLines={1} style={styles.productName}>{item.name}</Text>
+                                        <Text numberOfLines={2} style={styles.productDescription}>{item.description}</Text>
+                                        <View style={styles.productBottomRow}>
+                                            <View style={styles.productPriceWrap}>
+                                                <Image
+                                                    contentFit="contain"
+                                                    source={require('@/assets/images/ruby.png')}
+                                                    style={styles.productRubyIcon}
+                                                />
+                                                <Text style={styles.productPrice}>{item.priceRuby}</Text>
+                                            </View>
+                                            <Pressable
+                                                accessibilityRole="button"
+                                                accessibilityState={{
+                                                    disabled: item.owned || purchasingItemId !== null,
+                                                }}
+                                                disabled={item.owned || purchasingItemId !== null}
+                                                onPress={() => void handleBuy(item)}
+                                                style={({ pressed }) => [
+                                                    styles.buyButton,
+                                                    item.owned && styles.buyButtonOwned,
+                                                    purchasingItemId !== null && styles.buyButtonDisabled,
+                                                    pressed && purchasingItemId === null && !item.owned && styles.buyButtonPressed,
+                                                ]}>
+                                                {purchasingItemId === item.id ? (
+                                                    <ActivityIndicator color={Design.colors.white} size="small" />
+                                                ) : (
+                                                    <Text style={[
+                                                        styles.buyButtonText,
+                                                        item.owned && styles.buyButtonOwnedText,
+                                                    ]}>
+                                                        {item.owned ? 'Đã sở hữu' : 'Mua ngay'}
+                                                    </Text>
+                                                )}
+                                            </Pressable>
+                                        </View>
+                                    </View>
+                                ))}
                             </Animated.View>
-                        ))}
+                        )}
                     </ScrollView>
                 </View>
-            </View>
+
+                {/* Inline Insufficient Ruby & Purchase Success modals to prevent modal conflict */}
+                <InsufficientRubyModal
+                    balance={balance}
+                    message={insufficientItem?.message ?? ''}
+                    onClose={() => setInsufficientItem(null)}
+                    onTopUp={() => {
+                        setInsufficientItem(null);
+                        onClose();
+                        if (onTopUpRuby) {
+                            onTopUpRuby();
+                        } else {
+                            router.push('/ruby-topup');
+                        }
+                    }}
+                    product={insufficientItem?.item ?? null}
+                    visible={insufficientItem !== null}
+                />
+                <PurchaseSuccessModal
+                    balance={balance ?? 0}
+                    onClose={() => setSuccessItem(null)}
+                    product={successItem}
+                />
+            </Animated.View>
         </Modal>
     );
 }
@@ -351,11 +418,14 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     grid: {
+        paddingBottom: 54,
+        paddingTop: 4,
+    },
+    cardsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        paddingBottom: 36,
-        paddingTop: 4,
+        width: '100%',
     },
     loading: {
         paddingVertical: 40,

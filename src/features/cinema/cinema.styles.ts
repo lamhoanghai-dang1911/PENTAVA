@@ -44,7 +44,7 @@ export const styles = StyleSheet.create({
     fontSize: Design.fontSize.caption + 2,
     paddingVertical: 0,
   },
-  listContent: { gap: 12, paddingBottom: 24, paddingHorizontal: 24 },
+  listContent: { gap: 12, paddingBottom: 40, paddingHorizontal: 24 },
   emptyListContent: { flexGrow: 1 },
   goalCard: {
     backgroundColor: Design.colors.white,

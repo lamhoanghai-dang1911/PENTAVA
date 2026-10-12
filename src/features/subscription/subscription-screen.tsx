@@ -23,6 +23,7 @@ export default function SubscriptionScreen() {
     isLoading,
     isPurchasing,
     isCheckingStatus,
+    isMockConfirming,
     activeTransaction,
     errorModal,
     notificationModal,
@@ -31,6 +32,7 @@ export default function SubscriptionScreen() {
     loadData,
     initPurchase,
     checkStatus,
+    mockConfirm,
     closeQrModal,
     closeErrorModal,
     closeNotificationModal,
@@ -91,6 +93,8 @@ export default function SubscriptionScreen() {
         onCheckStatus={checkStatus}
         isCheckingStatus={isCheckingStatus}
         statusMessage={statusMessage}
+        onMockConfirm={mockConfirm}
+        isMockConfirming={isMockConfirming}
       />
 
       <NotificationModal

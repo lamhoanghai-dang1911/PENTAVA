@@ -53,23 +53,24 @@ export function HomeShopAndTaskModals({
       <ShopSheet
         balance={rubyBalance}
         onBalanceChange={onBalanceChange}
-        onInsufficientRuby={onInsufficientRuby}
         onClose={onCloseShop}
+        onInsufficientRuby={onInsufficientRuby}
         onPurchaseSuccess={onPurchaseSuccess}
+        onTopUpRuby={onTopUpRuby}
         visible={isShopVisible}
       />
       <PurchaseSuccessModal
         balance={rubyBalance ?? 0}
         onClose={onClosePurchaseSuccess}
-        product={purchasedShopItem}
+        product={isShopVisible ? null : purchasedShopItem}
       />
       <InsufficientRubyModal
         balance={rubyBalance}
         message={insufficientRubyMessage}
         onClose={onCloseInsufficientRuby}
         onTopUp={onTopUpRuby}
-        product={insufficientRubyItem}
-        visible={insufficientRubyItem !== null}
+        product={isShopVisible ? null : insufficientRubyItem}
+        visible={!isShopVisible && insufficientRubyItem !== null}
       />
       <DailyTaskModals
         completedStreak={null}

@@ -1,9 +1,8 @@
-import React from "react";
-import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { Image } from "expo-image";
-import { formatVnd } from "../utils/shop-utils";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 import { styles } from "../shop.styles";
 import type { TopupRateCardProps } from "../types/shop";
+import { formatVnd } from "../utils/shop-utils";
 
 export function TopupRateCard({
   isLoading,
@@ -29,7 +28,7 @@ export function TopupRateCard({
               = {formatVnd(pricing.baseRateVndPerRuby)}
             </Text>
           </View>
-          <Text style={styles.rateHint}>{pricing.customTopupRule}</Text>
+          {/* <Text style={styles.rateHint}>{pricing.customTopupRule}</Text> */}
         </>
       ) : (
         <View style={styles.pricingError}>

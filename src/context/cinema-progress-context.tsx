@@ -33,7 +33,7 @@ function getClipProgress(status: Clip["status"]) {
 
 function getClipStatusLabel(status: Clip["status"]) {
   return {
-    PENDING: "Đang xếp hàng xử lý...",
+    PENDING: "Đang xử lý...",
     PROCESSING: "Đang render video...",
     UPLOADING: "Đang tải video lên...",
     COMPLETED: "Video đã sẵn sàng.",

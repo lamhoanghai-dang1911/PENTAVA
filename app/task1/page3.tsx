@@ -34,7 +34,8 @@ export default function Page3() {
 
     try {
       setIsCompleting(true);
-      await taskService.completeTask(taskId, { selectedItems });
+      await taskService.saveProgressItems(taskId, { selectedItems });
+      await taskService.completeTask(taskId);
       const week = Number(weekParam);
       if (Number.isInteger(week) && week > 0) {
         // TODO: Include userId in this key after the auth user session is merged.

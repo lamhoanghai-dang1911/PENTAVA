@@ -213,31 +213,51 @@ export function TaskCard({
                                 Đổi task
                             </Text>
                         </Pressable>
-                    ) : null}
-                </View>
-            ) : null}
+                    ) : !checkInImageUrl ? (
+                        <Pressable
+                            accessibilityRole="button"
+                            onPress={() => onStartCheckIn(task)}
+                            style={({ pressed }) => [
+                                styles.action,
+                                pressed && { transform: [{ scale: 0.95 }] },
+                            ]}
+                        >
+                            <Ionicons
+                                color={Design.colors.primaryGreen}
+                                name="camera-outline"
+                                size={18}
+                            />
 
-            {task.isCompleted && checkInImageUrl ? (
-                <Pressable
-                    accessibilityRole="button"
-                    disabled={isLoadingCheckInImage}
-                    onPress={handleViewCheckInImage}
-                    style={({ pressed }) => [
-                        styles.viewImageAction,
-                        pressed && { transform: [{ scale: 0.97 }] },
-                    ]}
-                >
-                    {isLoadingCheckInImage ? (
-                        <ActivityIndicator color={Design.colors.primaryGreen} />
+                            <Text style={styles.actionText}>
+                                Check in
+                            </Text>
+                        </Pressable>
                     ) : (
-                        <Ionicons
-                            color={Design.colors.primaryGreen}
-                            name="image-outline"
-                            size={18}
-                        />
+                        <Pressable
+                            accessibilityRole="button"
+                            disabled={isLoadingCheckInImage}
+                            onPress={handleViewCheckInImage}
+                            style={({ pressed }) => [
+                                styles.action,
+                                pressed && { transform: [{ scale: 0.95 }] },
+                            ]}
+                        >
+                            {isLoadingCheckInImage ? (
+                                <ActivityIndicator color={Design.colors.primaryGreen} />
+                            ) : (
+                                <Ionicons
+                                    color={Design.colors.primaryGreen}
+                                    name="image-outline"
+                                    size={18}
+                                />
+                            )}
+
+                            <Text style={styles.actionText}>
+                                Xem ảnh
+                            </Text>
+                        </Pressable>
                     )}
-                    <Text style={styles.actionText}>Xem ảnh check-in</Text>
-                </Pressable>
+                </View>
             ) : null}
 
             <Modal
@@ -533,6 +553,6 @@ const styles = StyleSheet.create({
         width: "100%",
         height: 480,
         borderRadius: 12,
-        backgroundColor: Design.colors.lightGray,
+        backgroundColor: '#E2E8F0',
     },
 });

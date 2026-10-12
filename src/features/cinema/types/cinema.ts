@@ -21,6 +21,8 @@ export type WeekCardProps = {
 export type GoalWeeksContentProps = {
   data: GoalWeeksResponse;
   onWeekPress: (week: WeekSummary) => void;
+  onJourneyClipPress?: () => void;
+  onViewJourneyClipsPress?: () => void;
 };
 
 export type WeekOptionsContentProps = {
@@ -37,6 +39,10 @@ export type ClipVideoCardProps = {
 export type ClipsContentProps = {
   clips: Clip[];
   onPostPress: (clip: Clip) => void;
+  title?: string;
+  subtitle?: string;
+  emptyTitle?: string;
+  emptySubtitle?: string;
 };
 
 export type WeekPhotosContentProps = {
@@ -62,6 +68,18 @@ export type ErrorAlertModalProps = {
   message: string | null;
   iconName: keyof typeof Ionicons.glyphMap;
   onClose: () => void;
+};
+
+export type NoticeModalProps = {
+  visible: boolean;
+  title: string;
+  message: string | null;
+  iconName?: keyof typeof Ionicons.glyphMap;
+  iconColor?: string;
+  buttonText?: string;
+  onClose: () => void;
+  onAction?: () => void;
+  actionButtonText?: string;
 };
 
 export type PhotoActionModalProps = {

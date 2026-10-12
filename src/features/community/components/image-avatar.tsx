@@ -6,12 +6,12 @@ import type { ImageAvatarProps } from "../types/community";
 export function ImageAvatar({ source, fallback }: ImageAvatarProps) {
   const [hasError, setHasError] = useState(false);
 
-  if (hasError) {
+  if (hasError || !source) {
     return (
       <Image
         accessibilityLabel={`Ảnh đại diện của ${fallback}`}
         contentFit="cover"
-        source={require("@/assets/images/onboarding/cat-luna.png")}
+        source={require("@/assets/images/default-avatar.png")}
         style={styles.avatarImage}
       />
     );

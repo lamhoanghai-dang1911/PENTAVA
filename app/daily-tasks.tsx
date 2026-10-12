@@ -2,6 +2,7 @@ import { Design, FontFamily } from '@/src/constants/design';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
 import { DailyTasksHeader } from '@/src/features/tasks/components/daily-tasks-header';
 import { TaskCard } from '@/src/features/tasks/components/task-card';
+import { EndGoalSection } from '@/src/features/tasks/components/end-goal-section';
 import { useDailyTasks } from '@/src/features/tasks/hooks/use-daily-tasks';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -95,7 +96,7 @@ export default function DailyTasksScreen() {
     };
 
     return (
-        <SafeAreaView edges={['top']} style={styles.safeArea}>
+        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 contentInsetAdjustmentBehavior="never"
@@ -204,6 +205,14 @@ export default function DailyTasksScreen() {
 
                     ))
                     : null}
+
+                {!dailyTasks.isLoading && dailyTasks.currentGoalId ? (
+                    <EndGoalSection
+                        currentGoal={dailyTasks.currentGoal}
+                        currentGoalId={dailyTasks.currentGoalId}
+                        weekNumber={dailyTasks.weekNumber}
+                    />
+                ) : null}
             </ScrollView>
 
             <DailyTaskModals
@@ -270,7 +279,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 8,
-        paddingBottom: 36,
+        paddingBottom: 48,
     },
 
     diaryCard: {

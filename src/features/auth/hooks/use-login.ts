@@ -2,7 +2,8 @@ import * as AuthSession from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 
 import { authService } from '@/src/services/authService';
 import { useAuth } from '@/src/context/auth-context';
@@ -180,16 +181,33 @@ export function useLogin() {
     }
   };
 
-  const [request, , promptAsync] = Google.useAuthRequest({
+  const isWeb = Platform.OS === 'web';
+
+  const [request, response, promptAsync] = Google.useAuthRequest({
     clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
-    responseType: AuthSession.ResponseType.IdToken,
-    shouldAutoExchangeCode: false,
+    responseType: isWeb ? AuthSession.ResponseType.IdToken : undefined,
     scopes: ['openid', 'profile', 'email'],
     selectAccount: true,
   });
+
+  useEffect(() => {
+    if (!response) return;
+
+    if (response.type === 'success') {
+      const idToken = response.authentication?.idToken || response.params?.id_token;
+      if (idToken) {
+        handleBackendGoogleLogin(idToken);
+      }
+    } else if (response.type === 'error') {
+      showModal(
+        'Đăng nhập Google thất bại',
+        response.error?.description || 'Google không thể xác thực tài khoản.',
+      );
+    }
+  }, [response]);
 
   const handleLogin = async () => {
     const trimmedEmail = email.trim().toLowerCase();
@@ -221,16 +239,10 @@ export function useLogin() {
       return;
     }
 
-    const response = await promptAsync();
-    if (response.type === 'success') {
-      const idToken = response.authentication?.idToken || response.params?.id_token;
-      if (!idToken) {
-        showModal('Đăng nhập Google thất bại', 'Google không trả về idToken.');
-        return;
-      }
-      await handleBackendGoogleLogin(idToken);
-    } else if (response.type === 'error') {
-      showModal('Đăng nhập Google thất bại', response.error?.description || 'Google không thể xác thực tài khoản.');
+    try {
+      await promptAsync();
+    } catch (error: any) {
+      showModal('Đăng nhập Google thất bại', error?.message || 'Có lỗi xảy ra khi mở đăng nhập Google.');
     }
   };
 

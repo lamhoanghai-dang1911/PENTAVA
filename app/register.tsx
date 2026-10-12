@@ -4,7 +4,7 @@ import { PrimaryButton } from '@/src/components/ui/primary-button';
 import { ScreenContainer } from '@/src/components/ui/screen-container';
 import { Design, FontFamily } from '@/src/constants/design';
 import { authService } from '@/src/services/authService';
-import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -113,19 +113,27 @@ export default function RegisterScreen() {
                 contentContainerStyle={styles.scrollContent}
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}>
-                <Text style={styles.headerTitle}>Đăng ký tài khoản</Text>
-
-                <View style={styles.mascotWrapper}>
-                    <Image
-                        contentFit="contain"
-                        source={require('@/assets/images/auth/mascot.png')}
-                        style={styles.mascot}
-                    />
+                <View style={styles.topBar}>
+                    <Pressable
+                        accessibilityLabel="Quay lại"
+                        accessibilityRole="button"
+                        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                        onPress={() => {
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                router.replace('/login');
+                            }
+                        }}
+                        style={styles.backButton}>
+                        <Ionicons color={Design.colors.black} name="arrow-back" size={22} />
+                    </Pressable>
                 </View>
 
-                <Text style={styles.greeting}>
-                    Bắt đầu hành trình{'\n'}cùng bạn!!
-                </Text>
+                <View style={styles.headerArea}>
+                    <Text style={styles.welcomeTitle}>TẠO TÀI KHOẢN MỚI</Text>
+                    <Text style={styles.welcomeSubtitle}>Bắt đầu hành trình chuyển hóa cùng Pentava</Text>
+                </View>
 
                 <View style={styles.form}>
                     <PillTextInput
@@ -160,11 +168,14 @@ export default function RegisterScreen() {
                     style={styles.registerButton}
                 />
 
-                <View style={styles.linksRow}>
-                    <Pressable accessibilityRole="link" onPress={() => router.back()}>
-                        <Text style={styles.linkText}>
-                            Đã có tài khoản? <Text style={styles.linkAccent}>Đăng nhập</Text>
-                        </Text>
+                <View style={styles.loginRow}>
+                    <Text style={styles.loginPrompt}>Đã có tài khoản? </Text>
+                    <Pressable
+                        accessibilityRole="link"
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                        onPress={() => router.back()}
+                        style={styles.loginPressable}>
+                        <Text style={styles.loginAction}>Đăng nhập</Text>
                     </Pressable>
                 </View>
             </ScrollView>
@@ -185,63 +196,46 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
         alignItems: 'center',
     },
-    headerTitle: {
-        alignSelf: 'flex-start',
-        fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.title,
-        color: Design.colors.black,
-        marginBottom: 16,
-    },
-    mascotWrapper: {
-        width: 172,
-        height: 185,
-        marginBottom: 8,
-    },
-    mascot: {
-        width: '100%',
-        height: '100%',
-    },
-    greeting: {
-        fontFamily: FontFamily.beVietnamSemiBold,
-        fontSize: Design.fontSize.h2,
-        color: Design.colors.black,
-        textAlign: 'center',
-        lineHeight: 32,
-        marginBottom: 24,
-    },
-    responseBox: {
+    topBar: {
         width: '100%',
         maxWidth: Design.spacing.contentWidth,
-        borderRadius: 10,
-        borderWidth: 1,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        marginBottom: 18,
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 24,
+        marginTop: 4,
     },
-    successBox: {
-        backgroundColor: '#EAF8EF',
-        borderColor: Design.colors.primaryGreen,
+    backButton: {
+        width: 42,
+        height: 42,
+        borderRadius: 21,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#F3F4F6',
     },
-    errorBox: {
-        backgroundColor: '#FFF1F1',
-        borderColor: '#D64545',
+    headerArea: {
+        width: '100%',
+        maxWidth: Design.spacing.contentWidth,
+        alignItems: 'center',
+        marginBottom: 28,
     },
-    responseText: {
-        fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.caption,
-        lineHeight: 20,
+    welcomeTitle: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 26,
+        color: Design.colors.black,
+        letterSpacing: 0.5,
         textAlign: 'center',
+        marginBottom: 6,
     },
-    successText: {
-        color: Design.colors.primaryGreen,
-    },
-    errorText: {
-        color: '#B42318',
+    welcomeSubtitle: {
+        fontFamily: FontFamily.beVietnamRegular,
+        fontSize: 14,
+        color: Design.colors.mutedText,
+        textAlign: 'center',
     },
     form: {
         width: '100%',
         maxWidth: Design.spacing.contentWidth,
-        gap: 15,
+        gap: 14,
         marginBottom: 24,
     },
     registerButton: {
@@ -249,18 +243,26 @@ const styles = StyleSheet.create({
         maxWidth: Design.spacing.contentWidth,
         marginBottom: 16,
     },
-    linksRow: {
-        width: '100%',
-        maxWidth: Design.spacing.contentWidth,
+    loginRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 20,
+        justifyContent: 'center',
+        marginTop: 20,
+        paddingVertical: 8,
     },
-    linkText: {
+    loginPrompt: {
         fontFamily: FontFamily.beVietnamRegular,
-        fontSize: Design.fontSize.caption,
-        color: Design.colors.disabled,
+        fontSize: 15,
+        color: '#4B5563',
     },
-    linkAccent: {
+    loginPressable: {
+        paddingVertical: 4,
+        paddingHorizontal: 2,
+    },
+    loginAction: {
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 15,
         color: Design.colors.primaryGreen,
+        textDecorationLine: 'underline',
     },
 });

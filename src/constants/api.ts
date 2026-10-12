@@ -31,6 +31,19 @@ export const API_ENDPOINTS = {
     CURRENT_GOAL: "/api/onboarding/goals/current",
     CURRENT_STREAK: "/api/onboarding/streak/current",
     SELECT_MOOD: "/api/onboarding/mood/select",
+    PAST_CATALOG: "/api/onboarding/tasks/past-catalog",
+    CUSTOM_GOAL: "/api/onboarding/goals/custom",
+    GOAL_VISIBILITY: (goalId: number) => `/api/onboarding/goals/${goalId}/visibility`,
+    PUBLIC_GOALS: "/api/onboarding/goals/public",
+    CLONE_PUBLIC_GOAL: (publicGoalId: number) =>
+      `/api/onboarding/goals/public/${publicGoalId}/clone`,
+    ASSESSMENT_CONTEXT: (goalId: number) =>
+      `/api/onboarding/goals/${goalId}/assessment-context`,
+    SUBMIT_ASSESSMENT: (goalId: number) =>
+      `/api/onboarding/goals/${goalId}/assessment`,
+    ASSESSMENT_REPORT: (goalId: number) =>
+      `/api/onboarding/goals/${goalId}/assessment-report`,
+    RENEWAL: "/api/onboarding/goal-renewal",
   },
   SHOP: {
     ITEMS: "/api/shop/items",
@@ -66,10 +79,12 @@ export const API_ENDPOINTS = {
     UNEQUIP: "/api/skin/unequip",
   },
   CINEMA: {
+    STORAGE_QUOTA: "/api/cinema/storage/quota",
     GOALS: "/api/cinema/goals",
     GOAL_WEEKS: (goalId: number) => `/api/cinema/goals/${goalId}/weeks`,
     GOAL_WEEK_PHOTOS: (goalId: number, weekNumber: number) =>
       `/api/cinema/goals/${goalId}/weeks/${weekNumber}/photos`,
+    CREATE_JOURNEY_CLIP: (goalId: number) => `/api/cinema/goals/${goalId}/journey-clips`,
     CREATE_CLIP: (goalId: number, weekNumber: number) =>
       `/api/cinema/goals/${goalId}/weeks/${weekNumber}/clips`,
     GET_CLIPS: (goalId: number, weekNumber: number) =>

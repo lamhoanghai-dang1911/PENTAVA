@@ -1,7 +1,8 @@
-import { Design } from '@/src/constants/design';
+﻿import { Design, FontFamily } from '@/src/constants/design';
 import type { ThemeMode } from '@/src/hooks/use-day-night-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -11,7 +12,6 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { useEffect } from 'react';
 import { styles } from '../home-screen.styles';
 
 type HomeHeaderProps = {
@@ -23,6 +23,10 @@ type HomeHeaderProps = {
   isNight: boolean;
   isImmersiveView: boolean;
   themeMode: ThemeMode;
+  hasStreakProtection?: boolean;
+  freezesUsedThisMonth?: number;
+  maxFreezesPerMonth?: number;
+  onOpenStreakFreeze?: () => void;
   onToggleImmersiveView: () => void;
   onToggleDayNight: () => void;
   onCycleTheme: () => void;
@@ -40,6 +44,10 @@ export function HomeHeader({
   isNight,
   isImmersiveView,
   themeMode,
+  hasStreakProtection,
+  freezesUsedThisMonth = 0,
+  maxFreezesPerMonth = 2,
+  onOpenStreakFreeze,
   onToggleImmersiveView,
   onToggleDayNight,
   onCycleTheme,
@@ -64,22 +72,24 @@ export function HomeHeader({
     transform: [{ scale: flameScale.value }],
   }));
 
+  const remainingFreezes = Math.max(0, maxFreezesPerMonth - freezesUsedThisMonth);
+
   return (
     <View style={styles.headerContainer}>
       <View style={[styles.headerRow, isImmersiveView && { justifyContent: 'flex-end' }]}>
-        {!isImmersiveView && (
+        {/* {!isImmersiveView && (
           <Text
             numberOfLines={1}
             style={[styles.greeting, isNight && styles.greetingNight]}>
             Chào {displayName}
           </Text>
-        )}
+        )} */}
         <View style={styles.headerActions}>
           <Pressable
             accessibilityLabel={
               isImmersiveView
                 ? 'Đang bật xem toàn cảnh. Bấm để hiện lại các chức năng'
-                : 'Bấm để ẩn các thẻ, xem toàn cảnh nhân vật và thiên nhiên'
+                : 'Bấm để ẩn các thanh, xem toàn cảnh nhân vật và thiên nhiên'
             }
             accessibilityRole="button"
             onPress={onToggleImmersiveView}
@@ -148,7 +158,15 @@ export function HomeHeader({
 
       {!isImmersiveView && (
         <View style={styles.headerStatsRow}>
-          <View style={[styles.statPill, isNight && styles.statPillNight]}>
+          <Pressable
+            accessibilityLabel={`Streak hiện tại: ${currentStreak}${hasStreakProtection ? `. Khiên bảo vệ còn ${remainingFreezes} lượt` : ''}`}
+            accessibilityRole="button"
+            onPress={onOpenStreakFreeze}
+            style={({ pressed }) => [
+              styles.statPill,
+              isNight && styles.statPillNight,
+              pressed && { opacity: 0.85 },
+            ]}>
             <Animated.View style={animatedFlameStyle}>
               <Image
                 contentFit="contain"
@@ -163,7 +181,30 @@ export function HomeHeader({
             <Text style={[styles.statValue, styles.streakValue, isNight && styles.streakValueNight]}>
               {currentStreak}
             </Text>
-          </View>
+            {hasStreakProtection && (
+              <View
+                style={{
+                  backgroundColor: isNight ? '#0369A1' : '#E0F2FE',
+                  paddingHorizontal: 6,
+                  paddingVertical: 2,
+                  borderRadius: 10,
+                  marginLeft: 5,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 3,
+                }}>
+                <Ionicons name="snow" size={12} color={isNight ? '#BAE6FD' : '#0284C7'} />
+                <Text
+                  style={{
+                    fontSize: 11,
+                    fontFamily: FontFamily.beVietnamMedium,
+                    color: isNight ? '#BAE6FD' : '#0284C7',
+                  }}>
+                  {remainingFreezes}/2
+                </Text>
+              </View>
+            )}
+          </Pressable>
 
           <Pressable
             accessibilityLabel={
