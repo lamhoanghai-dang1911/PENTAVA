@@ -10,12 +10,16 @@ export function CustomTopupForm({
   pricing,
   rubyInput,
   onChangeRubyInput,
+  onBlur,
   amountVnd,
   isValidAmount,
   isSubmitting,
   errorMessage,
   onSubmit,
 }: CustomTopupFormProps) {
+  const parsedRuby = Number(rubyInput);
+  const isInputEmpty = !rubyInput.trim();
+
   return (
     <>
       <Text style={styles.inputLabel}>Số Ruby muốn nạp</Text>
@@ -24,6 +28,7 @@ export function CustomTopupForm({
           accessibilityLabel="Số Ruby muốn nạp"
           editable={pricing !== null}
           keyboardType="number-pad"
+          onBlur={onBlur}
           onChangeText={onChangeRubyInput}
           placeholder="Nhập số Ruby"
           placeholderTextColor={Design.colors.mutedText}
@@ -40,7 +45,9 @@ export function CustomTopupForm({
       <View style={styles.amountPreview}>
         <Text style={styles.amountLabel}>Số tiền cần chuyển</Text>
         <Text style={styles.amountValue}>
-          {isValidAmount ? formatVnd(amountVnd) : "—"}
+          {parsedRuby > 0 && Number.isSafeInteger(parsedRuby)
+            ? formatVnd(amountVnd)
+            : "—"}
         </Text>
       </View>
       {pricing ? (
@@ -58,13 +65,13 @@ export function CustomTopupForm({
 
       <Pressable
         accessibilityRole="button"
-        accessibilityState={{ disabled: !isValidAmount || isSubmitting }}
-        disabled={!isValidAmount || isSubmitting}
+        accessibilityState={{ disabled: isSubmitting || isInputEmpty }}
+        disabled={isSubmitting || isInputEmpty}
         onPress={onSubmit}
         style={({ pressed }) => [
           styles.submitButton,
-          (!isValidAmount || isSubmitting) && styles.disabledButton,
-          pressed && isValidAmount && !isSubmitting && styles.pressedButton,
+          (isSubmitting || isInputEmpty) && styles.disabledButton,
+          pressed && !isSubmitting && !isInputEmpty && styles.pressedButton,
         ]}
       >
         {isSubmitting ? (

@@ -33,7 +33,9 @@ export default function RubyTopupScreen() {
     statusError,
     handleBuyPackage,
     handleCustomSubmit,
+    handleRubyInputBlur,
     checkTransactionStatus,
+    handleCloseTransaction,
   } = useRubyTopup();
 
   const handleBack = () => {
@@ -76,6 +78,7 @@ export default function RubyTopupScreen() {
             errorMessage={errorMessage}
             isSubmitting={isSubmitting}
             isValidAmount={isValidAmount}
+            onBlur={handleRubyInputBlur}
             onChangeRubyInput={handleRubyInputChange}
             onSubmit={handleCustomSubmit}
             pricing={topupPricing}
@@ -86,6 +89,7 @@ export default function RubyTopupScreen() {
             <TopupTransactionCard
               isCheckingStatus={isCheckingStatus}
               onCheckStatus={() => void checkTransactionStatus()}
+              onClose={handleCloseTransaction}
               rubyBalance={rubyBalance}
               statusError={statusError}
               transaction={transaction}

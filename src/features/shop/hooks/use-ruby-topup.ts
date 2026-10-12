@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as Haptics from "expo-haptics";
 import { shopService } from "@/src/services/shopService";
+import { formatVnd } from "../utils/shop-utils";
 import type {
   InitTopupRequest,
   InitTopupResponse,
@@ -36,6 +38,20 @@ export function useRubyTopup() {
   const handleRubyInputChange = (value: string) => {
     setRubyInput(value.replace(/\D/g, ""));
     setErrorMessage(null);
+  };
+
+  const handleRubyInputBlur = () => {
+    if (!rubyInput.trim() || !topupPricing) return;
+    const parsed = Number(rubyInput);
+    if (!Number.isSafeInteger(parsed) || parsed <= 0) {
+      setErrorMessage("Vui lòng nhập số Ruby hợp lệ.");
+      return;
+    }
+    if (parsed < topupPricing.minCustomTopupRuby) {
+      setErrorMessage(
+        `Số Ruby nạp tối thiểu là ${topupPricing.minCustomTopupRuby} Ruby (${formatVnd(topupPricing.minCustomTopupVnd)}).`,
+      );
+    }
   };
 
   useEffect(() => {
@@ -113,10 +129,45 @@ export function useRubyTopup() {
   };
 
   const handleCustomSubmit = () => {
-    void handleCreateTopup({ amountVnd });
+    if (isSubmitting) return;
+
+    if (!topupPricing) {
+      setErrorMessage("Chưa tải được thông tin bảng giá.");
+      return;
+    }
+
+    const trimmed = rubyInput.trim();
+    if (!trimmed) {
+      setErrorMessage("Vui lòng nhập số Ruby muốn nạp.");
+      return;
+    }
+
+    const parsedRuby = Number(trimmed);
+    if (!Number.isSafeInteger(parsedRuby) || parsedRuby <= 0) {
+      setErrorMessage("Vui lòng nhập số Ruby hợp lệ.");
+      return;
+    }
+
+    if (parsedRuby < topupPricing.minCustomTopupRuby) {
+      setErrorMessage(
+        `Số Ruby nạp tối thiểu là ${topupPricing.minCustomTopupRuby} Ruby (${formatVnd(topupPricing.minCustomTopupVnd)}).`,
+      );
+      return;
+    }
+
+    if (parsedRuby > maxRubyAmount) {
+      setErrorMessage("Số Ruby nạp vượt quá giới hạn cho phép.");
+      return;
+    }
+
+    setErrorMessage(null);
+    void handleCreateTopup({
+      rubyAmount: parsedRuby,
+      amountVnd: parsedRuby * topupPricing.baseRateVndPerRuby,
+    });
   };
 
-  const checkTransactionStatus = useCallback(async () => {
+  const checkTransactionStatus = useCallback(async (isManual = false) => {
     const transactionCode = transaction?.transactionCode;
     if (
       !transactionCode ||
@@ -127,7 +178,11 @@ export function useRubyTopup() {
     }
 
     isCheckingStatusRef.current = true;
-    setIsCheckingStatus(true);
+    if (isManual) {
+      setIsCheckingStatus(true);
+      setStatusError(null);
+    }
+
     try {
       const history = await shopService.getTopupHistory();
       const updatedTransaction = history.find(
@@ -135,11 +190,16 @@ export function useRubyTopup() {
       );
 
       if (!updatedTransaction) {
-        setStatusError("Chưa tìm thấy giao dịch trong lịch sử. Hệ thống sẽ tiếp tục kiểm tra.");
+        if (isManual) {
+          setStatusError("Đang chờ ngân hàng xác nhận giao dịch...");
+        }
         return;
       }
 
-      setStatusError(null);
+      if (isManual) {
+        setStatusError(null);
+      }
+
       if (updatedTransaction.status !== transaction.status) {
         setTransaction((current) =>
           current?.transactionCode === transactionCode
@@ -152,36 +212,49 @@ export function useRubyTopup() {
       }
 
       if (updatedTransaction.status === "SUCCESS") {
-        const wallet = await shopService.getMyWallet();
+        try {
+          void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        } catch {
+          // ignore haptics error if not supported
+        }
+        const wallet = await shopService.getMyWallet(true);
         setRubyBalance(wallet.rubyBalance);
+      } else if (isManual && updatedTransaction.status === "PENDING") {
+        setStatusError("Giao dịch đang chờ ngân hàng xử lý. Hệ thống sẽ tự động cập nhật ngay khi nhận được tiền.");
       }
     } catch (error: unknown) {
-      setStatusError(
-        error instanceof Error
-          ? error.message
-          : "Không thể kiểm tra trạng thái giao dịch.",
-      );
+      if (isManual) {
+        setStatusError(
+          error instanceof Error
+            ? error.message
+            : "Không thể kiểm tra trạng thái giao dịch.",
+        );
+      }
     } finally {
       isCheckingStatusRef.current = false;
-      setIsCheckingStatus(false);
+      if (isManual) {
+        setIsCheckingStatus(false);
+      }
     }
   }, [transaction]);
 
   useEffect(() => {
     if (!transaction || transaction.status !== "PENDING") return;
 
-    const initialCheck = setTimeout(() => {
-      void checkTransactionStatus();
-    }, 0);
+    // Tự động kiểm tra ngầm mỗi 3.5 giây, không làm giật lag giao diện
     const interval = setInterval(() => {
-      void checkTransactionStatus();
-    }, 2500);
+      void checkTransactionStatus(false);
+    }, 3500);
 
     return () => {
-      clearTimeout(initialCheck);
       clearInterval(interval);
     };
   }, [transaction, checkTransactionStatus]);
+
+  const handleCloseTransaction = () => {
+    setTransaction(null);
+    setStatusError(null);
+  };
 
   return {
     topupPricing,
@@ -190,6 +263,7 @@ export function useRubyTopup() {
     retryLoadingPricing,
     rubyInput,
     handleRubyInputChange,
+    handleRubyInputBlur,
     amountVnd,
     isValidAmount,
     isSubmitting,
@@ -201,6 +275,7 @@ export function useRubyTopup() {
     statusError,
     handleBuyPackage,
     handleCustomSubmit,
-    checkTransactionStatus,
+    checkTransactionStatus: () => void checkTransactionStatus(true),
+    handleCloseTransaction,
   };
 }

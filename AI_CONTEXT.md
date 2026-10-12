@@ -270,6 +270,37 @@ Quy tắc:
 - Helper format ngày, parse error message và chuyển đổi kiểu bài viết đặt trong `community-utils.ts`.
 - Giữ nguyên video player `expo-video` (`useVideoPlayer`, `VideoView`), tương tác High-Five emoji và luồng quản lý bình luận.
 
+## Feature Shop & Nạp Ruby (Topup)
+
+Cấu trúc thư mục:
+
+```text
+src/features/shop/
+  ruby-topup-screen.tsx              # Giao diện màn hình nạp tiền Ruby
+  shop.styles.ts                     # StyleSheet bảng giá, gói nạp, form và thẻ giao dịch
+  components/
+    topup-header.tsx                 # Nút quay lại và tiêu đề
+    topup-rate-card.tsx              # Bảng tỷ giá nạp Ruby
+    topup-packages-list.tsx          # Danh sách gói nạp Ruby
+    custom-topup-form.tsx            # Form nhập số Ruby tùy chỉnh
+    topup-transaction-card.tsx       # Thẻ giao dịch QR, polling trạng thái và kết quả
+  hooks/
+    use-ruby-topup.ts                # Logic nạp tiền, validation, polling trạng thái ngầm
+  types/
+    shop.ts                          # Type props các component shop & topup
+  utils/
+    shop-utils.ts                    # Helper format VND và trạng thái giao dịch
+```
+
+Quy tắc UI/UX nạp tiền:
+
+- **Nút "Tôi đã chuyển khoản · Kiểm tra ngay":**
+  - Giữ dạng text button đơn giản, **background trong suốt (không màu)**, không dùng viền bo góc hay nền xanh nhạt pill box làm nặng nề giao diện; chỉ giữ màu chữ thương hiệu (`#3B8157`) kèm gạch chân nhẹ.
+  - Phân tách cơ chế kiểm tra: tiến trình kiểm tra ngầm (background polling) chạy âm thầm mỗi vài giây mà không làm giật lag hay biến nút thành loading spinner. Chỉ khi người dùng bấm trực tiếp vào nút mới hiển thị trạng thái đang kiểm tra.
+- **Trạng thái giao dịch nạp tiền qua Lottie Animation:**
+  - **Thành công (`SUCCESS`):** Ẩn mã QR cũ, hiển thị màn hình chúc mừng sử dụng Lottie animation `assets/lottie/payment_success.json` (Check Mark), kèm số Ruby nhận được, số dư ví mới và nút "Hoàn tất".
+  - **Thất bại / Hết hạn (`FAILED` / `EXPIRED`):** Hiển thị màn hình thông báo lỗi sử dụng Lottie animation `assets/lottie/payment_failed.json` (Payment failed Error) kèm nút "Đóng & Thử lại".
+
 ## Cache và tài khoản người dùng
 
 Cache local phải tách theo `userId`. Không dùng key AsyncStorage chung cho nhiều tài khoản.

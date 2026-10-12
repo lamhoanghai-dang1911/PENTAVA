@@ -32,6 +32,7 @@ export type CustomTopupFormProps = {
   pricing: TopupPackagesResponse | null;
   rubyInput: string;
   onChangeRubyInput: (value: string) => void;
+  onBlur?: () => void;
   amountVnd: number;
   isValidAmount: boolean;
   isSubmitting: boolean;
@@ -45,4 +46,5 @@ export type TopupTransactionCardProps = {
   isCheckingStatus: boolean;
   statusError: string | null;
   onCheckStatus: () => void;
+  onClose?: () => void;
 };
