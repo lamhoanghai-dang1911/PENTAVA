@@ -180,11 +180,16 @@ export function useLogin() {
     }
   };
 
+  const redirectUri = AuthSession.makeRedirectUri({
+    scheme: 'pentava',
+  });
+
   const [request, , promptAsync] = Google.useAuthRequest({
     clientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     androidClientId: process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
     iosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+    redirectUri,
     responseType: AuthSession.ResponseType.IdToken,
     shouldAutoExchangeCode: false,
     scopes: ['openid', 'profile', 'email'],
@@ -221,16 +226,26 @@ export function useLogin() {
       return;
     }
 
-    const response = await promptAsync();
-    if (response.type === 'success') {
-      const idToken = response.authentication?.idToken || response.params?.id_token;
-      if (!idToken) {
-        showModal('Đăng nhập Google thất bại', 'Google không trả về idToken.');
-        return;
+    try {
+      const response = await promptAsync();
+      if (response.type === 'success') {
+        const idToken =
+          response.authentication?.idToken ||
+          response.params?.id_token ||
+          (response as any).params?.access_token;
+        if (!idToken) {
+          showModal('Đăng nhập Google thất bại', 'Google không trả về idToken xác thực.');
+          return;
+        }
+        await handleBackendGoogleLogin(idToken);
+      } else if (response.type === 'error') {
+        showModal(
+          'Đăng nhập Google thất bại',
+          response.error?.description || response.error?.message || 'Google không thể xác thực tài khoản.',
+        );
       }
-      await handleBackendGoogleLogin(idToken);
-    } else if (response.type === 'error') {
-      showModal('Đăng nhập Google thất bại', response.error?.description || 'Google không thể xác thực tài khoản.');
+    } catch (error: any) {
+      showModal('Đăng nhập Google thất bại', error?.message || 'Không thể mở cửa sổ đăng nhập Google.');
     }
   };
 
