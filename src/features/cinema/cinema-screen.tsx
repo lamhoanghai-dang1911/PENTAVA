@@ -71,7 +71,7 @@ export default function CinemaScreen() {
             <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
             <Text style={styles.stateText}>Đang tải ảnh check-in...</Text>
           </View>
-        ) : isClipsLoading ? (
+        ) : isClipsLoading && selectedWeekClips === null ? (
           <View style={styles.centerState}>
             <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
             <Text style={styles.stateText}>Đang tải danh sách video...</Text>
@@ -86,8 +86,14 @@ export default function CinemaScreen() {
             selectedPhotoIds={selectedPhotoIds}
             selectionMessage={selectionMessage}
           />
-        ) : selectedWeekClips ? (
-          <ClipsContent clips={selectedWeekClips} onPostPress={handlePostClip} />
+        ) : selectedWeekClips !== null ? (
+          <ClipsContent
+            clips={selectedWeekClips}
+            errorMessage={clipsErrorMessage}
+            isRefreshing={isClipsLoading}
+            onPostPress={handlePostClip}
+            onRefresh={() => void handleSelectWeekClips()}
+          />
         ) : selectedWeek ? (
           <WeekOptionsContent
             onClipsPress={() => void handleSelectWeekClips()}
@@ -149,7 +155,7 @@ export default function CinemaScreen() {
         message={clipsErrorMessage}
         onClose={() => setClipsErrorMessage(null)}
         title="Không thể tải danh sách video"
-        visible={clipsErrorMessage !== null}
+        visible={clipsErrorMessage !== null && selectedWeekClips === null}
       />
 
       <PhotoActionModal

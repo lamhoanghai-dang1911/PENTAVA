@@ -37,6 +37,9 @@ export type ClipVideoCardProps = {
 export type ClipsContentProps = {
   clips: Clip[];
   onPostPress: (clip: Clip) => void;
+  onRefresh?: () => void;
+  isRefreshing?: boolean;
+  errorMessage?: string | null;
 };
 
 export type WeekPhotosContentProps = {

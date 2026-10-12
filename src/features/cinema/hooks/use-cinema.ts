@@ -108,7 +108,6 @@ export function useCinema() {
   const handleSelectWeekClips = async () => {
     if (!selectedGoal || !selectedWeek) return;
     setSelectedWeekPhotos(null);
-    setSelectedWeekClips(null);
     setIsClipsLoading(true);
     setClipsErrorMessage(null);
     try {
@@ -118,6 +117,7 @@ export function useCinema() {
       );
       setSelectedWeekClips(response);
     } catch (error) {
+      setSelectedWeekClips((prev) => prev ?? []);
       setClipsErrorMessage(getErrorMessage(error));
     } finally {
       setIsClipsLoading(false);
@@ -190,6 +190,7 @@ export function useCinema() {
       setSelectedWeekPhotos(null);
       setSelectedWeekClips(null);
       setSelectedPhotoIds(new Set());
+      setClipsErrorMessage(null);
       return;
     }
     if (selectedWeek) {
