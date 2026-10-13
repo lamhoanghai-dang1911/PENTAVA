@@ -23,6 +23,7 @@ export type GoalWeeksContentProps = {
   onWeekPress: (week: WeekSummary) => void;
   onJourneyClipPress?: () => void;
   onViewJourneyClipsPress?: () => void;
+  isMultiAngleUnlocked?: boolean;
 };
 
 export type WeekOptionsContentProps = {
