@@ -22,7 +22,9 @@ export function MoodTaskPanel({
   return (
     <View style={styles.taskPanel}>
       <View style={styles.taskPanelHeader}>
-        <Text style={styles.taskPanelTitle}>Chọn 5 task cho hôm nay</Text>
+        <Text style={styles.taskPanelTitle}>
+          {tasks.length === 5 ? '5 nhiệm vụ hôm nay theo tâm trạng' : 'Chọn 5 task cho hôm nay'}
+        </Text>
         <Text style={styles.taskCount}>{selectedTaskIds.length}/5</Text>
       </View>
       <ScrollView

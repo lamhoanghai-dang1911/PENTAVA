@@ -121,7 +121,10 @@ export type CreateCustomGoalRequest = {
   goalName: string;
   description?: string;
   isPublic?: boolean;
-  weeks: CustomWeek[];
+  badTasks?: CustomTaskItem[];
+  neutralTasks?: CustomTaskItem[];
+  goodTasks?: CustomTaskItem[];
+  weeks?: CustomWeek[];
 };
 
 export type PublicGoalSummary = {
@@ -130,7 +133,10 @@ export type PublicGoalSummary = {
   description: string;
   authorName: string;
   createdAt: string;
-  weeks: CustomWeek[];
+  weeks?: CustomWeek[];
+  badTasks?: CustomTaskItem[];
+  neutralTasks?: CustomTaskItem[];
+  goodTasks?: CustomTaskItem[];
 };
 
 export type PublicGoalsResponse = {

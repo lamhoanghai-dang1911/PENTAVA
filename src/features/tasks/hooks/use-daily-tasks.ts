@@ -111,7 +111,12 @@ export function useDailyTasks({
       try {
         const goalResponse = await onboardingService.getCurrentGoal();
         goalId = goalResponse.currentGoal?.goalId ?? null;
-        if (!goalId || !isActive) return;
+        if (!goalId || !isActive) {
+          if (isActive) {
+            setIsDailyStatusLoaded(true);
+          }
+          return;
+        }
 
         const userId = await getCurrentUserId();
         cachedStatus = await getCachedDailyStatus(userId, goalId);
@@ -433,6 +438,7 @@ export function useDailyTasks({
     openTask: onOpenTask,
     currentGoalId,
     currentGoal,
+    isGoalMissing: isDailyStatusLoaded && !currentGoalId,
   };
 }
 

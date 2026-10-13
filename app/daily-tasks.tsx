@@ -1,8 +1,8 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
 import { DailyTasksHeader } from '@/src/features/tasks/components/daily-tasks-header';
-import { TaskCard } from '@/src/features/tasks/components/task-card';
 import { EndGoalSection } from '@/src/features/tasks/components/end-goal-section';
+import { TaskCard } from '@/src/features/tasks/components/task-card';
 import { useDailyTasks } from '@/src/features/tasks/hooks/use-daily-tasks';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -180,6 +180,25 @@ export default function DailyTasksScreen() {
                                     <Ionicons color="#FFFFFF" name="arrow-forward" size={16} />
                                 </View>
                             )}
+                        </Pressable>
+                    </View>
+                ) : null}
+
+                {dailyTasks.isGoalMissing ? (
+                    <View style={styles.noGoalContainer}>
+                        <View style={styles.noGoalIconCircle}>
+                            <Ionicons color="#3A8157" name="compass-outline" size={38} />
+                        </View>
+                        <Text style={styles.noGoalTitle}>Bạn Chưa Có Mục Tiêu Hiện Tại</Text>
+                        <Text style={styles.noGoalDesc}>
+                            Hiện tại bạn chưa có mục tiêu rèn luyện nào đang thực hiện. Hãy chọn mục tiêu mới để cùng Luna bắt đầu rèn luyện mỗi ngày nhé!
+                        </Text>
+                        <Pressable
+                            onPress={() => router.push('/onboarding/goals')}
+                            style={styles.noGoalBtn}
+                        >
+                            {/* <Ionicons color="#FFFFFF" name="sparkles-outline" size={18} /> */}
+                            <Text style={styles.noGoalBtnText}>Khảo Sát & Chọn Mục Tiêu</Text>
                         </Pressable>
                     </View>
                 ) : null}
@@ -406,5 +425,68 @@ const styles = StyleSheet.create({
         color: Design.colors.white,
         fontFamily: FontFamily.beVietnamSemiBold,
         fontSize: 14,
+    },
+    noGoalContainer: {
+        alignItems: 'center',
+        borderRadius: 24,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 2,
+        borderColor: '#000000',
+        paddingHorizontal: 22,
+        paddingVertical: 28,
+        marginVertical: 16,
+        shadowColor: '#000000',
+        shadowOffset: { width: 4, height: 4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 5,
+    },
+    noGoalIconCircle: {
+        width: 68,
+        height: 68,
+        borderRadius: 34,
+        backgroundColor: '#E8F5E9',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 16,
+        borderWidth: 2,
+        borderColor: '#000000',
+    },
+    noGoalTitle: {
+        fontSize: 18,
+        fontFamily: FontFamily.beVietnamSemiBold,
+        color: '#000000',
+        textAlign: 'center',
+        marginBottom: 8,
+    },
+    noGoalDesc: {
+        fontSize: 14,
+        fontFamily: FontFamily.beVietnamRegular,
+        color: '#4B5563',
+        textAlign: 'center',
+        lineHeight: 20,
+        marginBottom: 20,
+    },
+    noGoalBtn: {
+        width: '100%',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        backgroundColor: '#3A8157',
+        paddingVertical: 13,
+        borderRadius: 16,
+        borderWidth: 2,
+        borderColor: '#000000',
+        shadowColor: '#000000',
+        shadowOffset: { width: 3, height: 3 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+        elevation: 3,
+    },
+    noGoalBtnText: {
+        color: '#FFFFFF',
+        fontFamily: FontFamily.beVietnamSemiBold,
+        fontSize: 15,
     },
 });

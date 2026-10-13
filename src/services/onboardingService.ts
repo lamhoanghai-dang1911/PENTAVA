@@ -151,10 +151,13 @@ export const onboardingService = {
     }
   },
 
-  async clonePublicGoal(publicGoalId: number): Promise<{ goalId: number; message: string }> {
+  async clonePublicGoal(
+    publicGoalId: number,
+    applyMode: 'REPLACE_NOW' | 'SET_AS_NEXT' = 'REPLACE_NOW',
+  ): Promise<{ goalId: number; message: string }> {
     try {
       const response = await apiClient.post(
-        API_ENDPOINTS.ONBOARDING.CLONE_PUBLIC_GOAL(publicGoalId)
+        `${API_ENDPOINTS.ONBOARDING.CLONE_PUBLIC_GOAL(publicGoalId)}?applyMode=${applyMode}`
       );
       return response.data;
     } catch (error: any) {

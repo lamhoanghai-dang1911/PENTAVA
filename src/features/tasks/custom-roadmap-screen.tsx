@@ -3,8 +3,8 @@ import { Design, FontFamily } from "@/src/constants/design";
 import { useEntitlement } from "@/src/features/subscription/hooks/use-entitlement";
 import { onboardingService } from "@/src/services/onboardingService";
 import type {
+  CurrentGoal,
   CustomTaskItem,
-  CustomWeek,
   PastGoalCatalog,
   PublicGoalSummary,
 } from "@/src/types/api/onboarding";
@@ -26,6 +26,43 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+type MoodKey = "BAD" | "NEUTRAL" | "GOOD";
+
+interface MoodMeta {
+  key: MoodKey;
+  label: string;
+  emoji: string;
+  color: string;
+  badgeBg: string;
+  sub: string;
+}
+
+const MOOD_LIST: MoodMeta[] = [
+  {
+    key: "BAD",
+    label: "Tâm trạng Tệ",
+    emoji: "🌧️",
+    color: "#EF4444",
+    badgeBg: "#FEE2E2",
+    sub: "Nhiệm vụ nhẹ nhàng, dễ làm để phục hồi năng lượng",
+  },
+  {
+    key: "NEUTRAL",
+    label: "Bình thường",
+    emoji: "⛅",
+    color: "#F59E0B",
+    badgeBg: "#FEF3C7",
+    sub: "Nhiệm vụ duy trì nhịp độ ổn định và đều đặn",
+  },
+  {
+    key: "GOOD",
+    label: "Tâm trạng Tốt",
+    emoji: "☀️",
+    color: "#10B981",
+    badgeBg: "#D1FAE5",
+    sub: "Nhiệm vụ bứt phá, năng suất cao khi dồi dào năng lượng",
+  },
+];
 
 const extractErrorMessage = (error: any, defaultMsg: string = "Có lỗi xảy ra, vui lòng thử lại"): string => {
   if (!error) return defaultMsg;
@@ -49,16 +86,18 @@ export default function CustomRoadmapScreen() {
 
   const [activeTab, setActiveTab] = useState<"custom" | "community">("custom");
 
-  // State: Tự Thiết Kế
+  // Current active goal of user
+  const [currentGoal, setCurrentGoal] = useState<CurrentGoal | null>(null);
+
+  // State: Tự Thiết Kế 15 Tasks theo 3 Mood
   const [goalName, setGoalName] = useState("");
   const [description, setDescription] = useState("");
   const [isPublic, setIsPublic] = useState(true);
-  const [selectedWeekNum, setSelectedWeekNum] = useState<number>(1);
-  const [weeksData, setWeeksData] = useState<Record<number, CustomTaskItem[]>>({
-    1: [],
-    2: [],
-    3: [],
-    4: [],
+  const [selectedMoodKey, setSelectedMoodKey] = useState<MoodKey>("BAD");
+  const [moodTasksData, setMoodTasksData] = useState<Record<MoodKey, CustomTaskItem[]>>({
+    BAD: [],
+    NEUTRAL: [],
+    GOOD: [],
   });
   const [newTaskInput, setNewTaskInput] = useState("");
   const [isSubmittingCustom, setIsSubmittingCustom] = useState(false);
@@ -82,11 +121,28 @@ export default function CustomRoadmapScreen() {
   const [isCommunityLoading, setIsCommunityLoading] = useState(false);
   const [cloningGoalId, setCloningGoalId] = useState<number | null>(null);
 
+  // State: Clone Choice Modal (REPLACE_NOW vs SET_AS_NEXT)
+  const [isCloneChoiceModalVisible, setIsCloneChoiceModalVisible] = useState(false);
+  const [selectedPublicGoalForClone, setSelectedPublicGoalForClone] = useState<PublicGoalSummary | null>(null);
+
+  useEffect(() => {
+    void loadCurrentGoal();
+  }, []);
+
   useEffect(() => {
     if (activeTab === "community") {
       void loadPublicGoals();
     }
   }, [activeTab]);
+
+  const loadCurrentGoal = async () => {
+    try {
+      const res = await onboardingService.getCurrentGoal();
+      setCurrentGoal(res.currentGoal);
+    } catch {
+      // ignore
+    }
+  };
 
   const loadPublicGoals = async () => {
     setIsCommunityLoading(true);
@@ -140,6 +196,19 @@ export default function CustomRoadmapScreen() {
       return;
     }
 
+    const currentList = moodTasksData[selectedMoodKey] || [];
+    const remainingSlots = 5 - currentList.length;
+
+    if (remainingSlots <= 0) {
+      setModalNotification({
+        visible: true,
+        title: "Đã đủ 5 nhiệm vụ",
+        message: "Tâm trạng này đã đạt tối đa 5 nhiệm vụ.",
+      });
+      setIsCatalogModalVisible(false);
+      return;
+    }
+
     const tasksToAdd: CustomTaskItem[] = [];
     pastCatalogs.forEach((goal) => {
       goal.tasks.forEach((t) => {
@@ -153,9 +222,18 @@ export default function CustomRoadmapScreen() {
       });
     });
 
-    setWeeksData((prev) => ({
+    const toAdd = tasksToAdd.slice(0, remainingSlots);
+    if (tasksToAdd.length > remainingSlots) {
+      setModalNotification({
+        visible: true,
+        title: "Giới hạn 5 nhiệm vụ",
+        message: `Chỉ lấy ${remainingSlots} nhiệm vụ đã chọn vì mỗi tâm trạng cần đúng 5 nhiệm vụ.`,
+      });
+    }
+
+    setMoodTasksData((prev) => ({
       ...prev,
-      [selectedWeekNum]: [...(prev[selectedWeekNum] || []), ...tasksToAdd],
+      [selectedMoodKey]: [...currentList, ...toAdd],
     }));
 
     setIsCatalogModalVisible(false);
@@ -164,20 +242,28 @@ export default function CustomRoadmapScreen() {
   const handleAddNewTask = () => {
     const trimmed = newTaskInput.trim();
     if (!trimmed) return;
-    setWeeksData((prev) => ({
+
+    const currentList = moodTasksData[selectedMoodKey] || [];
+    if (currentList.length >= 5) {
+      setModalNotification({
+        visible: true,
+        title: "Đã đủ 5 nhiệm vụ",
+        message: "Mỗi tâm trạng chỉ cần đúng 5 nhiệm vụ. Vui lòng chuyển sang tâm trạng khác.",
+      });
+      return;
+    }
+
+    setMoodTasksData((prev) => ({
       ...prev,
-      [selectedWeekNum]: [
-        ...(prev[selectedWeekNum] || []),
-        { title: trimmed },
-      ],
+      [selectedMoodKey]: [...currentList, { title: trimmed }],
     }));
     setNewTaskInput("");
   };
 
-  const handleRemoveTask = (weekNum: number, index: number) => {
-    setWeeksData((prev) => ({
+  const handleRemoveTask = (mood: MoodKey, index: number) => {
+    setMoodTasksData((prev) => ({
       ...prev,
-      [weekNum]: prev[weekNum].filter((_, i) => i !== index),
+      [mood]: prev[mood].filter((_, i) => i !== index),
     }));
   };
 
@@ -201,40 +287,34 @@ export default function CustomRoadmapScreen() {
       return;
     }
 
-    const totalTasks = Object.values(weeksData).reduce(
-      (sum, list) => sum + list.length,
-      0
-    );
-    if (totalTasks === 0) {
+    const badCount = (moodTasksData.BAD || []).length;
+    const neutralCount = (moodTasksData.NEUTRAL || []).length;
+    const goodCount = (moodTasksData.GOOD || []).length;
+
+    if (badCount !== 5 || neutralCount !== 5 || goodCount !== 5) {
       setModalNotification({
         visible: true,
-        title: "Chưa có nhiệm vụ",
-        message: "Vui lòng thêm ít nhất một nhiệm vụ cho lộ trình của bạn.",
+        title: "Chưa đủ 15 nhiệm vụ",
+        message: `Lộ trình yêu cầu đúng 5 nhiệm vụ cho mỗi tâm trạng (Hiện có: 🌧️ Tệ ${badCount}/5, ⛅ Bình thường ${neutralCount}/5, ☀️ Tốt ${goodCount}/5). Vui lòng điền đủ 5 nhiệm vụ cho cả 3 tâm trạng.`,
       });
       return;
     }
 
     setIsSubmittingCustom(true);
     try {
-      // Chỉ gửi những tuần có nhiệm vụ để không bị lỗi validation nếu các tuần còn lại chưa điền
-      const weeks: CustomWeek[] = [1, 2, 3, 4]
-        .map((w) => ({
-          weekNumber: w,
-          tasks: (weeksData[w] || []).filter((t) => t.title && t.title.trim().length > 0),
-        }))
-        .filter((w) => w.tasks.length > 0);
-
       await onboardingService.createCustomGoal({
         goalName: goalName.trim(),
         description: description.trim(),
         isPublic,
-        weeks,
+        badTasks: moodTasksData.BAD,
+        neutralTasks: moodTasksData.NEUTRAL,
+        goodTasks: moodTasksData.GOOD,
       });
 
       setModalNotification({
         visible: true,
         title: "Tạo Lộ Trình Thành Công 🎉",
-        message: "Lộ trình mới đã được thiết lập làm mục tiêu hiện tại của bạn!",
+        message: "Lộ trình 15 nhiệm vụ mới đã được thiết lập làm mục tiêu hiện tại của bạn!",
         onConfirm: () => router.replace("/daily-tasks"),
       });
     } catch (error: any) {
@@ -248,7 +328,8 @@ export default function CustomRoadmapScreen() {
     }
   };
 
-  const handleCloneGoal = (item: PublicGoalSummary) => {
+  // Clone Community Goal Handler
+  const handleInitiateClone = (item: PublicGoalSummary) => {
     if (!isCustomRoadmapUnlocked) {
       setModalNotification({
         visible: true,
@@ -259,36 +340,57 @@ export default function CustomRoadmapScreen() {
       return;
     }
 
-    Alert.alert(
-      "Áp Dụng Lộ Trình",
-      `Bạn có chắc chắn muốn nhận lộ trình "${item.goalName}" của ${item.authorName} làm mục tiêu hiện tại của mình?`,
-      [
-        { text: "Hủy", style: "cancel" },
-        {
-          text: "Đồng ý",
-          onPress: async () => {
-            setCloningGoalId(item.goalId);
-            try {
-              await onboardingService.clonePublicGoal(item.goalId);
-              setModalNotification({
-                visible: true,
-                title: "Thành Công! 🚀",
-                message: "Đã áp dụng lộ trình cộng đồng thành công!",
-                onConfirm: () => router.replace("/daily-tasks"),
-              });
-            } catch (error: any) {
-              setModalNotification({
-                visible: true,
-                title: "Lỗi sao chép",
-                message: extractErrorMessage(error, "Không thể sao chép lộ trình này."),
-              });
-            } finally {
-              setCloningGoalId(null);
-            }
+    // Check if user currently has an active in-progress goal
+    if (currentGoal && currentGoal.status === "IN_PROGRESS") {
+      setSelectedPublicGoalForClone(item);
+      setIsCloneChoiceModalVisible(true);
+    } else {
+      Alert.alert(
+        "Áp Dụng Lộ Trình",
+        `Bạn có chắc chắn muốn nhận lộ trình "${item.goalName}" của ${item.authorName} làm mục tiêu hiện tại?`,
+        [
+          { text: "Hủy", style: "cancel" },
+          {
+            text: "Áp dụng ngay",
+            onPress: () => void executeClone(item.goalId, "REPLACE_NOW"),
           },
+        ]
+      );
+    }
+  };
+
+  const executeClone = async (
+    goalId: number,
+    applyMode: "REPLACE_NOW" | "SET_AS_NEXT"
+  ) => {
+    setIsCloneChoiceModalVisible(false);
+    setCloningGoalId(goalId);
+    try {
+      await onboardingService.clonePublicGoal(goalId, applyMode);
+      const isReplace = applyMode === "REPLACE_NOW";
+      setModalNotification({
+        visible: true,
+        title: "Thành Công! 🚀",
+        message: isReplace
+          ? "Đã kết thúc lộ trình cũ và áp dụng lộ trình cộng đồng mới thành công!"
+          : "Đã lưu lộ trình cộng đồng làm mục tiêu tiếp theo! Lộ trình hiện tại vẫn đang tiếp tục.",
+        onConfirm: () => {
+          if (isReplace) {
+            router.replace("/daily-tasks");
+          } else {
+            void loadCurrentGoal();
+          }
         },
-      ]
-    );
+      });
+    } catch (error: any) {
+      setModalNotification({
+        visible: true,
+        title: "Lỗi sao chép",
+        message: extractErrorMessage(error, "Không thể sao chép lộ trình này."),
+      });
+    } finally {
+      setCloningGoalId(null);
+    }
   };
 
   if (isEntitlementLoading) {
@@ -315,7 +417,6 @@ export default function CustomRoadmapScreen() {
   if (!isCustomRoadmapUnlocked) {
     return (
       <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
-        {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color={Design.colors.black} />
@@ -327,7 +428,6 @@ export default function CustomRoadmapScreen() {
           <View style={{ width: 40 }} />
         </View>
 
-        {/* Paywall Container */}
         <View style={styles.paywallContainer}>
           <View style={styles.paywallCard}>
             <View style={styles.paywallIconCircle}>
@@ -341,23 +441,8 @@ export default function CustomRoadmapScreen() {
             <Text style={styles.paywallTitle}>Tự Thiết Kế Lộ Trình</Text>
 
             <Text style={styles.paywallDesc}>
-              Tính năng tự do thiết kế lộ trình phát triển bản thân 4 tuần và sao chép lộ trình từ cộng đồng chỉ dành riêng cho tài khoản đã nâng cấp gói hội viên.
+              Tính năng tự do thiết kế lộ trình 15 nhiệm vụ theo tâm trạng và sao chép lộ trình từ cộng đồng chỉ dành riêng cho tài khoản đã nâng cấp gói hội viên.
             </Text>
-
-            {/* <View style={styles.paywallBenefits}>
-              <View style={styles.benefitRow}>
-                <Ionicons color="#3A8157" name="checkmark-circle" size={18} />
-                <Text style={styles.benefitText}>Tự do tạo danh sách nhiệm vụ 4 tuần riêng biệt</Text>
-              </View>
-              <View style={styles.benefitRow}>
-                <Ionicons color="#3A8157" name="checkmark-circle" size={18} />
-                <Text style={styles.benefitText}>Khám phá & áp dụng lộ trình từ cộng đồng PENTAVA</Text>
-              </View>
-              <View style={styles.benefitRow}>
-                <Ionicons color="#3A8157" name="checkmark-circle" size={18} />
-                <Text style={styles.benefitText}>Công khai lộ trình để chia sẻ thành tựu của bạn</Text>
-              </View>
-            </View> */}
 
             <TouchableOpacity
               activeOpacity={0.85}
@@ -391,6 +476,12 @@ export default function CustomRoadmapScreen() {
       </SafeAreaView>
     );
   }
+
+  const activeMoodMeta = MOOD_LIST.find((m) => m.key === selectedMoodKey) || MOOD_LIST[0];
+  const badCount = (moodTasksData.BAD || []).length;
+  const neutralCount = (moodTasksData.NEUTRAL || []).length;
+  const goodCount = (moodTasksData.GOOD || []).length;
+  const totalTasksCount = badCount + neutralCount + goodCount;
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
@@ -426,7 +517,7 @@ export default function CustomRoadmapScreen() {
               activeTab === "custom" && styles.tabTextActive,
             ]}
           >
-            Tự Thiết Kế
+            Tự Thiết Kế (15 việc)
           </Text>
         </TouchableOpacity>
 
@@ -468,7 +559,7 @@ export default function CustomRoadmapScreen() {
             <Text style={styles.inputLabel}>Tên mục tiêu *</Text>
             <TextInput
               onChangeText={setGoalName}
-              placeholder="VD: Rèn luyện thói quen dậy sớm 30 ngày..."
+              placeholder="VD: Rèn luyện thói quen dậy sớm & sống tích cực..."
               placeholderTextColor="#9CA3AF"
               style={styles.textInput}
               value={goalName}
@@ -489,7 +580,7 @@ export default function CustomRoadmapScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.switchLabel}>Công khai lên Cộng Đồng</Text>
                 <Text style={styles.switchSub}>
-                  Cho phép mọi người cùng khám phá và học hỏi lộ trình của bạn
+                  Cho phép mọi người cùng khám phá và áp dụng lộ trình của bạn
                 </Text>
               </View>
               <Switch
@@ -501,10 +592,13 @@ export default function CustomRoadmapScreen() {
             </View>
           </View>
 
-          {/* Week Selector */}
+          {/* 15 Tasks according to 3 Moods Card */}
           <View style={styles.card}>
             <View style={styles.weekHeaderRow}>
-              <Text style={styles.sectionTitle}>Kế Hoạch 4 Tuần</Text>
+              <View>
+                <Text style={styles.sectionTitle}>15 Nhiệm Vụ Theo 3 Tâm Trạng</Text>
+                <Text style={styles.sectionSub}>Mỗi tâm trạng gồm đúng 5 nhiệm vụ</Text>
+              </View>
               <TouchableOpacity
                 onPress={handleOpenCatalog}
                 style={styles.catalogButton}
@@ -514,40 +608,54 @@ export default function CustomRoadmapScreen() {
               </TouchableOpacity>
             </View>
 
-            <View style={styles.weekTabsRow}>
-              {[1, 2, 3, 4].map((w) => {
-                const count = (weeksData[w] || []).length;
-                const isSelected = selectedWeekNum === w;
+            {/* Total progress overview pills */}
+            <View style={styles.totalProgressRow}>
+              <View style={[styles.progressItemPill, badCount === 5 && styles.progressItemPillComplete]}>
+                <Text style={styles.progressItemPillText}>🌧️ Tệ: {badCount}/5</Text>
+              </View>
+              <View style={[styles.progressItemPill, neutralCount === 5 && styles.progressItemPillComplete]}>
+                <Text style={styles.progressItemPillText}>⛅ Bình thường: {neutralCount}/5</Text>
+              </View>
+              <View style={[styles.progressItemPill, goodCount === 5 && styles.progressItemPillComplete]}>
+                <Text style={styles.progressItemPillText}>☀️ Tốt: {goodCount}/5</Text>
+              </View>
+            </View>
+
+            {/* Mood Tabs */}
+            <View style={styles.moodTabsRow}>
+              {MOOD_LIST.map((m) => {
+                const count = (moodTasksData[m.key] || []).length;
+                const isSelected = selectedMoodKey === m.key;
                 return (
                   <TouchableOpacity
-                    key={w}
-                    onPress={() => setSelectedWeekNum(w)}
+                    key={m.key}
+                    onPress={() => setSelectedMoodKey(m.key)}
                     style={[
-                      styles.weekTabBtn,
-                      isSelected && styles.weekTabBtnSelected,
+                      styles.moodTabBtn,
+                      isSelected && {
+                        borderColor: m.color,
+                        backgroundColor: m.badgeBg,
+                        borderWidth: 2,
+                      },
                     ]}
                   >
+                    <Text style={styles.moodTabEmoji}>{m.emoji}</Text>
                     <Text
                       style={[
-                        styles.weekTabBtnText,
-                        isSelected && styles.weekTabBtnTextSelected,
+                        styles.moodTabLabel,
+                        isSelected && { color: Design.colors.black, fontFamily: FontFamily.beVietnamSemiBold },
                       ]}
                     >
-                      Tuần {w}
+                      {m.label}
                     </Text>
                     <View
                       style={[
-                        styles.weekBadge,
-                        isSelected && styles.weekBadgeSelected,
+                        styles.moodBadge,
+                        count === 5 ? { backgroundColor: "#10B981" } : isSelected ? { backgroundColor: m.color } : null,
                       ]}
                     >
-                      <Text
-                        style={[
-                          styles.weekBadgeText,
-                          isSelected && styles.weekBadgeTextSelected,
-                        ]}
-                      >
-                        {count}
+                      <Text style={styles.moodBadgeText}>
+                        {count}/5
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -555,29 +663,32 @@ export default function CustomRoadmapScreen() {
               })}
             </View>
 
-            {/* Current Week Tasks */}
-            <View style={styles.taskListContainer}>
-              <Text style={styles.weekTitleDetail}>
-                Nhiệm vụ Tuần {selectedWeekNum} (
-                {(weeksData[selectedWeekNum] || []).length} nhiệm vụ)
+            {/* Mood Description Banner */}
+            <View style={[styles.moodDescBanner, { borderLeftColor: activeMoodMeta.color }]}>
+              <Text style={styles.moodDescTitle}>
+                {activeMoodMeta.emoji} {activeMoodMeta.label}
               </Text>
+              <Text style={styles.moodDescSub}>{activeMoodMeta.sub}</Text>
+            </View>
 
-              {(weeksData[selectedWeekNum] || []).length === 0 ? (
+            {/* Task list for active mood */}
+            <View style={styles.taskListContainer}>
+              {(moodTasksData[selectedMoodKey] || []).length === 0 ? (
                 <View style={styles.emptyWeekBox}>
                   <Ionicons
-                    name="document-text-outline"
+                    name="list-outline"
                     size={32}
                     color="#D1D5DB"
                   />
                   <Text style={styles.emptyWeekText}>
-                    Tuần {selectedWeekNum} chưa có nhiệm vụ nào.
+                    Chưa có nhiệm vụ cho {activeMoodMeta.label}.
                   </Text>
                   <Text style={styles.emptyWeekSub}>
-                    Thêm nhiệm vụ bên dưới hoặc chọn từ nhiệm vụ đã làm ở các mục tiêu trước!
+                    Thêm 5 nhiệm vụ bên dưới hoặc bấm &quot;Chọn từ quá khứ&quot; để chọn lại các thói quen hiệu quả!
                   </Text>
                 </View>
               ) : (
-                weeksData[selectedWeekNum].map((task, idx) => (
+                moodTasksData[selectedMoodKey].map((task, idx) => (
                   <View key={idx} style={styles.taskItemCard}>
                     <View style={styles.taskItemIndex}>
                       <Text style={styles.taskIndexText}>{idx + 1}</Text>
@@ -591,7 +702,7 @@ export default function CustomRoadmapScreen() {
                       ) : null}
                     </View>
                     <TouchableOpacity
-                      onPress={() => handleRemoveTask(selectedWeekNum, idx)}
+                      onPress={() => handleRemoveTask(selectedMoodKey, idx)}
                       style={styles.deleteTaskBtn}
                     >
                       <Ionicons
@@ -604,23 +715,32 @@ export default function CustomRoadmapScreen() {
                 ))
               )}
 
-              {/* Add Task Input */}
-              <View style={styles.addTaskRow}>
-                <TextInput
-                  onChangeText={setNewTaskInput}
-                  onSubmitEditing={handleAddNewTask}
-                  placeholder={`Thêm nhiệm vụ mới cho tuần ${selectedWeekNum}...`}
-                  placeholderTextColor="#9CA3AF"
-                  style={styles.addTaskInput}
-                  value={newTaskInput}
-                />
-                <TouchableOpacity
-                  onPress={handleAddNewTask}
-                  style={styles.addTaskBtn}
-                >
-                  <Ionicons name="add" size={20} color="#FFFFFF" />
-                </TouchableOpacity>
-              </View>
+              {/* Add Task Input or Completed State */}
+              {(moodTasksData[selectedMoodKey] || []).length >= 5 ? (
+                <View style={styles.completedMoodBanner}>
+                  <Ionicons name="checkmark-circle" size={18} color="#10B981" />
+                  <Text style={styles.completedMoodText}>
+                    Đã hoàn tất 5/5 nhiệm vụ cho {activeMoodMeta.label}!
+                  </Text>
+                </View>
+              ) : (
+                <View style={styles.addTaskRow}>
+                  <TextInput
+                    onChangeText={setNewTaskInput}
+                    onSubmitEditing={handleAddNewTask}
+                    placeholder={`Thêm nhiệm vụ ${ (moodTasksData[selectedMoodKey] || []).length + 1 }/5...`}
+                    placeholderTextColor="#9CA3AF"
+                    style={styles.addTaskInput}
+                    value={newTaskInput}
+                  />
+                  <TouchableOpacity
+                    onPress={handleAddNewTask}
+                    style={styles.addTaskBtn}
+                  >
+                    <Ionicons name="add" size={20} color="#FFFFFF" />
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
           </View>
 
@@ -639,7 +759,7 @@ export default function CustomRoadmapScreen() {
               <>
                 <Ionicons name="rocket-outline" size={20} color="#FFFFFF" />
                 <Text style={styles.submitButtonText}>
-                  Khởi Tạo Lộ Trình Mới
+                  Khởi Tạo Lộ Trình ({totalTasksCount}/15)
                 </Text>
               </>
             )}
@@ -670,10 +790,11 @@ export default function CustomRoadmapScreen() {
               data={publicGoals}
               keyExtractor={(item) => String(item.goalId)}
               renderItem={({ item }) => {
-                const totalTasks = (item.weeks || []).reduce(
-                  (sum, w) => sum + (w.tasks?.length || 0),
-                  0
-                );
+                const badLen = item.badTasks?.length ?? (item.weeks ? (item.weeks[0]?.tasks?.length || 0) : 5);
+                const neutralLen = item.neutralTasks?.length ?? (item.weeks ? (item.weeks[1]?.tasks?.length || 0) : 5);
+                const goodLen = item.goodTasks?.length ?? (item.weeks ? (item.weeks[2]?.tasks?.length || 0) : 5);
+                const totalTasks = badLen + neutralLen + goodLen;
+
                 return (
                   <View style={styles.communityCard}>
                     <View style={styles.communityCardHeader}>
@@ -709,20 +830,28 @@ export default function CustomRoadmapScreen() {
                       </Text>
                     ) : null}
 
-                    {/* Week summary pills */}
-                    <View style={styles.weekPillsRow}>
-                      {(item.weeks || []).map((w) => (
-                        <View key={w.weekNumber} style={styles.weekPill}>
-                          <Text style={styles.weekPillText}>
-                            T{w.weekNumber}: {w.tasks?.length || 0} việc
-                          </Text>
-                        </View>
-                      ))}
+                    {/* Mood summary pills */}
+                    <View style={styles.moodPillsRow}>
+                      <View style={[styles.moodPill, { backgroundColor: "#FEE2E2", borderColor: "#EF4444" }]}>
+                        <Text style={[styles.moodPillText, { color: "#B91C1C" }]}>
+                          🌧️ Tệ: {badLen}
+                        </Text>
+                      </View>
+                      <View style={[styles.moodPill, { backgroundColor: "#FEF3C7", borderColor: "#F59E0B" }]}>
+                        <Text style={[styles.moodPillText, { color: "#B45309" }]}>
+                          ⛅ Bình thường: {neutralLen}
+                        </Text>
+                      </View>
+                      <View style={[styles.moodPill, { backgroundColor: "#D1FAE5", borderColor: "#10B981" }]}>
+                        <Text style={[styles.moodPillText, { color: "#047857" }]}>
+                          ☀️ Tốt: {goodLen}
+                        </Text>
+                      </View>
                     </View>
 
                     <TouchableOpacity
                       disabled={cloningGoalId === item.goalId}
-                      onPress={() => handleCloneGoal(item)}
+                      onPress={() => handleInitiateClone(item)}
                       style={[
                         styles.cloneButton,
                         cloningGoalId === item.goalId && { opacity: 0.6 },
@@ -767,7 +896,7 @@ export default function CustomRoadmapScreen() {
                   Nhiệm Vụ Đã Làm Trong Quá Khứ
                 </Text>
                 <Text style={styles.catalogModalSub}>
-                  Chọn để thêm vào Tuần {selectedWeekNum}
+                  Chọn để thêm vào {activeMoodMeta.label} (Còn {Math.max(0, 5 - (moodTasksData[selectedMoodKey]?.length || 0))} chỗ)
                 </Text>
               </View>
               <TouchableOpacity
@@ -793,7 +922,7 @@ export default function CustomRoadmapScreen() {
                   Chưa có nhiệm vụ quá khứ nào
                 </Text>
                 <Text style={styles.emptySub}>
-                  Bạn chưa hoàn thành các mục tiêu trước đó để lưu trữ danh mục.
+                  Bạn chưa có nhiệm vụ nào từ các mục tiêu đã làm trước đây.
                 </Text>
               </View>
             ) : (
@@ -818,15 +947,9 @@ export default function CustomRoadmapScreen() {
                           ]}
                         >
                           <Ionicons
-                            name={
-                              isSelected ? "checkbox" : "square-outline"
-                            }
+                            name={isSelected ? "checkbox" : "square-outline"}
                             size={20}
-                            color={
-                              isSelected
-                                ? Design.colors.primaryGreen
-                                : "#9CA3AF"
-                            }
+                            color={isSelected ? Design.colors.primaryGreen : "#9CA3AF"}
                           />
                           <View style={{ flex: 1 }}>
                             <Text style={styles.catalogTaskTitle}>
@@ -837,11 +960,6 @@ export default function CustomRoadmapScreen() {
                                 {task.content}
                               </Text>
                             ) : null}
-                          </View>
-                          <View style={styles.catalogWeekBadge}>
-                            <Text style={styles.catalogWeekBadgeText}>
-                              T{task.weekNumber}
-                            </Text>
                           </View>
                         </TouchableOpacity>
                       );
@@ -867,10 +985,87 @@ export default function CustomRoadmapScreen() {
                 ]}
               >
                 <Text style={styles.confirmCatalogBtnText}>
-                  Thêm ({selectedCatalogTaskIds.size}) vào Tuần {selectedWeekNum}
+                  Thêm ({selectedCatalogTaskIds.size}) vào {activeMoodMeta.label}
                 </Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Community Clone Choice Modal (REPLACE_NOW vs SET_AS_NEXT) */}
+      <Modal
+        animationType="slide"
+        onRequestClose={() => setIsCloneChoiceModalVisible(false)}
+        transparent
+        visible={isCloneChoiceModalVisible}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.cloneChoiceModalBox}>
+            <View style={styles.cloneChoiceHeader}>
+              <View style={styles.cloneIconCircle}>
+                <Ionicons name="git-branch-outline" size={26} color="#059669" />
+              </View>
+              <Text style={styles.cloneChoiceTitle}>Áp Dụng Lộ Trình Cộng Đồng</Text>
+              <Text style={styles.cloneChoiceSubtitle}>
+                Bạn hiện đang có mục tiêu:{"\n"}
+                <Text style={{ fontFamily: FontFamily.beVietnamSemiBold, color: Design.colors.black }}>
+                  &ldquo;{currentGoal?.goalName || "Mục tiêu hiện tại"}&rdquo;
+                </Text>
+              </Text>
+            </View>
+
+            {/* Option 1: Kết thúc lộ trình cũ & Áp dụng ngay */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                if (selectedPublicGoalForClone) {
+                  void executeClone(selectedPublicGoalForClone.goalId, "REPLACE_NOW");
+                }
+              }}
+              style={styles.cloneOptionCard}
+            >
+              <View style={[styles.cloneOptionIconBox, { backgroundColor: "#FEE2E2" }]}>
+                <Ionicons name="flash-outline" size={22} color="#EF4444" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cloneOptionTitle}>Kết thúc lộ trình hiện tại & Bắt đầu ngay</Text>
+                <Text style={styles.cloneOptionDesc}>
+                  Hoàn tất mục tiêu hiện tại đang dang dở và chuyển sang lộ trình cộng đồng này từ hôm nay.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            {/* Option 2: Tiếp tục lộ trình cũ & Đặt làm mục tiêu tiếp theo */}
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => {
+                if (selectedPublicGoalForClone) {
+                  void executeClone(selectedPublicGoalForClone.goalId, "SET_AS_NEXT");
+                }
+              }}
+              style={styles.cloneOptionCard}
+            >
+              <View style={[styles.cloneOptionIconBox, { backgroundColor: "#ECFDF5" }]}>
+                <Ionicons name="arrow-forward-circle-outline" size={22} color="#10B981" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.cloneOptionTitle}>Tiếp tục & Đặt làm mục tiêu tiếp theo</Text>
+                <Text style={styles.cloneOptionDesc}>
+                  Tiếp tục rèn luyện mục tiêu hiện tại. Lộ trình này sẽ tự động áp dụng khi bạn hoàn thành.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color="#9CA3AF" />
+            </TouchableOpacity>
+
+            {/* Cancel */}
+            <TouchableOpacity
+              onPress={() => setIsCloneChoiceModalVisible(false)}
+              style={styles.cancelCloneBtn}
+            >
+              <Text style={styles.cancelCloneBtnText}>Hủy bỏ</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -971,14 +1166,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: FontFamily.beVietnamSemiBold,
     color: Design.colors.black,
-    marginBottom: 12,
+  },
+  sectionSub: {
+    fontSize: 12,
+    fontFamily: FontFamily.beVietnamRegular,
+    color: Design.colors.mutedText,
+    marginTop: 2,
   },
   inputLabel: {
     fontSize: 13,
     fontFamily: FontFamily.beVietnamMedium,
     color: "#374151",
     marginBottom: 6,
-    marginTop: 8,
+    marginTop: 10,
   },
   textInput: {
     backgroundColor: "#F9FAFB",
@@ -992,7 +1192,7 @@ const styles = StyleSheet.create({
     color: Design.colors.black,
   },
   textArea: {
-    height: 80,
+    height: 70,
     textAlignVertical: "top",
   },
   switchRow: {
@@ -1019,8 +1219,8 @@ const styles = StyleSheet.create({
   weekHeaderRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 14,
+    alignItems: "flex-start",
+    marginBottom: 12,
   },
   catalogButton: {
     flexDirection: "row",
@@ -1038,63 +1238,86 @@ const styles = StyleSheet.create({
     fontFamily: FontFamily.beVietnamMedium,
     color: "#0284C7",
   },
-  weekTabsRow: {
+  totalProgressRow: {
     flexDirection: "row",
     gap: 8,
-    marginBottom: 16,
+    marginBottom: 14,
   },
-  weekTabBtn: {
+  progressItemPill: {
+    flex: 1,
+    backgroundColor: "#F3F4F6",
+    borderRadius: 10,
+    paddingVertical: 6,
+    alignItems: "center",
+  },
+  progressItemPillComplete: {
+    backgroundColor: "#DCFCE7",
+  },
+  progressItemPillText: {
+    fontSize: 11,
+    fontFamily: FontFamily.beVietnamMedium,
+    color: "#374151",
+  },
+  moodTabsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 14,
+  },
+  moodTabBtn: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F3F4F6",
     paddingVertical: 10,
-    borderRadius: 12,
-  },
-  weekTabBtnSelected: {
-    backgroundColor: "#ECFDF5",
-    borderColor: Design.colors.primaryGreen,
+    borderRadius: 14,
     borderWidth: 1.5,
+    borderColor: "transparent",
   },
-  weekTabBtnText: {
-    fontSize: 13,
+  moodTabEmoji: {
+    fontSize: 20,
+    marginBottom: 4,
+  },
+  moodTabLabel: {
+    fontSize: 12,
     fontFamily: FontFamily.beVietnamMedium,
     color: "#6B7280",
+    marginBottom: 4,
   },
-  weekTabBtnTextSelected: {
-    color: Design.colors.primaryGreen,
-    fontFamily: FontFamily.beVietnamSemiBold,
-  },
-  weekBadge: {
-    backgroundColor: "#E5E7EB",
+  moodBadge: {
+    backgroundColor: "#9CA3AF",
     borderRadius: 10,
-    paddingHorizontal: 6,
+    paddingHorizontal: 7,
     paddingVertical: 1,
-    marginTop: 4,
   },
-  weekBadgeSelected: {
-    backgroundColor: Design.colors.primaryGreen,
-  },
-  weekBadgeText: {
+  moodBadgeText: {
     fontSize: 10,
     fontFamily: FontFamily.beVietnamSemiBold,
-    color: "#6B7280",
-  },
-  weekBadgeTextSelected: {
     color: "#FFFFFF",
+  },
+  moodDescBanner: {
+    backgroundColor: "#F9FAFB",
+    padding: 10,
+    borderRadius: 10,
+    borderLeftWidth: 4,
+    marginBottom: 12,
+  },
+  moodDescTitle: {
+    fontSize: 13,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    color: Design.colors.black,
+  },
+  moodDescSub: {
+    fontSize: 11.5,
+    fontFamily: FontFamily.beVietnamRegular,
+    color: Design.colors.mutedText,
+    marginTop: 2,
   },
   taskListContainer: {
     marginTop: 4,
   },
-  weekTitleDetail: {
-    fontSize: 14,
-    fontFamily: FontFamily.beVietnamSemiBold,
-    color: Design.colors.black,
-    marginBottom: 10,
-  },
   emptyWeekBox: {
     alignItems: "center",
-    paddingVertical: 24,
+    paddingVertical: 20,
     paddingHorizontal: 16,
     backgroundColor: "#F9FAFB",
     borderRadius: 12,
@@ -1125,9 +1348,9 @@ const styles = StyleSheet.create({
     borderColor: "#F3F4F6",
   },
   taskItemIndex: {
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: "#E5E7EB",
     justifyContent: "center",
     alignItems: "center",
@@ -1151,10 +1374,27 @@ const styles = StyleSheet.create({
   deleteTaskBtn: {
     padding: 6,
   },
+  completedMoodBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    backgroundColor: "#ECFDF5",
+    borderWidth: 1,
+    borderColor: "#A7F3D0",
+    paddingVertical: 10,
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  completedMoodText: {
+    fontSize: 12.5,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    color: "#065F46",
+  },
   addTaskRow: {
     flexDirection: "row",
     gap: 8,
-    marginTop: 10,
+    marginTop: 8,
   },
   addTaskInput: {
     flex: 1,
@@ -1269,22 +1509,20 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     marginBottom: 12,
   },
-  weekPillsRow: {
+  moodPillsRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
     gap: 6,
     marginBottom: 14,
   },
-  weekPill: {
-    backgroundColor: "#F3F4F6",
+  moodPill: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
+    borderWidth: 1,
   },
-  weekPillText: {
+  moodPillText: {
     fontSize: 11,
-    fontFamily: FontFamily.beVietnamRegular,
-    color: "#4B5563",
+    fontFamily: FontFamily.beVietnamSemiBold,
   },
   cloneButton: {
     backgroundColor: Design.colors.primaryGreen,
@@ -1367,17 +1605,6 @@ const styles = StyleSheet.create({
     color: Design.colors.mutedText,
     marginTop: 2,
   },
-  catalogWeekBadge: {
-    backgroundColor: "#E5E7EB",
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-  },
-  catalogWeekBadgeText: {
-    fontSize: 10,
-    fontFamily: FontFamily.beVietnamMedium,
-    color: "#4B5563",
-  },
   catalogModalFooter: {
     flexDirection: "row",
     gap: 12,
@@ -1409,6 +1636,88 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: FontFamily.beVietnamSemiBold,
     color: "#FFFFFF",
+  },
+  cloneChoiceModalBox: {
+    backgroundColor: "#FFFFFF",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    padding: 24,
+    borderTopWidth: 2,
+    borderColor: "#000000",
+  },
+  cloneChoiceHeader: {
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  cloneIconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "#D1FAE5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: "#10B981",
+  },
+  cloneChoiceTitle: {
+    fontSize: 18,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    color: Design.colors.black,
+    textAlign: "center",
+  },
+  cloneChoiceSubtitle: {
+    fontSize: 13,
+    fontFamily: FontFamily.beVietnamRegular,
+    color: "#4B5563",
+    textAlign: "center",
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  cloneOptionCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    backgroundColor: "#F9FAFB",
+    borderWidth: 2,
+    borderColor: "#000000",
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 12,
+    shadowColor: "#000000",
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+  },
+  cloneOptionIconBox: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  cloneOptionTitle: {
+    fontSize: 13.5,
+    fontFamily: FontFamily.beVietnamSemiBold,
+    color: Design.colors.black,
+    marginBottom: 2,
+  },
+  cloneOptionDesc: {
+    fontSize: 11.5,
+    fontFamily: FontFamily.beVietnamRegular,
+    color: "#6B7280",
+    lineHeight: 16,
+  },
+  cancelCloneBtn: {
+    marginTop: 6,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  cancelCloneBtnText: {
+    fontSize: 14,
+    fontFamily: FontFamily.beVietnamMedium,
+    color: "#6B7280",
   },
   centerBox: {
     alignItems: "center",
@@ -1498,28 +1807,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     lineHeight: 19,
     marginBottom: 20,
-  },
-  paywallBenefits: {
-    width: "100%",
-    backgroundColor: "#F9FAFB",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    padding: 14,
-    gap: 10,
-    marginBottom: 22,
-  },
-  benefitRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  benefitText: {
-    flex: 1,
-    fontFamily: FontFamily.beVietnamMedium,
-    fontSize: 12.5,
-    color: "#374151",
-    lineHeight: 17,
   },
   paywallUpgradeBtn: {
     width: "100%",
