@@ -1,8 +1,8 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
 import { DailyTasksHeader } from '@/src/features/tasks/components/daily-tasks-header';
-import { TaskCard } from '@/src/features/tasks/components/task-card';
 import { EndGoalSection } from '@/src/features/tasks/components/end-goal-section';
+import { TaskCard } from '@/src/features/tasks/components/task-card';
 import { useDailyTasks } from '@/src/features/tasks/hooks/use-daily-tasks';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
