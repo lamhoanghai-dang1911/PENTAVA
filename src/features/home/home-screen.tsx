@@ -7,10 +7,12 @@ import { HomeShopAndTaskModals } from '@/src/features/home/components/home-shop-
 import { StreakFreezeModal } from '@/src/features/home/components/streak-freeze-modal';
 import { useDayNightTheme } from '@/src/hooks/use-day-night-theme';
 import { authService } from '@/src/services/authService';
+import { getCurrentUserId } from '@/src/services/authStorage';
 import { onboardingService } from '@/src/services/onboardingService';
 import { shopService } from '@/src/services/shopService';
 import { skinService } from '@/src/services/skinService';
 import { socialService, type SocialNotification } from '@/src/services/socialService';
+import { cacheDailyStatus, getCachedDailyStatus } from '@/src/services/taskCacheStorage';
 import { taskService } from '@/src/services/taskService';
 import type { CurrentStreak } from '@/src/types/api/onboarding';
 import type { ShopItem } from '@/src/types/api/shop';
@@ -219,14 +221,28 @@ export default function HomeScreen() {
   }, []);
 
   const handleExecuteGoal = async () => {
-    if (!currentGoalId) {
+    let goalId = currentGoalId;
+    if (!goalId) {
+      try {
+        const goalResponse = await onboardingService.getCurrentGoal();
+        goalId = goalResponse.currentGoal?.goalId ?? null;
+        if (goalId) {
+          setCurrentGoalId(goalId);
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    if (!goalId) {
       Alert.alert('Không thể thực thi', 'Không tìm thấy mục tiêu hiện tại của bạn.');
       return;
     }
 
     setIsDailyStatusLoading(true);
     try {
-      const response = await taskService.getDailyTaskStatus(currentGoalId);
+      const userId = await getCurrentUserId();
+      const response = await taskService.getDailyTaskStatus(goalId);
       const status = response.dailyTaskStatus;
 
       if (!status) {
@@ -234,12 +250,44 @@ export default function HomeScreen() {
       }
 
       setDailyStatus(status);
-      if (status.yesterdayTasks.length > 0) {
+      await cacheDailyStatus(userId, goalId, status);
+
+      // 1. Nếu hôm nay đã có dữ liệu / đã xác nhận nhiệm vụ -> Chuyển vào Daily Tasks
+      if (status.hasConfirmedToday || (status.todayTasks && status.todayTasks.length > 0)) {
+        router.push('/daily-tasks');
+        return;
+      }
+
+      // 2. Nếu hôm nay chưa xác nhận nhiệm vụ:
+      // Kiểm tra có nhiệm vụ hôm qua để hiện popup hỏi tái sử dụng hay không
+      if (status.yesterdayTasks && status.yesterdayTasks.length > 0) {
         setIsDailyStatusVisible(true);
       } else {
+        // Chưa có dữ liệu nhiệm vụ hôm qua -> Chuyển vào Mood để chọn cảm xúc & task mới
         handleChooseNewTasks();
       }
     } catch (error) {
+      // Fallback kiểm tra cache local nếu mất kết nối
+      try {
+        const userId = await getCurrentUserId();
+        const cached = await getCachedDailyStatus(userId, goalId);
+        if (cached) {
+          setDailyStatus(cached);
+          if (cached.hasConfirmedToday || (cached.todayTasks && cached.todayTasks.length > 0)) {
+            router.push('/daily-tasks');
+            return;
+          }
+          if (cached.yesterdayTasks && cached.yesterdayTasks.length > 0) {
+            setIsDailyStatusVisible(true);
+            return;
+          }
+          handleChooseNewTasks();
+          return;
+        }
+      } catch {
+        // ignore fallback error
+      }
+
       Alert.alert(
         'Không thể tải nhiệm vụ',
         error instanceof Error ? error.message : 'Đã có lỗi xảy ra.',
@@ -258,6 +306,12 @@ export default function HomeScreen() {
         goalId: currentGoalId,
         selectedTaskIds: dailyStatus.yesterdayTasks.map((task) => task.id),
       });
+      const userId = await getCurrentUserId();
+      const updatedResponse = await taskService.getDailyTaskStatus(currentGoalId);
+      if (updatedResponse.dailyTaskStatus) {
+        setDailyStatus(updatedResponse.dailyTaskStatus);
+        await cacheDailyStatus(userId, currentGoalId, updatedResponse.dailyTaskStatus);
+      }
       setIsDailyStatusVisible(false);
       router.push('/daily-tasks');
     } catch (error) {

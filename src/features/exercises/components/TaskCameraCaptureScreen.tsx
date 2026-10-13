@@ -79,6 +79,7 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
 
         imageUri = result.uri;
       }
+      const encodedUri = encodeURIComponent(imageUri);
 
       // Camera sau: dùng nguyên ảnh gốc
       // Camera trước: dùng ảnh đã flip
@@ -86,7 +87,7 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
         pathname: reviewPathname,
         params: {
           ...routeParams,
-          imageUri,
+          imageUri: encodedUri,
         },
       });
     } catch {
