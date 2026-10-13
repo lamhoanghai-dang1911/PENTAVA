@@ -301,11 +301,15 @@ export default function HomeScreen() {
             currentStreak={currentStreak}
             displayName={displayName}
             freezesUsedThisMonth={streakData?.freezesUsedThisMonth}
-            hasStreakProtection={streakData?.hasStreakProtection}
+            hasStreakProtection={Boolean(streakData?.hasStreakProtection)}
             isImmersiveView={isImmersiveView}
             isNight={isNight}
             isRubyBalanceLoading={isRubyBalanceLoading}
-            maxFreezesPerMonth={streakData?.maxFreezesPerMonth}
+            maxFreezesPerMonth={
+              streakData?.hasStreakProtection
+                ? (streakData?.maxFreezesPerMonth ?? 2)
+                : 0
+            }
             onCycleTheme={cycleMode}
             onOpenRubyTopup={() => router.push('/ruby-topup' as any)}
             onOpenSettings={() => router.push('/settings' as any)}
@@ -382,8 +386,12 @@ export default function HomeScreen() {
 
         <StreakFreezeModal
           freezesUsedThisMonth={streakData?.freezesUsedThisMonth ?? 0}
-          hasStreakProtection={streakData?.hasStreakProtection ?? false}
-          maxFreezesPerMonth={streakData?.maxFreezesPerMonth ?? 2}
+          hasStreakProtection={Boolean(streakData?.hasStreakProtection)}
+          maxFreezesPerMonth={
+            streakData?.hasStreakProtection
+              ? (streakData?.maxFreezesPerMonth ?? 2)
+              : 0
+          }
           onClose={() => setIsStreakFreezeVisible(false)}
           streakFrozenYesterday={streakData?.streakFrozenYesterday}
           visible={isStreakFreezeVisible}
