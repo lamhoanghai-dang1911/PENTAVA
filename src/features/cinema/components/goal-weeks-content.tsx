@@ -1,4 +1,4 @@
-﻿import { FontFamily } from "@/src/constants/design";
+import { FontFamily } from "@/src/constants/design";
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "../cinema.styles";
@@ -10,6 +10,7 @@ export function GoalWeeksContent({
   onWeekPress,
   onJourneyClipPress,
   onViewJourneyClipsPress,
+  isMultiAngleUnlocked = true,
 }: GoalWeeksContentProps) {
   return (
     <ScrollView
@@ -26,16 +27,20 @@ export function GoalWeeksContent({
         <View style={localStyles.journeyBanner}>
           <View style={localStyles.journeyTextContainer}>
             <View style={localStyles.badgeRow}>
-              {/* <Ionicons name="sparkles" size={16} color="#D97706" /> */}
               <Text style={localStyles.journeyTitle}>
                 CLIP HÀNH TRÌNH
               </Text>
-              <View style={localStyles.vipBadge}>
-                <Text style={localStyles.vipText}>VIP</Text>
+              <View style={[localStyles.vipBadge, !isMultiAngleUnlocked && { backgroundColor: '#FBBF24', flexDirection: 'row', alignItems: 'center', gap: 3 }]}>
+                {!isMultiAngleUnlocked ? (
+                  <Ionicons name="lock-closed" size={10} color="#78350F" />
+                ) : null}
+                <Text style={[localStyles.vipText, !isMultiAngleUnlocked && { color: '#78350F' }]}>
+                  {isMultiAngleUnlocked ? "VIP" : "KHÓA VIP"}
+                </Text>
               </View>
             </View>
             <Text style={localStyles.journeySubtitle}>
-              Tạo và xem lại các video tổng kết kết hợp ảnh check-in từ các tuần
+              Tạo và xem lại các video tổng kết kết hợp ảnh check-in từ các tuần (Multi-Angle)
             </Text>
           </View>
 

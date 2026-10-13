@@ -4,7 +4,7 @@ import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
 import React, { useCallback, useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import { CircularProgress } from '@/src/components/ui/circular-progress';
 
 type DailyTaskProgressCircleProps = {
   goalId: number | null;
@@ -74,7 +74,7 @@ export function DailyTaskProgressCircle({
         style,
         pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
       ]}>
-      <AnimatedCircularProgress
+      <CircularProgress
         backgroundColor={isNight ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.12)'}
         duration={650}
         fill={percentage}
@@ -96,7 +96,7 @@ export function DailyTaskProgressCircle({
             <Text style={[styles.symbolText, isNight && styles.symbolTextNight]}>%</Text>
           </View>
         )}
-      </AnimatedCircularProgress>
+      </CircularProgress>
     </Pressable>
   );
 }

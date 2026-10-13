@@ -1,4 +1,16 @@
-import React, { useEffect, useState } from "react";
+import { NotificationModal } from "@/src/components/ui/notification-modal";
+import { Design, FontFamily } from "@/src/constants/design";
+import { useEntitlement } from "@/src/features/subscription/hooks/use-entitlement";
+import { onboardingService } from "@/src/services/onboardingService";
+import type {
+  CustomTaskItem,
+  CustomWeek,
+  PastGoalCatalog,
+  PublicGoalSummary,
+} from "@/src/types/api/onboarding";
+import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -13,17 +25,6 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import { Design, FontFamily } from "@/src/constants/design";
-import { onboardingService } from "@/src/services/onboardingService";
-import { NotificationModal } from "@/src/components/ui/notification-modal";
-import type {
-  CustomTaskItem,
-  CustomWeek,
-  PastGoalCatalog,
-  PublicGoalSummary,
-} from "@/src/types/api/onboarding";
 
 
 const extractErrorMessage = (error: any, defaultMsg: string = "Có lỗi xảy ra, vui lòng thử lại"): string => {
@@ -43,6 +44,9 @@ const extractErrorMessage = (error: any, defaultMsg: string = "Có lỗi xảy r
 };
 
 export default function CustomRoadmapScreen() {
+  const { hasFeature, isLoading: isEntitlementLoading } = useEntitlement();
+  const isCustomRoadmapUnlocked = hasFeature("CUSTOM_ROADMAP");
+
   const [activeTab, setActiveTab] = useState<"custom" | "community">("custom");
 
   // State: Tự Thiết Kế
@@ -178,6 +182,16 @@ export default function CustomRoadmapScreen() {
   };
 
   const handleSubmitCustomGoal = async () => {
+    if (!isCustomRoadmapUnlocked) {
+      setModalNotification({
+        visible: true,
+        title: "Tính Năng Hội Viên",
+        message: "Bạn cần nâng cấp gói cước để có thể tạo lộ trình tự thiết kế.",
+        onConfirm: () => router.push("/membership"),
+      });
+      return;
+    }
+
     if (!goalName.trim()) {
       setModalNotification({
         visible: true,
@@ -235,6 +249,16 @@ export default function CustomRoadmapScreen() {
   };
 
   const handleCloneGoal = (item: PublicGoalSummary) => {
+    if (!isCustomRoadmapUnlocked) {
+      setModalNotification({
+        visible: true,
+        title: "Tính Năng Hội Viên",
+        message: "Bạn cần nâng cấp gói cước để có thể nhận lộ trình cộng đồng.",
+        onConfirm: () => router.push("/membership"),
+      });
+      return;
+    }
+
     Alert.alert(
       "Áp Dụng Lộ Trình",
       `Bạn có chắc chắn muốn nhận lộ trình "${item.goalName}" của ${item.authorName} làm mục tiêu hiện tại của mình?`,
@@ -266,6 +290,107 @@ export default function CustomRoadmapScreen() {
       ]
     );
   };
+
+  if (isEntitlementLoading) {
+    return (
+      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Design.colors.black} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerTitle}>Lộ Trình Phát Triển</Text>
+            <Text style={styles.headerSub}>Tự do thiết kế & Khám phá</Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </View>
+        <View style={styles.centerBox}>
+          <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
+          <Text style={styles.loadingText}>Đang kiểm tra quyền truy cập gói...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!isCustomRoadmapUnlocked) {
+    return (
+      <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Ionicons name="arrow-back" size={24} color={Design.colors.black} />
+          </TouchableOpacity>
+          <View style={styles.headerTitleWrap}>
+            <Text style={styles.headerTitle}>Lộ Trình Phát Triển</Text>
+            <Text style={styles.headerSub}>Tính năng đặc quyền</Text>
+          </View>
+          <View style={{ width: 40 }} />
+        </View>
+
+        {/* Paywall Container */}
+        <View style={styles.paywallContainer}>
+          <View style={styles.paywallCard}>
+            <View style={styles.paywallIconCircle}>
+              <Ionicons color="#D97706" name="lock-closed" size={36} />
+            </View>
+
+            <View style={styles.paywallVipBadge}>
+              <Text style={styles.paywallVipText}>GÓI HỘI VIÊN</Text>
+            </View>
+
+            <Text style={styles.paywallTitle}>Tự Thiết Kế Lộ Trình</Text>
+
+            <Text style={styles.paywallDesc}>
+              Tính năng tự do thiết kế lộ trình phát triển bản thân 4 tuần và sao chép lộ trình từ cộng đồng chỉ dành riêng cho tài khoản đã nâng cấp gói hội viên.
+            </Text>
+
+            {/* <View style={styles.paywallBenefits}>
+              <View style={styles.benefitRow}>
+                <Ionicons color="#3A8157" name="checkmark-circle" size={18} />
+                <Text style={styles.benefitText}>Tự do tạo danh sách nhiệm vụ 4 tuần riêng biệt</Text>
+              </View>
+              <View style={styles.benefitRow}>
+                <Ionicons color="#3A8157" name="checkmark-circle" size={18} />
+                <Text style={styles.benefitText}>Khám phá & áp dụng lộ trình từ cộng đồng PENTAVA</Text>
+              </View>
+              <View style={styles.benefitRow}>
+                <Ionicons color="#3A8157" name="checkmark-circle" size={18} />
+                <Text style={styles.benefitText}>Công khai lộ trình để chia sẻ thành tựu của bạn</Text>
+              </View>
+            </View> */}
+
+            <TouchableOpacity
+              activeOpacity={0.85}
+              onPress={() => router.push("/membership")}
+              style={styles.paywallUpgradeBtn}
+            >
+              <Ionicons color="#FFFFFF" name="diamond-outline" size={18} />
+              <Text style={styles.paywallUpgradeBtnText}>Nâng Cấp Gói Ngay</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              activeOpacity={0.7}
+              onPress={() => router.back()}
+              style={styles.paywallBackBtn}
+            >
+              <Text style={styles.paywallBackBtnText}>Quay Lại Trang Chủ</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <NotificationModal
+          message={modalNotification?.message ?? ""}
+          onConfirm={() => {
+            const onConfirm = modalNotification?.onConfirm;
+            setModalNotification(null);
+            onConfirm?.();
+          }}
+          title={modalNotification?.title ?? ""}
+          visible={modalNotification?.visible ?? false}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
@@ -1309,5 +1434,123 @@ const styles = StyleSheet.create({
     color: Design.colors.mutedText,
     textAlign: "center",
     marginTop: 4,
+  },
+  paywallContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  paywallCard: {
+    width: "100%",
+    maxWidth: 380,
+    backgroundColor: Design.colors.white,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: "#000000",
+    paddingHorizontal: 22,
+    paddingTop: 28,
+    paddingBottom: 22,
+    alignItems: "center",
+    shadowColor: "#000000",
+    shadowOffset: { width: 6, height: 6 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 6,
+  },
+  paywallIconCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: "#FEF3C7",
+    borderWidth: 2,
+    borderColor: "#F59E0B",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  paywallVipBadge: {
+    backgroundColor: "#FFC857",
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: "#000000",
+    marginBottom: 10,
+  },
+  paywallVipText: {
+    fontFamily: FontFamily.poppinsSemiBold,
+    fontSize: 10,
+    color: "#000000",
+    letterSpacing: 0.5,
+  },
+  paywallTitle: {
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 20,
+    color: "#000000",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  paywallDesc: {
+    fontFamily: FontFamily.beVietnamRegular,
+    fontSize: 13,
+    color: "#6B7280",
+    textAlign: "center",
+    lineHeight: 19,
+    marginBottom: 20,
+  },
+  paywallBenefits: {
+    width: "100%",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    padding: 14,
+    gap: 10,
+    marginBottom: 22,
+  },
+  benefitRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  benefitText: {
+    flex: 1,
+    fontFamily: FontFamily.beVietnamMedium,
+    fontSize: 12.5,
+    color: "#374151",
+    lineHeight: 17,
+  },
+  paywallUpgradeBtn: {
+    width: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "#3A8157",
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: "#000000",
+    paddingVertical: 14,
+    shadowColor: "#000000",
+    shadowOffset: { width: 3, height: 3 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 3,
+  },
+  paywallUpgradeBtnText: {
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: 15,
+    color: "#FFFFFF",
+  },
+  paywallBackBtn: {
+    marginTop: 12,
+    paddingVertical: 8,
+    alignItems: "center",
+  },
+  paywallBackBtnText: {
+    fontFamily: FontFamily.beVietnamMedium,
+    fontSize: 13,
+    color: "#6B7280",
   },
 });

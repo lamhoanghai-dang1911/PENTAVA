@@ -19,10 +19,31 @@ import { StorageQuotaCard } from "./components/storage-quota-card";
 import { WeekOptionsContent } from "./components/week-options-content";
 import { WeekPhotosContent } from "./components/week-photos-content";
 import { useCinema } from "./hooks/use-cinema";
+import { useEntitlement } from "@/src/features/subscription/hooks/use-entitlement";
+import { UpgradeModal } from "@/src/components/ui/upgrade-modal";
 
 export default function CinemaScreen() {
   const router = useRouter();
   const [isJourneyModalVisible, setIsJourneyModalVisible] = useState(false);
+  const [isUpgradeModalVisible, setIsUpgradeModalVisible] = useState(false);
+  const { hasFeature } = useEntitlement();
+  const isMultiAngleUnlocked = hasFeature("MULTI_ANGLE_TEMPLATES");
+
+  const handleJourneyClipPress = () => {
+    if (!isMultiAngleUnlocked) {
+      setIsUpgradeModalVisible(true);
+      return;
+    }
+    setIsJourneyModalVisible(true);
+  };
+
+  const handleViewJourneyClipsPress = () => {
+    if (!isMultiAngleUnlocked) {
+      setIsUpgradeModalVisible(true);
+      return;
+    }
+    void handleSelectJourneyClips();
+  };
 
   const {
     goals,
@@ -136,8 +157,9 @@ export default function CinemaScreen() {
         ) : selectedGoalWeeks ? (
           <GoalWeeksContent
             data={selectedGoalWeeks}
-            onJourneyClipPress={() => setIsJourneyModalVisible(true)}
-            onViewJourneyClipsPress={() => void handleSelectJourneyClips()}
+            isMultiAngleUnlocked={isMultiAngleUnlocked}
+            onJourneyClipPress={handleJourneyClipPress}
+            onViewJourneyClipsPress={handleViewJourneyClipsPress}
             onWeekPress={handleSelectWeek}
           />
         ) : null
@@ -157,7 +179,7 @@ export default function CinemaScreen() {
           ListHeaderComponent={
             <StorageQuotaCard
               isLoading={isQuotaLoading}
-              onUpgradePress={() => router.push("/subscription" as any)}
+              onUpgradePress={() => router.push("/membership")}
               quota={storageQuota}
             />
           }
@@ -230,6 +252,14 @@ export default function CinemaScreen() {
         }}
         photoUrl={selectedPhoto ? selectedPhoto.imageUrl : null}
         visible={isPhotoViewerVisible && selectedPhoto !== undefined}
+      />
+      {/* Upgrade Modal khi bấm vào Multi-Angle mà chưa có gói */}
+      <UpgradeModal
+        featureName="Multi-Angle & Dynamic Templates"
+        description="Tính năng tạo và xem clip hành trình ghép đa tuần (Multi-Angle) chỉ dành riêng cho các thành viên đã nâng cấp gói VIP / Premium."
+        onClose={() => setIsUpgradeModalVisible(false)}
+        requiredPlanName="Premium"
+        visible={isUpgradeModalVisible}
       />
     </SafeAreaView>
   );

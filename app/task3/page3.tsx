@@ -8,7 +8,7 @@ import {
     Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import { AnimatedCircularProgress } from '@/src/components/ui/circular-progress';
 
 const { height } = Dimensions.get('window');
 

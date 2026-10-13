@@ -49,16 +49,12 @@ export function TaskPhotoReviewScreen() {
       return;
     }
 
-    try {
-      setIsSaving(true);
-      const uploadResult = await checkinService.uploadImage(imageUri, progressId);
-      await checkinService.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
-      setIsSuccessModalVisible(true);
-    } catch (error) {
-      Alert.alert('Không thể lưu check-in', error instanceof Error ? error.message : 'Đã có lỗi xảy ra.');
-    } finally {
-      setIsSaving(false);
-    }
+    setIsSaving(true);
+    // Kích hoạt tiến trình nén và upload chạy ngầm (không chặn UI)
+    checkinService.uploadAndSaveInBackground(imageUri, progressId);
+
+    // Hiển thị modal thành công ngay lập tức để người dùng tiếp tục
+    setIsSuccessModalVisible(true);
   };
 
   return (
@@ -89,7 +85,15 @@ export function TaskPhotoReviewScreen() {
         }
       />
 
-      <Modal animationType="fade" onRequestClose={() => setIsSuccessModalVisible(false)} transparent visible={isSuccessModalVisible}>
+      <Modal
+        animationType="fade"
+        onRequestClose={() => {
+          setIsSuccessModalVisible(false);
+          setIsSaving(false);
+        }}
+        transparent
+        visible={isSuccessModalVisible}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.successModal}>
             <View style={styles.successIcon}>

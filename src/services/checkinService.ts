@@ -5,9 +5,34 @@ import type {
   CheckinRequestDTO,
   CheckinResponse,
 } from "@/src/types/api/checkin";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 const CHECKIN_BUCKET =
   process.env.EXPO_PUBLIC_SUPABASE_CHECKIN_BUCKET || "pentava-checkin-images";
+
+// Bộ nhớ đệm tạm thời trên client để hiển thị ảnh ngay lập tức khi đang upload ngầm
+const localCheckinCache = new Map<number, string>();
+
+async function compressImageForUpload(uri: string): Promise<string> {
+  if (uri.startsWith("http://") || uri.startsWith("https://") || uri.startsWith("data:")) {
+    return uri;
+  }
+
+  try {
+    const result = await manipulateAsync(
+      uri,
+      [{ resize: { width: 1080 } }],
+      {
+        compress: 0.7,
+        format: SaveFormat.JPEG,
+      },
+    );
+    return result.uri;
+  } catch (error) {
+    console.warn("Không thể nén ảnh check-in, dùng ảnh gốc:", error);
+    return uri;
+  }
+}
 
 function getImageInfo(uri: string) {
   const dataUriMatch = uri.match(
@@ -44,16 +69,44 @@ function getImageInfo(uri: string) {
 
 export const checkinService = {
   async getImage(progressId: number): Promise<CheckinResponse> {
-    const response = await apiClient.get(
-      API_ENDPOINTS.CHECKIN.GET_IMAGE(progressId),
-    );
-    return response.data;
+    try {
+      const response = await apiClient.get(
+        API_ENDPOINTS.CHECKIN.GET_IMAGE(progressId),
+      );
+
+      if (response.data?.imageUrl) {
+        localCheckinCache.set(progressId, response.data.imageUrl);
+        return response.data;
+      }
+
+      if (localCheckinCache.has(progressId)) {
+        return {
+          message: "Ảnh check-in từ thiết bị",
+          taskProgressId: progressId,
+          imageUrl: localCheckinCache.get(progressId)!,
+          checkinDate: new Date().toISOString().split("T")[0],
+        };
+      }
+
+      return response.data;
+    } catch (error) {
+      if (localCheckinCache.has(progressId)) {
+        return {
+          message: "Ảnh check-in từ thiết bị",
+          taskProgressId: progressId,
+          imageUrl: localCheckinCache.get(progressId)!,
+          checkinDate: new Date().toISOString().split("T")[0],
+        };
+      }
+      throw error;
+    }
   },
 
   async uploadImage(imageUri: string, progressId: number): Promise<{ publicUrl: string; fileSizeBytes: number }> {
     try {
-      const { extension, contentType } = getImageInfo(imageUri);
-      const response = await fetch(imageUri);
+      const optimizedUri = await compressImageForUpload(imageUri);
+      const { extension, contentType } = getImageInfo(optimizedUri);
+      const response = await fetch(optimizedUri);
 
       if (!response.ok) {
         throw new Error(`Không đọc được ảnh local (${response.status}).`);
@@ -94,5 +147,19 @@ export const checkinService = {
       payload,
     );
     return response.data;
+  },
+
+  uploadAndSaveInBackground(imageUri: string, progressId: number): void {
+    localCheckinCache.set(progressId, imageUri);
+
+    (async () => {
+      try {
+        const uploadResult = await this.uploadImage(imageUri, progressId);
+        await this.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
+        localCheckinCache.set(progressId, uploadResult.publicUrl);
+      } catch (error) {
+        console.error(`[checkinService] Lỗi upload ngầm ảnh check-in (task: ${progressId}):`, error);
+      }
+    })();
   },
 };
