@@ -2,9 +2,11 @@ import DayNightBackground from '@/src/components/home/day-night-background';
 import { useOnboarding } from '@/src/context/onboarding-context';
 import { HomeBottomBar } from '@/src/features/home/components/home-bottom-bar';
 import { HomeHeader } from '@/src/features/home/components/home-header';
+import { HomeNotificationsModal } from '@/src/features/home/components/home-notifications-modal';
 import { HomeSceneContent } from '@/src/features/home/components/home-scene-content';
 import { HomeShopAndTaskModals } from '@/src/features/home/components/home-shop-and-task-modals';
 import { StreakFreezeModal } from '@/src/features/home/components/streak-freeze-modal';
+import { getNotificationKey } from '@/src/features/home/utils/home-notifications';
 import { useDayNightTheme } from '@/src/hooks/use-day-night-theme';
 import { authService } from '@/src/services/authService';
 import { getCurrentUserId } from '@/src/services/authStorage';
@@ -14,16 +16,15 @@ import { skinService } from '@/src/services/skinService';
 import { socialService, type SocialNotification } from '@/src/services/socialService';
 import { cacheDailyStatus, getCachedDailyStatus } from '@/src/services/taskCacheStorage';
 import { taskService } from '@/src/services/taskService';
-import type { CurrentStreak } from '@/src/types/api/onboarding';
+import type { CurrentGoal, CurrentStreak } from '@/src/types/api/onboarding';
 import type { ShopItem } from '@/src/types/api/shop';
 import type { AvatarLayer } from '@/src/types/api/skin';
 import type { DailyTaskStatus } from '@/src/types/api/task';
-import { HomeNotificationsModal } from '@/src/features/home/components/home-notifications-modal';
-import { getNotificationKey } from '@/src/features/home/utils/home-notifications';
-import { router, useFocusEffect } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, ScrollView, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './home-screen.styles';
 
@@ -34,6 +35,7 @@ export default function HomeScreen() {
   const [profileName, setProfileName] = useState('');
   const displayName = profileName.trim() || data.name.trim() || 'bạn';
   const [currentGoalId, setCurrentGoalId] = useState<number | null>(null);
+  const [currentGoal, setCurrentGoal] = useState<CurrentGoal | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [streakData, setStreakData] = useState<CurrentStreak | null>(null);
   const [isStreakFreezeVisible, setIsStreakFreezeVisible] = useState(false);
@@ -44,6 +46,7 @@ export default function HomeScreen() {
   const [isDailyStatusVisible, setIsDailyStatusVisible] = useState(false);
   const [, setIsDailyStatusLoading] = useState(false);
   const [isConfirmingDailyTasks, setIsConfirmingDailyTasks] = useState(false);
+  const [isNoGoalModalVisible, setIsNoGoalModalVisible] = useState(false);
 
   const [isShopVisible, setIsShopVisible] = useState(false);
   const [purchasedShopItem, setPurchasedShopItem] = useState<ShopItem | null>(null);
@@ -74,6 +77,18 @@ export default function HomeScreen() {
             setAvatarLayers(null);
           }
         });
+
+      // Tự động làm mới Goal và Streak khi quay lại màn hình Home (ví dụ sau khi mua gói hoặc đổi mục tiêu)
+      void Promise.all([onboardingService.getCurrentGoal(), onboardingService.getCurrentStreak()])
+        .then(([goalResponse, streakResponse]) => {
+          if (isFocused) {
+            setCurrentGoalId(goalResponse.currentGoal?.goalId ?? null);
+            setCurrentGoal(goalResponse.currentGoal ?? null);
+            setCurrentStreak(streakResponse.streak?.currentStreak ?? 0);
+            setStreakData(streakResponse.streak ?? null);
+          }
+        })
+        .catch(() => { });
 
       return () => {
         isFocused = false;
@@ -213,7 +228,7 @@ export default function HomeScreen() {
           void Image.prefetch(Array.from(new Set(urls)));
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     return () => {
       isMounted = false;
@@ -235,7 +250,7 @@ export default function HomeScreen() {
     }
 
     if (!goalId) {
-      Alert.alert('Không thể thực thi', 'Không tìm thấy mục tiêu hiện tại của bạn.');
+      setIsNoGoalModalVisible(true);
       return;
     }
 
@@ -259,11 +274,21 @@ export default function HomeScreen() {
       }
 
       // 2. Nếu hôm nay chưa xác nhận nhiệm vụ:
-      // Kiểm tra có nhiệm vụ hôm qua để hiện popup hỏi tái sử dụng hay không
-      if (status.yesterdayTasks && status.yesterdayTasks.length > 0) {
+      // Mục tiêu mới tạo hôm nay thì chắc chắn không có nhiệm vụ hôm qua
+      const isGoalCreatedToday =
+        currentGoal?.createdAt &&
+        new Date(currentGoal.createdAt).toDateString() === new Date().toDateString();
+
+      const hasValidYesterdayTasks =
+        !isGoalCreatedToday &&
+        Boolean(status.hasYesterdayTasks) &&
+        Boolean(status.yesterdayTasks && status.yesterdayTasks.length === 5) &&
+        status.yesterdayTasks.every((t) => !t.goalId || t.goalId === goalId);
+
+      if (hasValidYesterdayTasks) {
         setIsDailyStatusVisible(true);
       } else {
-        // Chưa có dữ liệu nhiệm vụ hôm qua -> Chuyển vào Mood để chọn cảm xúc & task mới
+        // Mục tiêu mới bắt đầu hoặc chưa có nhiệm vụ hôm qua -> Vào Mood để chọn cảm xúc & xem 5 task mới
         handleChooseNewTasks();
       }
     } catch (error) {
@@ -277,7 +302,16 @@ export default function HomeScreen() {
             router.push('/daily-tasks');
             return;
           }
-          if (cached.yesterdayTasks && cached.yesterdayTasks.length > 0) {
+          const isGoalCreatedToday =
+            currentGoal?.createdAt &&
+            new Date(currentGoal.createdAt).toDateString() === new Date().toDateString();
+          const hasValidYesterdayTasks =
+            !isGoalCreatedToday &&
+            Boolean(cached.hasYesterdayTasks) &&
+            Boolean(cached.yesterdayTasks && cached.yesterdayTasks.length === 5) &&
+            cached.yesterdayTasks.every((t) => !t.goalId || t.goalId === goalId);
+
+          if (hasValidYesterdayTasks) {
             setIsDailyStatusVisible(true);
             return;
           }
@@ -355,11 +389,15 @@ export default function HomeScreen() {
             currentStreak={currentStreak}
             displayName={displayName}
             freezesUsedThisMonth={streakData?.freezesUsedThisMonth}
-            hasStreakProtection={streakData?.hasStreakProtection}
+            hasStreakProtection={Boolean(streakData?.hasStreakProtection)}
             isImmersiveView={isImmersiveView}
             isNight={isNight}
             isRubyBalanceLoading={isRubyBalanceLoading}
-            maxFreezesPerMonth={streakData?.maxFreezesPerMonth}
+            maxFreezesPerMonth={
+              streakData?.hasStreakProtection
+                ? (streakData?.maxFreezesPerMonth ?? 2)
+                : 0
+            }
             onCycleTheme={cycleMode}
             onOpenRubyTopup={() => router.push('/ruby-topup' as any)}
             onOpenSettings={() => router.push('/settings' as any)}
@@ -403,7 +441,7 @@ export default function HomeScreen() {
           <HomeBottomBar
             isNight={isNight}
             onOpenCommunity={() => router.push('/community')}
-            onOpenHome={() => {}}
+            onOpenHome={() => { }}
             onOpenSettings={() => router.push('/settings' as any)}
             onOpenShop={() => setIsShopVisible(true)}
             onOpenWardrobe={() => router.push('/wardrobe' as any)}
@@ -436,12 +474,52 @@ export default function HomeScreen() {
 
         <StreakFreezeModal
           freezesUsedThisMonth={streakData?.freezesUsedThisMonth ?? 0}
-          hasStreakProtection={streakData?.hasStreakProtection ?? false}
-          maxFreezesPerMonth={streakData?.maxFreezesPerMonth ?? 2}
+          hasStreakProtection={Boolean(streakData?.hasStreakProtection)}
+          maxFreezesPerMonth={
+            streakData?.hasStreakProtection
+              ? (streakData?.maxFreezesPerMonth ?? 2)
+              : 0
+          }
           onClose={() => setIsStreakFreezeVisible(false)}
           streakFrozenYesterday={streakData?.streakFrozenYesterday}
           visible={isStreakFreezeVisible}
         />
+
+        {/* Modal: Bạn Chưa Có Mục Tiêu Hiện Tại */}
+        <Modal
+          animationType="fade"
+          onRequestClose={() => setIsNoGoalModalVisible(false)}
+          transparent
+          visible={isNoGoalModalVisible}
+        >
+          <Pressable style={styles.noGoalModalOverlay} onPress={() => setIsNoGoalModalVisible(false)}>
+            <Pressable style={styles.noGoalModalCard} onPress={(e) => e.stopPropagation()}>
+              <View style={styles.noGoalIconCircle}>
+                <Ionicons color="#3A8157" name="compass-outline" size={36} />
+              </View>
+              <Text style={styles.noGoalModalTitle}>Bạn Chưa Có Mục Tiêu Hiện Tại</Text>
+              <Text style={styles.noGoalModalDesc}>
+                Hiện tại bạn chưa có mục tiêu rèn luyện nào đang thực hiện. Hãy chọn mục tiêu mới để cùng Luna bắt đầu rèn luyện mỗi ngày nhé!
+              </Text>
+              <Pressable
+                style={styles.noGoalConfirmBtn}
+                onPress={() => {
+                  setIsNoGoalModalVisible(false);
+                  router.push('/onboarding/goals');
+                }}
+              >
+                {/* <Ionicons color="#FFFFFF" name="sparkles-outline" size={18} /> */}
+                <Text style={styles.noGoalConfirmBtnText}>Khảo Sát & Chọn Mục Tiêu</Text>
+              </Pressable>
+              <Pressable
+                style={styles.noGoalCancelBtn}
+                onPress={() => setIsNoGoalModalVisible(false)}
+              >
+                <Text style={styles.noGoalCancelBtnText}>Để sau</Text>
+              </Pressable>
+            </Pressable>
+          </Pressable>
+        </Modal>
       </SafeAreaView>
     </View>
   );

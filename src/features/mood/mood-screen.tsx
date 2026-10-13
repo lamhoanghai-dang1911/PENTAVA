@@ -65,8 +65,14 @@ export default function MoodScreen() {
 
       const moodType = ['BAD', 'NEUTRAL', 'GOOD'][currentIndex] as 'BAD' | 'NEUTRAL' | 'GOOD';
       const response = await taskService.selectMood({ goalId: activeGoalId, moodType, comment });
-      setAvailableTasks(response.moodTaskResponse?.availableTasks ?? []);
-      setSelectedTaskIds([]);
+      const tasks = response.moodTaskResponse?.availableTasks ?? [];
+      setAvailableTasks(tasks);
+      if (tasks.length === 5) {
+        // Tự động chọn sẵn 5 task của mood để người dùng xem và bấm xác nhận
+        setSelectedTaskIds(tasks.map((t) => t.id));
+      } else {
+        setSelectedTaskIds([]);
+      }
     } catch (error) {
       Alert.alert('Không thể tải task', error instanceof Error ? error.message : 'Đã có lỗi xảy ra.');
     } finally {

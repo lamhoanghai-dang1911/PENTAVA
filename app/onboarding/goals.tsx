@@ -25,6 +25,7 @@ export default function GoalsScreen() {
       <OnboardingTopBar
         currentStep={3}
         showBack
+        onBack={() => router.replace('/')}
         onForward={() => {
           if (canContinue) {
             router.push('/onboarding/routine');
