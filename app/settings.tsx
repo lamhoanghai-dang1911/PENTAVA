@@ -13,14 +13,18 @@ import { useEffect, useState } from 'react';
 import {
     ActivityIndicator,
     Alert,
+    KeyboardAvoidingView,
     Linking,
     Modal,
+    Platform,
     Pressable,
+    ScrollView,
     StyleSheet,
     Text,
     TextInput,
     View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type MenuItem = {
     label: string;
@@ -39,6 +43,7 @@ const MENU_ITEMS: MenuItem[] = [
 
 export default function SettingsScreen() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const [profile, setProfile] = useState<Profile | null>(null);
     const [accountVisible, setAccountVisible] = useState(false);
     const [editing, setEditing] = useState(false);
@@ -271,8 +276,15 @@ export default function SettingsScreen() {
                 onRequestClose={handleCloseAccount}
                 transparent
                 visible={accountVisible}>
-                <View style={styles.modalOverlay}>
-                    <View style={styles.accountCard}>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                    style={styles.modalOverlay}>
+                    <Pressable
+                        accessibilityLabel="Đóng tài khoản"
+                        onPress={handleCloseAccount}
+                        style={StyleSheet.absoluteFill}
+                    />
+                    <View style={[styles.accountCard, { paddingBottom: Math.max(insets.bottom + 16, 28) }]}>
                         <View style={styles.accountHeader}>
                             <Text style={styles.accountTitle}>Tài khoản</Text>
                             <Pressable disabled={savingProfile} onPress={handleCloseAccount}>
@@ -282,7 +294,10 @@ export default function SettingsScreen() {
                         {loadingProfile ? (
                             <ActivityIndicator color={Design.colors.primaryGreen} style={styles.loader} />
                         ) : profile ? (
-                            <>
+                            <ScrollView
+                                contentContainerStyle={styles.accountScrollContent}
+                                keyboardShouldPersistTaps="handled"
+                                showsVerticalScrollIndicator={false}>
                                 <View style={styles.accountAvatarWrapper}>
                                     <Pressable disabled={savingProfile} onPress={() => void handlePickAvatar()}>
                                         <Image
@@ -332,10 +347,10 @@ export default function SettingsScreen() {
                                         </Pressable>
                                     </>
                                 )}
-                            </>
+                            </ScrollView>
                         ) : null}
                     </View>
-                </View>
+                </KeyboardAvoidingView>
             </Modal>
         </ScreenContainer>
     );
@@ -498,8 +513,12 @@ const styles = StyleSheet.create({
         backgroundColor: Design.colors.white,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        padding: 24,
-        paddingBottom: 36,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        maxHeight: '85%',
+    },
+    accountScrollContent: {
+        paddingBottom: 16,
     },
     accountHeader: {
         flexDirection: 'row',
