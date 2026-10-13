@@ -268,7 +268,50 @@ Quy tắc:
 - Giữ logic gọi service `socialService`, chuyển đổi tab, gửi lời mời kết bạn, high-five và bình luận trong `use-community.ts`.
 - Component trong `components/` chỉ render UI và nhận dữ liệu/callback qua props.
 - Helper format ngày, parse error message và chuyển đổi kiểu bài viết đặt trong `community-utils.ts`.
-- Giữ nguyên video player `expo-video` (`useVideoPlayer`, `VideoView`), tương tác High-Five emoji và luồng quản lý bình luận.
+## Feature Settings (Hồ sơ & Cài đặt)
+
+Màn hình cài đặt và thông tin tài khoản được chia theo feature:
+
+```text
+app/settings.tsx                      # Thin entry point trỏ sang src/features/settings
+src/features/settings/
+  settings-screen.tsx                 # Ghép route screen và các thành phần settings
+  settings.styles.ts                  # Style dùng chung của màn hình settings & modal
+  constants.ts                        # MENU_ITEMS danh sách điều hướng cài đặt
+  components/
+    settings-header.tsx               # Nút back và tiêu đề "Hồ sơ của tôi"
+    settings-profile-card.tsx         # Thẻ hiển thị avatar và tên, link mở social profile
+    settings-menu-list.tsx            # Danh sách mục cài đặt: Quyền riêng tư, Tài khoản, Thành viên, Đăng xuất
+    account-modal.tsx                 # Modal xem chi tiết và chỉnh sửa hồ sơ kèm KeyboardAvoidingView
+  hooks/
+    use-settings.ts                   # Quản lý state profile, chọn avatar, cập nhật bio/name và logout
+  types/
+    settings.ts                       # Type MenuItem và Props các component
+```
+
+Quy tắc:
+
+- `app/settings.tsx` chỉ làm entry point cho Expo Router (`export { default } from "@/src/features/settings/settings-screen"`).
+- Giữ logic gọi service `authService`, `avatarService`, chọn ảnh đại diện và đăng xuất trong `use-settings.ts`.
+- `account-modal.tsx` xử lý bàn phím thông qua `KeyboardAvoidingView` với `behavior={Platform.OS === 'ios' ? 'padding' : 'height'}` và `keyboardVerticalOffset={0}`, co giãn tự động theo chiều cao khả dụng (`maxHeight: isKeyboardOpen ? '90%' : '85%'`). Kết hợp cùng `ref={scrollViewRef}` tự động cuộn đến `bioInput` khi focus, đảm bảo hiển thị hoàn hảo trên mọi kích thước màn hình Android (responsive) và iOS.
+- Logout xóa token/session hiện tại nhưng không xóa cache local của người dùng.
+
+## Feature Mood (Cảm xúc & Chọn Task)
+
+Màn hình Mood và chọn 5 nhiệm vụ hàng ngày:
+
+```text
+app/mood.tsx                          # Thin entry point trỏ sang src/features/mood
+src/features/mood/
+  mood-screen.tsx                     # Ghép màn hình chính, thanh trượt cảm xúc, Mascot và bảng task
+  mood.styles.ts                      # Style dùng chung của màn hình mood
+  components/
+    MoodMascot.tsx                    # Linh vật đổi biểu cảm mắt, miệng, lông mày theo cảm xúc
+    mood-task-panel.tsx               # Khung chọn 5 nhiệm vụ hàng ngày
+    mood-task-item.tsx                # Thẻ nhiệm vụ phẳng (không bo góc, không màu xanh nhạt)
+  hooks/
+    useMoodSelector.ts                # Hook quản lý slider và danh sách cảm xúc MOOD_OPTIONS
+```
 
 ## Cache và tài khoản người dùng
 
