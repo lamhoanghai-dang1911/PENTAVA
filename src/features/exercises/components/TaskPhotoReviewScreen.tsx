@@ -1,46 +1,58 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import { checkinService } from '@/src/services/checkinService';
+import { toAndroidSafeUri } from '@/src/services/fileUri';
 import type { TaskCameraRouteParams } from '@/src/types/camera';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { cameraFrameHeight, cameraFrameWidth, cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
+import { Alert, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
 
+// Chuẩn hóa imageUri nhận từ expo-router.
+// KHÔNG gọi decodeURIComponent: đường dẫn cache của Expo Go chứa tên thư mục
+// có ký tự %, decode sẽ ra đường dẫn không tồn tại.
 function normalizeImageUri(uri?: string | string[]): string | undefined {
   if (!uri) return undefined;
-  const rawUri = Array.isArray(uri) ? uri[0] : uri;
-  if (!rawUri || typeof rawUri !== 'string') return undefined;
-
-  let decoded = rawUri;
-  try {
-    decoded = decodeURIComponent(rawUri);
-  } catch {
-    decoded = rawUri;
-  }
+  const raw = Array.isArray(uri) ? uri[0] : uri;
+  if (!raw || typeof raw !== 'string') return undefined;
 
   if (
-    !decoded.startsWith('file://') &&
-    !decoded.startsWith('content://') &&
-    !decoded.startsWith('http://') &&
-    !decoded.startsWith('https://') &&
-    !decoded.startsWith('data:') &&
-    decoded.startsWith('/')
+    !raw.startsWith('file://') &&
+    !raw.startsWith('content://') &&
+    !raw.startsWith('http://') &&
+    !raw.startsWith('https://') &&
+    raw.startsWith('/')
   ) {
-    return `file://${decoded}`;
+    return `file://${raw}`;
   }
-
-  return decoded;
+  return raw;
 }
+
+
 
 export function TaskPhotoReviewScreen() {
   const router = useRouter();
-  const { imageUri: rawImageUri, progressId: progressIdParam } = useLocalSearchParams<TaskCameraRouteParams & { imageUri?: string }>();
+  const { imageUri: rawImageUri, progressId: progressIdParam } =
+    useLocalSearchParams<TaskCameraRouteParams & { imageUri?: string }>();
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
-  const imageUri = useMemo(() => normalizeImageUri(rawImageUri), [rawImageUri]);
+  // URI gốc: dùng cho upload/nén
+  const imageUri = useMemo(() => {
+    const normalized = normalizeImageUri(rawImageUri);
+    console.log('[ReviewScreen] rawImageUri:', rawImageUri);
+    console.log('[ReviewScreen] normalized imageUri:', normalized);
+    return normalized;
+  }, [rawImageUri]);
+
+  // URI dùng để hiển thị trong <Image>
+  const displayUri = useMemo(() => {
+    if (!imageUri) return undefined;
+    const uri = toAndroidSafeUri(imageUri);
+    console.log('[ReviewScreen] displayUri:', uri);
+    return uri;
+  }, [imageUri]);
 
   const usePhoto = async () => {
     const progressId = Number(progressIdParam);
@@ -50,28 +62,43 @@ export function TaskPhotoReviewScreen() {
     }
 
     setIsSaving(true);
-    // Kích hoạt tiến trình nén và upload chạy ngầm (không chặn UI)
+    // Nén và upload chạy ngầm (không chặn UI), dùng URI gốc
     checkinService.uploadAndSaveInBackground(imageUri, progressId);
 
-    // Hiển thị modal thành công ngay lập tức để người dùng tiếp tục
+    // Hiện modal thành công ngay để người dùng tiếp tục
     setIsSuccessModalVisible(true);
   };
 
   return (
     <>
       <TaskCameraScaffold
-        background={imageUri ? (
-          <View style={styles.reviewBackground}>
-            <View style={styles.reviewImageContainer}>
+        background={
+          displayUri ? (
+            <View style={StyleSheet.absoluteFill}>
               <Image
-                cachePolicy="none"
-                contentFit="cover"
-                source={{ uri: imageUri }}
-                style={styles.reviewImage}
+                source={{ uri: displayUri }}
+                style={StyleSheet.absoluteFill}
+                resizeMode="cover"
+                onLoad={() => {
+                  console.log('[ReviewScreen] Image loaded');
+                  setImageLoaded(true);
+                }}
+                onError={(e) => {
+                  console.log('[ReviewScreen] Image load error:', e.nativeEvent.error);
+                  setImageLoaded(true); // ẩn overlay, tránh hiện "Đang tải" mãi
+                }}
               />
+
+              {!imageLoaded && (
+                <View style={[StyleSheet.absoluteFill, styles.loadingOverlay]}>
+                  <Text style={styles.loadingText}>Đang tải ảnh...</Text>
+                </View>
+              )}
             </View>
-          </View>
-        ) : <View style={[StyleSheet.absoluteFill, cameraStyles.emptyPreview]} />}
+          ) : (
+            <View style={[StyleSheet.absoluteFill, cameraStyles.emptyPreview]} />
+          )
+        }
         onBack={() => router.back()}
         footer={
           <View style={cameraStyles.finalActionsRow}>
@@ -112,26 +139,14 @@ export function TaskPhotoReviewScreen() {
 }
 
 const styles = StyleSheet.create({
-  reviewBackground: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
+  loadingOverlay: {
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
   },
-  reviewImageContainer: {
-    width: cameraFrameWidth,
-    height: cameraFrameHeight + 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000',
-    overflow: 'hidden',
-    alignSelf: 'center',
-  },
-  reviewImage: {
-    width: cameraFrameWidth,
-    height: cameraFrameHeight + 30,
-    alignSelf: 'center',
+  loadingText: {
+    color: '#FFF',
+    fontSize: 14,
   },
   modalOverlay: {
     flex: 1,

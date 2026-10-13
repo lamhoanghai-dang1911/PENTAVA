@@ -79,17 +79,13 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
 
         imageUri = result.uri;
       }
-      const encodedUri = encodeURIComponent(imageUri);
-
-      // Camera sau: dùng nguyên ảnh gốc
-      // Camera trước: dùng ảnh đã flip
+      // Navigate to review screen with the captured image URI.
+      // expo-router handles param encoding internally — do NOT manually encode.
       router.push({
         pathname: reviewPathname,
-        params: {
-          ...routeParams,
-          imageUri: encodedUri,
-        },
+        params: { ...routeParams, imageUri },
       });
+
     } catch {
       Alert.alert('Lỗi chụp ảnh', 'Không thể chụp ảnh lúc này.');
     }
