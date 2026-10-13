@@ -29,7 +29,6 @@ async function compressImageForUpload(uri: string): Promise<string> {
     );
     return result.uri;
   } catch (error) {
-    console.warn("Không thể nén ảnh check-in, dùng ảnh gốc:", error);
     return uri;
   }
 }

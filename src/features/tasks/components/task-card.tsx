@@ -267,8 +267,7 @@ export function TaskCard({
                 visible={isCheckInModalVisible}
             >
                 <View style={styles.modalOverlay}>
-                    <Animated.View
-                        entering={ZoomIn.springify().damping(16)}
+                    <View
                         style={styles.checkInModal}>
                         <View style={styles.checkInIcon}>
                             <Ionicons
@@ -312,7 +311,7 @@ export function TaskCard({
                                 Để sau
                             </Text>
                         </Pressable>
-                    </Animated.View>
+                    </View>
                 </View>
             </Modal>
 

@@ -3,7 +3,6 @@ import type { DailyTaskModalsProps } from '@/src/features/tasks/types/daily-task
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { ZoomIn } from 'react-native-reanimated';
 
 export function DailyTaskModals({
     dailyStatusVisible,
@@ -128,14 +127,12 @@ export function DailyTaskModals({
 
             <Modal animationType="fade" onRequestClose={onCloseSwapSuccess} transparent visible={swapSuccessVisible}>
                 <View style={styles.streakOverlay}>
-                    <Animated.View
-                        entering={ZoomIn.springify().damping(15)}
+                    <View
                         style={styles.successModal}>
-                        <Animated.View
-                            entering={ZoomIn.springify().damping(10).delay(100)}
+                        <View
                             style={styles.successIcon}>
                             <Ionicons color={Design.colors.white} name="checkmark" size={34} />
-                        </Animated.View>
+                        </View>
                         <Text style={styles.successTitle}>Đổi task thành công</Text>
                         <Pressable
                             onPress={onCloseSwapSuccess}
@@ -145,20 +142,18 @@ export function DailyTaskModals({
                             ]}>
                             <Text style={styles.primaryActionText}>Tiếp tục</Text>
                         </Pressable>
-                    </Animated.View>
+                    </View>
                 </View>
             </Modal>
 
             <Modal animationType="fade" onRequestClose={onCancelStreak} transparent visible={streakVisible}>
                 <View style={styles.streakOverlay}>
-                    <Animated.View
-                        entering={ZoomIn.springify().damping(15)}
+                    <View
                         style={styles.streakModal}>
-                        <Animated.View
-                            entering={ZoomIn.springify().damping(10).delay(150)}
+                        <View
                             style={styles.streakIcon}>
                             <Ionicons color="#F26A3D" name="flame" size={42} />
-                        </Animated.View>
+                        </View>
                         <Text style={styles.streakTitle}>Chúc mừng bạn!</Text>
                         <Text style={styles.streakSubtitle}>Bạn đã hoàn thành đủ 5 nhiệm vụ hôm nay.</Text>
                         <View style={styles.streakStats}>
@@ -180,7 +175,7 @@ export function DailyTaskModals({
                             ]}>
                             <Text style={styles.primaryActionText}>Tiếp tục</Text>
                         </Pressable>
-                    </Animated.View>
+                    </View>
                 </View>
             </Modal>
         </>
