@@ -1,10 +1,10 @@
+import { CircularProgress } from '@/src/components/ui/circular-progress';
 import { FontFamily } from '@/src/constants/design';
 import { taskService } from '@/src/services/taskService';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
-import { CircularProgress } from '@/src/components/ui/circular-progress';
 
 type DailyTaskProgressCircleProps = {
   goalId: number | null;
@@ -75,13 +75,13 @@ export function DailyTaskProgressCircle({
         pressed && { transform: [{ scale: 0.94 }], opacity: 0.9 },
       ]}>
       <CircularProgress
-        backgroundColor={isNight ? 'rgba(255, 255, 255, 0.22)' : 'rgba(0, 0, 0, 0.12)'}
+        backgroundColor={isNight ? 'rgba(255, 255, 255, 0.22)' : 'rgba(173, 173, 173, 1)'}
         duration={650}
         fill={percentage}
         lineCap="round"
         rotation={0}
         size={84}
-        tintColor={isNight ? '#FFFFFF' : '#000000'}
+        tintColor={isNight ? '#FFFFFF' : '#9cffbcff'}
         width={7.5}>
         {() => (
           <View style={styles.centerTextRow}>
