@@ -2,17 +2,45 @@ import { Design, FontFamily } from '@/src/constants/design';
 import { checkinService } from '@/src/services/checkinService';
 import type { TaskCameraRouteParams } from '@/src/types/camera';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Alert, Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { Alert, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { cameraFrameHeight, cameraFrameWidth, cameraStyles, TaskCameraScaffold } from './TaskCameraScaffold';
 
+function normalizeImageUri(uri?: string | string[]): string | undefined {
+  if (!uri) return undefined;
+  const rawUri = Array.isArray(uri) ? uri[0] : uri;
+  if (!rawUri || typeof rawUri !== 'string') return undefined;
+
+  let decoded = rawUri;
+  try {
+    decoded = decodeURIComponent(rawUri);
+  } catch {
+    decoded = rawUri;
+  }
+
+  if (
+    !decoded.startsWith('file://') &&
+    !decoded.startsWith('content://') &&
+    !decoded.startsWith('http://') &&
+    !decoded.startsWith('https://') &&
+    !decoded.startsWith('data:') &&
+    decoded.startsWith('/')
+  ) {
+    return `file://${decoded}`;
+  }
+
+  return decoded;
+}
 
 export function TaskPhotoReviewScreen() {
   const router = useRouter();
-  const { imageUri, progressId: progressIdParam } = useLocalSearchParams<TaskCameraRouteParams & { imageUri?: string }>();
+  const { imageUri: rawImageUri, progressId: progressIdParam } = useLocalSearchParams<TaskCameraRouteParams & { imageUri?: string }>();
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+
+  const imageUri = useMemo(() => normalizeImageUri(rawImageUri), [rawImageUri]);
 
   const usePhoto = async () => {
     const progressId = Number(progressIdParam);
@@ -40,11 +68,10 @@ export function TaskPhotoReviewScreen() {
           <View style={styles.reviewBackground}>
             <View style={styles.reviewImageContainer}>
               <Image
-                resizeMode="cover"
+                cachePolicy="none"
+                contentFit="cover"
                 source={{ uri: imageUri }}
-                style={[
-                  styles.reviewImage
-                ]}
+                style={styles.reviewImage}
               />
             </View>
           </View>
@@ -83,6 +110,8 @@ export function TaskPhotoReviewScreen() {
 const styles = StyleSheet.create({
   reviewBackground: {
     flex: 1,
+    width: '100%',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -96,9 +125,8 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   reviewImage: {
-
     width: cameraFrameWidth,
-    height: '100%',
+    height: cameraFrameHeight + 30,
     alignSelf: 'center',
   },
   modalOverlay: {

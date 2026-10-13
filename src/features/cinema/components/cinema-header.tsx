@@ -1,8 +1,7 @@
-import React from "react";
-import { View, Text, Pressable, TextInput } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { SectionTabs } from "@/src/components/home/section-tabs";
 import { Design } from "@/src/constants/design";
+import { Ionicons } from "@expo/vector-icons";
+import { Pressable, Text, TextInput, View } from "react-native";
 import { styles } from "../cinema.styles";
 import type { CinemaHeaderProps } from "../types/cinema";
 

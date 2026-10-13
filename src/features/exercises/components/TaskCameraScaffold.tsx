@@ -54,7 +54,7 @@ export function TaskCameraScaffold({
         });
       }}
       style={cameraStyles.cameraContainer}>
-        {/* bo góc khúc này */}
+      {/* bo góc khúc này */}
       <View style={[StyleSheet.absoluteFill, cameraStyles.cameraOverlayContainer]} onLayout={measureFrame}>
         {background}
       </View>
@@ -140,5 +140,5 @@ export const cameraStyles = StyleSheet.create({
   retakeText: { color: '#FFF', fontWeight: '600', fontSize: 14 },
   usePhotoBtn: { flex: 1, backgroundColor: '#34A853', paddingVertical: 16, borderRadius: 24, marginLeft: 12, alignItems: 'center' },
   usePhotoText: { color: '#FFF', fontWeight: '600', fontSize: 14 },
-  emptyPreview: { backgroundColor: '#222' },
+  emptyPreview: { backgroundColor: '#000000ff' },
 });
