@@ -293,7 +293,7 @@ Quy tắc:
 
 - `app/settings.tsx` chỉ làm entry point cho Expo Router (`export { default } from "@/src/features/settings/settings-screen"`).
 - Giữ logic gọi service `authService`, `avatarService`, chọn ảnh đại diện và đăng xuất trong `use-settings.ts`.
-- `account-modal.tsx` xử lý bàn phím thông qua `KeyboardAvoidingView` với `behavior={Platform.OS === 'ios' ? 'padding' : 'height'}` và `keyboardVerticalOffset={0}`, co giãn tự động theo chiều cao khả dụng (`maxHeight: isKeyboardOpen ? '90%' : '85%'`). Kết hợp cùng `ref={scrollViewRef}` tự động cuộn đến `bioInput` khi focus, đảm bảo hiển thị hoàn hảo trên mọi kích thước màn hình Android (responsive) và iOS.
+- `account-modal.tsx` xử lý bàn phím thông qua `KeyboardAvoidingView` với `behavior={Platform.OS === 'android' ? 'padding' : 'height'}` và `keyboardVerticalOffset={0}`, co giãn tự động theo chiều cao khả dụng (`maxHeight: isKeyboardOpen ? '90%' : '85%'`). Kết hợp cùng `ref={scrollViewRef}` tự động cuộn đến `bioInput` khi focus, đảm bảo hiển thị hoàn hảo trên mọi kích thước màn hình Android (responsive) và android.
 - Logout xóa token/session hiện tại nhưng không xóa cache local của người dùng.
 
 ## Feature Mood (Cảm xúc & Chọn Task)
