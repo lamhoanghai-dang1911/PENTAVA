@@ -163,24 +163,4 @@ export const subscriptionService = {
       );
     }
   },
-
-  /**
-   * Kiểm tra trạng thái giao dịch mua gói cước theo mã giao dịch
-   * GET /api/shop/subscription/order-status/{transactionCode}
-   */
-  async getOrderStatus(
-    transactionCode: string,
-  ): Promise<import("@/src/types/api/subscription").SubscriptionOrderStatusResponse> {
-    try {
-      const response = await apiClient.get<
-        import("@/src/types/api/subscription").SubscriptionOrderStatusResponse
-      >(API_ENDPOINTS.SUBSCRIPTION.ORDER_STATUS(transactionCode));
-      return response.data;
-    } catch (error: any) {
-      throw createSubscriptionError(
-        error,
-        "Không thể kiểm tra trạng thái đơn hàng mua gói.",
-      );
-    }
-  },
 };

@@ -82,6 +82,12 @@ export function useSubscription(): UseSubscriptionResult {
     await fetchSubscriptionData();
   }, [fetchSubscriptionData]);
 
+  const subSnapshotRef = useRef<{
+    hasSub: boolean;
+    endDate: string | null;
+    planCode: string | null;
+  } | null>(null);
+
   useEffect(() => {
     void fetchSubscriptionData();
   }, [fetchSubscriptionData]);
@@ -99,6 +105,13 @@ export function useSubscription(): UseSubscriptionResult {
     setIsPurchasing(true);
     setStatusMessage(null);
     try {
+      // Lưu lại trạng thái gói cước hiện tại trước khi bắt đầu giao dịch
+      subSnapshotRef.current = {
+        hasSub: Boolean(mySubscription?.hasActiveSubscription),
+        endDate: mySubscription?.endDate ?? null,
+        planCode: mySubscription?.planCode ?? null,
+      };
+
       const result = await subscriptionService.initPurchase({
         planCode: selectedPlan.code,
       });
@@ -116,7 +129,7 @@ export function useSubscription(): UseSubscriptionResult {
     } finally {
       setIsPurchasing(false);
     }
-  }, [selectedPlan]);
+  }, [selectedPlan, mySubscription]);
 
   const checkStatus = useCallback(
     async (isManual = true) => {
@@ -128,32 +141,28 @@ export function useSubscription(): UseSubscriptionResult {
         setStatusMessage(null);
       }
       try {
-        let isSuccess = false;
-        try {
-          const order = await subscriptionService.getOrderStatus(
-            activeTransaction.transactionCode,
-          );
-          if (order.status === "SUCCESS") {
-            isSuccess = true;
-          }
-        } catch {
-          // Fallback kiểm tra qua thông tin my-subscription
-        }
-
         const updatedSub = await subscriptionService.getMySubscription();
         setMySubscription(updatedSub);
 
-        // Chỉ xác nhận thành công nếu đơn hàng có status SUCCESS hoặc lastTransactionCode khớp chính xác
-        if (
-          !isSuccess &&
-          updatedSub.lastTransactionCode &&
-          updatedSub.lastTransactionCode.toUpperCase() ===
-            activeTransaction.transactionCode.toUpperCase()
-        ) {
-          isSuccess = true;
-        }
+        const snapshot = subSnapshotRef.current;
+        // Chỉ xác nhận thành công nếu:
+        // 1. Trước đó chưa có gói -> giờ kích hoạt thành công đúng gói
+        // 2. Trước đó đã có gói -> gia hạn thành công (endDate thay đổi) hoặc đổi sang gói mới khác gói cũ
+        const isPurchasedPlanActive =
+          updatedSub.hasActiveSubscription &&
+          Boolean(
+            (!snapshot?.hasSub &&
+              updatedSub.planCode?.toUpperCase() ===
+                activeTransaction.planCode.toUpperCase()) ||
+              (snapshot?.hasSub &&
+                (updatedSub.planCode?.toUpperCase() !==
+                  snapshot.planCode?.toUpperCase() ||
+                  (updatedSub.endDate &&
+                    snapshot.endDate &&
+                    updatedSub.endDate !== snapshot.endDate))),
+          );
 
-        if (isSuccess) {
+        if (isPurchasedPlanActive) {
           setActiveTransaction(null);
           setStatusMessage(null);
           setNotificationModal({

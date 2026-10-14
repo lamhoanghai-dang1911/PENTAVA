@@ -71,8 +71,6 @@ export const API_ENDPOINTS = {
     CHECK_ENTITLEMENT: "/api/shop/subscription/entitlement/check",
     MOCK_CONFIRM: (transactionCode: string) =>
       `/api/shop/subscription/mock-confirm/${transactionCode}`,
-    ORDER_STATUS: (transactionCode: string) =>
-      `/api/shop/subscription/order-status/${transactionCode}`,
   },
   SKIN: {
     MY_AVATAR: "/api/skin/avatar/my-avatar",

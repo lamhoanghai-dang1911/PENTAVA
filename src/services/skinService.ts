@@ -11,7 +11,33 @@ import type {
 const AVATAR_CACHE_KEY = "skin:my-avatar";
 const INVENTORY_CACHE_KEY = "skin:inventory";
 
+type AvatarListener = (avatar: MyAvatarResponse) => void;
+const avatarListeners = new Set<AvatarListener>();
+
 export const skinService = {
+  /**
+   * Đăng ký lắng nghe sự kiện khi avatar thay đổi trang phục trong toàn app
+   */
+  subscribeAvatar(listener: AvatarListener): () => void {
+    avatarListeners.add(listener);
+    return () => {
+      avatarListeners.delete(listener);
+    };
+  },
+
+  /**
+   * Phát thông báo avatar đã được cập nhật đến tất cả các màn hình đang lắng nghe
+   */
+  notifyAvatarChanged(avatar: MyAvatarResponse): void {
+    avatarListeners.forEach((listener) => {
+      try {
+        listener(avatar);
+      } catch (err) {
+        console.error("Lỗi callback subscribeAvatar:", err);
+      }
+    });
+  },
+
   async getMyAvatar(forceRefresh = false): Promise<MyAvatarResponse> {
     return cacheManager.fetchWithCache(
       AVATAR_CACHE_KEY,
@@ -48,6 +74,7 @@ export const skinService = {
     );
     cacheManager.set(AVATAR_CACHE_KEY, response.data, 60000);
     cacheManager.invalidate(INVENTORY_CACHE_KEY);
+    this.notifyAvatarChanged(response.data);
     return response.data;
   },
 
@@ -59,6 +86,7 @@ export const skinService = {
     );
     cacheManager.set(AVATAR_CACHE_KEY, response.data, 60000);
     cacheManager.invalidate(INVENTORY_CACHE_KEY);
+    this.notifyAvatarChanged(response.data);
     return response.data;
   },
 };
