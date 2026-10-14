@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, InteractionManager, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './home-screen.styles';
 
@@ -57,38 +57,58 @@ export default function HomeScreen() {
   const [notificationError, setNotificationError] = useState<string | null>(null);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
   const isLoadingNotificationsRef = useRef(false);
-
-  const [toggleKey, setToggleKey] = useState(0);
+  const hasShownStreakFrozenAlertRef = useRef(false);
+  const lastFetchTimeRef = useRef(0);
+  const toggleKey = 0;
 
   useFocusEffect(
     useCallback(() => {
       let isFocused = true;
-      setToggleKey((prev) => prev + 1);
+      const now = Date.now();
+      // Không gọi lại dồn dập 4 API nếu vừa mới focus trong vòng 15 giây
+      if (now - lastFetchTimeRef.current < 15000 && lastFetchTimeRef.current > 0) {
+        return;
+      }
+      lastFetchTimeRef.current = now;
 
-      void skinService
-        .getMyAvatar()
-        .then((avatar) => {
-          if (isFocused) {
-            setAvatarLayers(avatar.layers ?? []);
-          }
-        })
-        .catch(() => {
-          if (isFocused) {
-            setAvatarLayers(null);
-          }
-        });
+      // Gộp các API chính vào 1 luồng song song duy nhất (Goal, Streak, Avatar, Wallet)
+      void Promise.allSettled([
+        onboardingService.getCurrentGoal(),
+        onboardingService.getCurrentStreak(),
+        skinService.getMyAvatar(),
+        shopService.getMyWallet(),
+      ]).then(([goalRes, streakRes, avatarRes, walletRes]) => {
+        if (!isFocused) return;
 
-      // Tự động làm mới Goal và Streak khi quay lại màn hình Home (ví dụ sau khi mua gói hoặc đổi mục tiêu)
-      void Promise.all([onboardingService.getCurrentGoal(), onboardingService.getCurrentStreak()])
-        .then(([goalResponse, streakResponse]) => {
-          if (isFocused) {
-            setCurrentGoalId(goalResponse.currentGoal?.goalId ?? null);
-            setCurrentGoal(goalResponse.currentGoal ?? null);
-            setCurrentStreak(streakResponse.streak?.currentStreak ?? 0);
-            setStreakData(streakResponse.streak ?? null);
+        if (goalRes.status === 'fulfilled' && goalRes.value) {
+          setCurrentGoalId(goalRes.value.currentGoal?.goalId ?? null);
+          setCurrentGoal(goalRes.value.currentGoal ?? null);
+        }
+
+        if (streakRes.status === 'fulfilled' && streakRes.value?.streak) {
+          const streak = streakRes.value.streak;
+          setCurrentStreak(streak.currentStreak ?? 0);
+          setStreakData(streak);
+          if (streak.streakFrozenYesterday && !hasShownStreakFrozenAlertRef.current) {
+            hasShownStreakFrozenAlertRef.current = true;
+            Alert.alert(
+              'Khiên Bảo Vệ Đã Kích Hoạt ❄️',
+              'Chuỗi Streak của bạn đã được đóng băng và bảo vệ thành công cho ngày hôm qua!',
+            );
           }
-        })
-        .catch(() => { });
+        }
+
+        if (avatarRes.status === 'fulfilled') {
+          setAvatarLayers(avatarRes.value.layers ?? []);
+        } else {
+          setAvatarLayers(null);
+        }
+
+        if (walletRes.status === 'fulfilled' && walletRes.value) {
+          setRubyBalance(walletRes.value.rubyBalance);
+          setIsRubyBalanceLoading(false);
+        }
+      });
 
       return () => {
         isFocused = false;
@@ -98,6 +118,8 @@ export default function HomeScreen() {
 
   useEffect(() => {
     let isMounted = true;
+
+    // 1. Tải tên hiển thị profile
     void authService
       .getProfile()
       .then((profile) => {
@@ -108,12 +130,38 @@ export default function HomeScreen() {
       .catch(() => {
         // Fallback silently to onboarding name
       });
+
+    // 2. Chuyển prefetch Shop sang chế độ Idle (3.5 giây sau khi mở màn hình và sau tương tác)
+    const idleTimer = setTimeout(() => {
+      InteractionManager.runAfterInteractions(() => {
+        if (!isMounted) return;
+        void shopService
+          .getItems()
+          .then((catalog) => {
+            const urls: string[] = [];
+            catalog.forEach((item) => {
+              if (item.imageUrl) urls.push(item.imageUrl);
+              if (item.thumbnailUrl) urls.push(item.thumbnailUrl);
+              if (item.itemBackgroundUrl) urls.push(item.itemBackgroundUrl);
+              item.thumbnailLayers?.forEach((layer) => {
+                if (layer) urls.push(layer);
+              });
+            });
+            if (urls.length > 0) {
+              void Image.prefetch(Array.from(new Set(urls)));
+            }
+          })
+          .catch(() => { });
+      });
+    }, 1200);
+
     return () => {
       isMounted = false;
+      clearTimeout(idleTimer);
     };
   }, []);
 
-  const toggleNotifications = async () => {
+  const toggleNotifications = useCallback(async () => {
     const nextState = !isNotificationsVisible;
     setIsNotificationsVisible(nextState);
     if (!nextState) return;
@@ -145,9 +193,9 @@ export default function HomeScreen() {
     } finally {
       isLoadingNotificationsRef.current = false;
     }
-  };
+  }, [isNotificationsVisible]);
 
-  const markNotificationAsRead = async (notification: SocialNotification) => {
+  const markNotificationAsRead = useCallback(async (notification: SocialNotification) => {
     if (notification.id === undefined || notification.read !== false) return;
     try {
       await socialService.markNotificationAsRead(notification.id);
@@ -158,9 +206,9 @@ export default function HomeScreen() {
     } catch (error) {
       setNotificationError(error instanceof Error ? error.message : 'Không thể đánh dấu thông báo đã đọc.');
     }
-  };
+  }, []);
 
-  const markAllNotificationsAsRead = async () => {
+  const markAllNotificationsAsRead = useCallback(async () => {
     try {
       await socialService.markAllNotificationsAsRead();
       setNotifications((current) => current.map((notification) => ({ ...notification, read: true })));
@@ -168,74 +216,15 @@ export default function HomeScreen() {
     } catch (error) {
       setNotificationError(error instanceof Error ? error.message : 'Không thể đánh dấu tất cả thông báo đã đọc.');
     }
-  };
-
-  useEffect(() => {
-    let isMounted = true;
-
-    Promise.all([onboardingService.getCurrentGoal(), onboardingService.getCurrentStreak()])
-      .then(([goalResponse, streakResponse]) => {
-        if (isMounted) {
-          setCurrentGoalId(goalResponse.currentGoal?.goalId ?? null);
-          setCurrentStreak(streakResponse.streak?.currentStreak ?? 0);
-          setStreakData(streakResponse.streak ?? null);
-          if (streakResponse.streak?.streakFrozenYesterday) {
-            Alert.alert(
-              'Khiên Bảo Vệ Đã Kích Hoạt ❄️',
-              'Chuỗi Streak của bạn đã được đóng băng và bảo vệ thành công cho ngày hôm qua!',
-            );
-          }
-        }
-      })
-      .catch((error: Error) => {
-        if (isMounted) {
-          Alert.alert('Không thể tải mục tiêu', error.message);
-        }
-      });
-
-    void shopService
-      .getMyWallet()
-      .then((wallet) => {
-        if (isMounted) {
-          setRubyBalance(wallet.rubyBalance);
-        }
-      })
-      .catch((error: Error) => {
-        if (isMounted) {
-          Alert.alert('Không thể tải số dư Ruby', error.message);
-        }
-      })
-      .finally(() => {
-        if (isMounted) {
-          setIsRubyBalanceLoading(false);
-        }
-      });
-
-    // Background prefetch shop catalog & images so shop opens instantaneously
-    void shopService
-      .getItems()
-      .then((catalog) => {
-        const urls: string[] = [];
-        catalog.forEach((item) => {
-          if (item.imageUrl) urls.push(item.imageUrl);
-          if (item.thumbnailUrl) urls.push(item.thumbnailUrl);
-          if (item.itemBackgroundUrl) urls.push(item.itemBackgroundUrl);
-          item.thumbnailLayers?.forEach((layer) => {
-            if (layer) urls.push(layer);
-          });
-        });
-        if (urls.length > 0) {
-          void Image.prefetch(Array.from(new Set(urls)));
-        }
-      })
-      .catch(() => { });
-
-    return () => {
-      isMounted = false;
-    };
   }, []);
 
-  const handleExecuteGoal = async () => {
+  const handleChooseNewTasks = useCallback(() => {
+    if (!currentGoalId) return;
+    setIsDailyStatusVisible(false);
+    router.push({ pathname: '/mood', params: { goalId: String(currentGoalId) } } as any);
+  }, [currentGoalId]);
+
+  const handleExecuteGoal = useCallback(async () => {
     let goalId = currentGoalId;
     if (!goalId) {
       try {
@@ -252,6 +241,25 @@ export default function HomeScreen() {
     if (!goalId) {
       setIsNoGoalModalVisible(true);
       return;
+    }
+
+    // ⚡ Fast path 1: Nếu state đã có nhiệm vụ -> Chuyển màn hình ngay trong 0ms!
+    if (dailyStatus?.hasConfirmedToday || (dailyStatus?.todayTasks && dailyStatus.todayTasks.length > 0)) {
+      router.push('/daily-tasks');
+      return;
+    }
+
+    // ⚡ Fast path 2: Kiểm tra nhanh cache local
+    try {
+      const userId = await getCurrentUserId();
+      const cached = await getCachedDailyStatus(userId, goalId);
+      if (cached && (cached.hasConfirmedToday || (cached.todayTasks && cached.todayTasks.length > 0))) {
+        setDailyStatus(cached);
+        router.push('/daily-tasks');
+        return;
+      }
+    } catch {
+      // ignore
     }
 
     setIsDailyStatusLoading(true);
@@ -329,9 +337,9 @@ export default function HomeScreen() {
     } finally {
       setIsDailyStatusLoading(false);
     }
-  };
+  }, [currentGoal, currentGoalId, handleChooseNewTasks]);
 
-  const handleKeepYesterdayTasks = async () => {
+  const handleKeepYesterdayTasks = useCallback(async () => {
     if (!currentGoalId || !dailyStatus?.yesterdayTasks.length) return;
 
     setIsConfirmingDailyTasks(true);
@@ -356,13 +364,79 @@ export default function HomeScreen() {
     } finally {
       setIsConfirmingDailyTasks(false);
     }
-  };
+  }, [currentGoalId, dailyStatus?.yesterdayTasks]);
 
-  const handleChooseNewTasks = () => {
-    if (!currentGoalId) return;
+  const handleOpenRubyTopup = useCallback(() => {
+    router.push('/ruby-topup' as any);
+  }, []);
+
+  const handleOpenSettings = useCallback(() => {
+    router.push('/settings' as any);
+  }, []);
+
+  const handleOpenStreakFreeze = useCallback(() => {
+    setIsStreakFreezeVisible(true);
+  }, []);
+
+  const handleCloseStreakFreeze = useCallback(() => {
+    setIsStreakFreezeVisible(false);
+  }, []);
+
+  const handleToggleImmersiveView = useCallback(() => {
+    setIsImmersiveView((prev) => !prev);
+  }, []);
+
+  const handleExitImmersiveView = useCallback(() => {
+    setIsImmersiveView(false);
+  }, []);
+
+  const handleOpenCinema = useCallback(() => {
+    router.push('/cinema');
+  }, []);
+
+  const handleOpenCustomRoadmap = useCallback(() => {
+    router.push('/custom-roadmap' as any);
+  }, []);
+
+  const handleOpenCommunity = useCallback(() => {
+    router.push('/community');
+  }, []);
+
+  const handleOpenWardrobe = useCallback(() => {
+    router.push('/wardrobe' as any);
+  }, []);
+
+  const handleOpenShop = useCallback(() => {
+    setIsShopVisible(true);
+  }, []);
+
+  const handleCloseShop = useCallback(() => {
+    setIsShopVisible(false);
+  }, []);
+
+  const handleCloseDailyStatus = useCallback(() => {
     setIsDailyStatusVisible(false);
-    router.push({ pathname: '/mood', params: { goalId: String(currentGoalId) } } as any);
-  };
+  }, []);
+
+  const handleCloseInsufficientRuby = useCallback(() => {
+    setInsufficientRubyItem(null);
+  }, []);
+
+  const handleClosePurchaseSuccess = useCallback(() => {
+    setPurchasedShopItem(null);
+  }, []);
+
+  const handleTopUpRuby = useCallback(() => {
+    setInsufficientRubyItem(null);
+    router.push('/ruby-topup');
+  }, []);
+
+  const handleOpenFriendRequests = useCallback(() => {
+    setIsNotificationsVisible(false);
+    router.push('/friend-requests');
+  }, []);
+
+  const handleNoop = useCallback(() => {}, []);
 
   const handleWalletBalanceChange = useCallback((balance: number) => {
     setRubyBalance(balance);
@@ -383,7 +457,11 @@ export default function HomeScreen() {
       <DayNightBackground isNight={isNight} />
       <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <ScrollView
+          bounces={false}
           contentContainerStyle={[styles.scrollContent, isImmersiveView && styles.scrollContentImmersive]}
+          keyboardShouldPersistTaps="handled"
+          overScrollMode="never"
+          scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}>
           <HomeHeader
             currentStreak={currentStreak}
@@ -399,12 +477,12 @@ export default function HomeScreen() {
                 : 0
             }
             onCycleTheme={cycleMode}
-            onOpenRubyTopup={() => router.push('/ruby-topup' as any)}
-            onOpenSettings={() => router.push('/settings' as any)}
-            onOpenStreakFreeze={() => setIsStreakFreezeVisible(true)}
+            onOpenRubyTopup={handleOpenRubyTopup}
+            onOpenSettings={handleOpenSettings}
+            onOpenStreakFreeze={handleOpenStreakFreeze}
             onToggleDayNight={toggleDayNight}
-            onToggleImmersiveView={() => setIsImmersiveView((prev) => !prev)}
-            onToggleNotifications={() => void toggleNotifications()}
+            onToggleImmersiveView={handleToggleImmersiveView}
+            onToggleNotifications={toggleNotifications}
             rubyBalance={rubyBalance}
             themeMode={themeMode}
             unreadNotificationCount={unreadNotificationCount}
@@ -415,36 +493,35 @@ export default function HomeScreen() {
             currentGoalId={currentGoalId}
             isImmersiveView={isImmersiveView}
             isNight={isNight}
-            onExitImmersiveView={() => setIsImmersiveView(false)}
-            onOpenCinema={() => router.push('/cinema')}
-            onOpenCustomRoadmap={() => router.push('/custom-roadmap' as any)}
+            onExitImmersiveView={handleExitImmersiveView}
+            onOpenCinema={handleOpenCinema}
+            onOpenCustomRoadmap={handleOpenCustomRoadmap}
             onOpenTasks={handleExecuteGoal}
             toggleKey={toggleKey}
           />
         </ScrollView>
 
-        <HomeNotificationsModal
-          isVisible={isNotificationsVisible}
-          notificationError={notificationError}
-          notifications={notifications}
-          onMarkAllAsRead={() => void markAllNotificationsAsRead()}
-          onMarkAsRead={(notification) => void markNotificationAsRead(notification)}
-          onOpenFriendRequests={() => {
-            setIsNotificationsVisible(false);
-            router.push('/friend-requests');
-          }}
-          onToggle={() => void toggleNotifications()}
-          unreadNotificationCount={unreadNotificationCount}
-        />
+        {isNotificationsVisible && (
+          <HomeNotificationsModal
+            isVisible={isNotificationsVisible}
+            notificationError={notificationError}
+            notifications={notifications}
+            onMarkAllAsRead={markAllNotificationsAsRead}
+            onMarkAsRead={markNotificationAsRead}
+            onOpenFriendRequests={handleOpenFriendRequests}
+            onToggle={toggleNotifications}
+            unreadNotificationCount={unreadNotificationCount}
+          />
+        )}
 
         {!isImmersiveView && (
           <HomeBottomBar
             isNight={isNight}
-            onOpenCommunity={() => router.push('/community')}
-            onOpenHome={() => { }}
-            onOpenSettings={() => router.push('/settings' as any)}
-            onOpenShop={() => setIsShopVisible(true)}
-            onOpenWardrobe={() => router.push('/wardrobe' as any)}
+            onOpenCommunity={handleOpenCommunity}
+            onOpenHome={handleNoop}
+            onOpenSettings={handleOpenSettings}
+            onOpenShop={handleOpenShop}
+            onOpenWardrobe={handleOpenWardrobe}
           />
         )}
 
@@ -456,70 +533,70 @@ export default function HomeScreen() {
           isShopVisible={isShopVisible}
           onBalanceChange={handleWalletBalanceChange}
           onChooseNewTasks={handleChooseNewTasks}
-          onCloseDailyStatus={() => setIsDailyStatusVisible(false)}
-          onCloseInsufficientRuby={() => setInsufficientRubyItem(null)}
-          onClosePurchaseSuccess={() => setPurchasedShopItem(null)}
-          onCloseShop={() => setIsShopVisible(false)}
+          onCloseDailyStatus={handleCloseDailyStatus}
+          onCloseInsufficientRuby={handleCloseInsufficientRuby}
+          onClosePurchaseSuccess={handleClosePurchaseSuccess}
+          onCloseShop={handleCloseShop}
           onInsufficientRuby={handleInsufficientRuby}
           onKeepYesterdayTasks={handleKeepYesterdayTasks}
           onPurchaseSuccess={handleShopPurchaseSuccess}
-          onTopUpRuby={() => {
-            setInsufficientRubyItem(null);
-            router.push('/ruby-topup');
-          }}
+          onTopUpRuby={handleTopUpRuby}
           purchasedShopItem={purchasedShopItem}
           rubyBalance={rubyBalance}
           yesterdayTasks={dailyStatus?.yesterdayTasks ?? []}
         />
 
-        <StreakFreezeModal
-          freezesUsedThisMonth={streakData?.freezesUsedThisMonth ?? 0}
-          hasStreakProtection={Boolean(streakData?.hasStreakProtection)}
-          maxFreezesPerMonth={
-            streakData?.hasStreakProtection
-              ? (streakData?.maxFreezesPerMonth ?? 2)
-              : 0
-          }
-          onClose={() => setIsStreakFreezeVisible(false)}
-          streakFrozenYesterday={streakData?.streakFrozenYesterday}
-          visible={isStreakFreezeVisible}
-        />
+        {isStreakFreezeVisible && (
+          <StreakFreezeModal
+            freezesUsedThisMonth={streakData?.freezesUsedThisMonth ?? 0}
+            hasStreakProtection={Boolean(streakData?.hasStreakProtection)}
+            maxFreezesPerMonth={
+              streakData?.hasStreakProtection
+                ? (streakData?.maxFreezesPerMonth ?? 2)
+                : 0
+            }
+            onClose={handleCloseStreakFreeze}
+            streakFrozenYesterday={streakData?.streakFrozenYesterday}
+            visible={isStreakFreezeVisible}
+          />
+        )}
 
         {/* Modal: Bạn Chưa Có Mục Tiêu Hiện Tại */}
-        <Modal
-          animationType="fade"
-          onRequestClose={() => setIsNoGoalModalVisible(false)}
-          transparent
-          visible={isNoGoalModalVisible}
-        >
-          <Pressable style={styles.noGoalModalOverlay} onPress={() => setIsNoGoalModalVisible(false)}>
-            <Pressable style={styles.noGoalModalCard} onPress={(e) => e.stopPropagation()}>
-              <View style={styles.noGoalIconCircle}>
-                <Ionicons color="#3A8157" name="compass-outline" size={36} />
-              </View>
-              <Text style={styles.noGoalModalTitle}>Bạn Chưa Có Mục Tiêu Hiện Tại</Text>
-              <Text style={styles.noGoalModalDesc}>
-                Hiện tại bạn chưa có mục tiêu rèn luyện nào đang thực hiện. Hãy chọn mục tiêu mới để cùng Luna bắt đầu rèn luyện mỗi ngày nhé!
-              </Text>
-              <Pressable
-                style={styles.noGoalConfirmBtn}
-                onPress={() => {
-                  setIsNoGoalModalVisible(false);
-                  router.push('/onboarding/goals');
-                }}
-              >
-                {/* <Ionicons color="#FFFFFF" name="sparkles-outline" size={18} /> */}
-                <Text style={styles.noGoalConfirmBtnText}>Khảo Sát & Chọn Mục Tiêu</Text>
-              </Pressable>
-              <Pressable
-                style={styles.noGoalCancelBtn}
-                onPress={() => setIsNoGoalModalVisible(false)}
-              >
-                <Text style={styles.noGoalCancelBtnText}>Để sau</Text>
+        {isNoGoalModalVisible && (
+          <Modal
+            animationType="fade"
+            onRequestClose={() => setIsNoGoalModalVisible(false)}
+            transparent
+            visible={isNoGoalModalVisible}
+          >
+            <Pressable style={styles.noGoalModalOverlay} onPress={() => setIsNoGoalModalVisible(false)}>
+              <Pressable style={styles.noGoalModalCard} onPress={(e) => e.stopPropagation()}>
+                <View style={styles.noGoalIconCircle}>
+                  <Ionicons color="#3A8157" name="compass-outline" size={36} />
+                </View>
+                <Text style={styles.noGoalModalTitle}>Bạn Chưa Có Mục Tiêu Hiện Tại</Text>
+                <Text style={styles.noGoalModalDesc}>
+                  Hiện tại bạn chưa có mục tiêu rèn luyện nào đang thực hiện. Hãy chọn mục tiêu mới để cùng Luna bắt đầu rèn luyện mỗi ngày nhé!
+                </Text>
+                <Pressable
+                  style={styles.noGoalConfirmBtn}
+                  onPress={() => {
+                    setIsNoGoalModalVisible(false);
+                    router.push('/onboarding/goals');
+                  }}
+                >
+                  <Text style={styles.noGoalConfirmBtnText}>Khảo Sát & Chọn Mục Tiêu</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.noGoalCancelBtn}
+                  onPress={() => setIsNoGoalModalVisible(false)}
+                >
+                  <Text style={styles.noGoalCancelBtnText}>Để sau</Text>
+                </Pressable>
               </Pressable>
             </Pressable>
-          </Pressable>
-        </Modal>
+          </Modal>
+        )}
       </SafeAreaView>
     </View>
   );

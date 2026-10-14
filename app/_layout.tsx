@@ -14,6 +14,10 @@ import { useEffect } from 'react';
 import { ActivityIndicator, View, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import 'react-native-reanimated';
+import { enableFreeze, enableScreens } from 'react-native-screens';
+
+enableScreens(true);
+enableFreeze(true);
 
 // Prevent splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -74,24 +78,35 @@ function RootStack() {
   }
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        animation: 'slide_from_right',
+        animationDuration: 220,
+        freezeOnBlur: true,
+      }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="login" />
       <Stack.Screen name="register" />
       <Stack.Screen name="verify-otp" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="daily-tasks" options={{ animation: 'fade' }} />
-      <Stack.Screen name="cinema" options={{ animation: 'fade' }} />
-      <Stack.Screen name="social-post" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="social-profile" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="friend-requests" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="settings" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="membership" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="payment" options={{ animation: 'slide_from_right' }} />
-      <Stack.Screen name="ruby-topup" options={{ animation: 'fade' }} />
-      <Stack.Screen name="payment-success" options={{ animation: 'fade' }} />
-      <Stack.Screen name="payment-failed" options={{ animation: 'fade' }} />
+      <Stack.Screen name="daily-tasks" />
+      <Stack.Screen name="cinema" />
+      <Stack.Screen name="wardrobe" />
+      <Stack.Screen name="community" />
+      <Stack.Screen name="mood" />
+      <Stack.Screen name="custom-roadmap" />
+      <Stack.Screen name="diary" />
+      <Stack.Screen name="social-post" />
+      <Stack.Screen name="social-profile" />
+      <Stack.Screen name="friend-requests" />
+      <Stack.Screen name="settings" />
+      <Stack.Screen name="membership" />
+      <Stack.Screen name="payment" />
+      <Stack.Screen name="ruby-topup" />
+      <Stack.Screen name="payment-success" />
+      <Stack.Screen name="payment-failed" />
       <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
     </Stack>
   );

@@ -80,7 +80,7 @@ export default function VerifyOtpScreen() {
                 otpCode: cleanOtp,
             });
 
-('VERIFY OTP SUCCESS:', result);
+            console.log('VERIFY OTP SUCCESS:', result);
             showModal(
                 'Xác thực thành công',
                 'Vui lòng đăng nhập lại để tiếp tục.',

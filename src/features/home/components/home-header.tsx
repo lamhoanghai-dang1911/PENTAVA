@@ -2,7 +2,7 @@ import { Design } from '@/src/constants/design';
 import type { ThemeMode } from '@/src/hooks/use-day-night-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
+import { memo, useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Animated, {
   Easing,
@@ -35,7 +35,7 @@ type HomeHeaderProps = {
   onOpenRubyTopup: () => void;
 };
 
-export function HomeHeader({
+export const HomeHeader = memo(function HomeHeader({
   displayName,
   currentStreak,
   rubyBalance,
@@ -216,4 +216,4 @@ export function HomeHeader({
       </View>
     </View>
   );
-}
+});

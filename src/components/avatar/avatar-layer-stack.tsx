@@ -1,4 +1,6 @@
+import React from 'react';
 import type { AvatarLayer } from '@/src/types/api/skin';
+import { useFocusEffect } from 'expo-router';
 import { Image } from 'expo-image';
 import LottieView from 'lottie-react-native';
 import { StyleSheet, View } from 'react-native';
@@ -7,11 +9,25 @@ type AvatarLayerStackProps = {
   layers: AvatarLayer[];
 };
 
-function BaseAvatarLayer({ layer }: { layer: AvatarLayer }) {
+const BaseAvatarLayer = React.memo(function BaseAvatarLayer({ layer }: { layer: AvatarLayer }) {
+  const [isFocused, setIsFocused] = React.useState(true);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setIsFocused(true);
+      return () => {
+        setIsFocused(false);
+      };
+    }, []),
+  );
+
   return (
     <LottieView
-      autoPlay
-      loop
+      autoPlay={isFocused}
+      loop={isFocused}
+      renderMode="HARDWARE"
+      hardwareAccelerationAndroid
+      speed={1}
       onAnimationFailure={(error) => {
         console.error('Unable to load the avatar Lottie animation.', error);
       }}
@@ -19,7 +35,6 @@ function BaseAvatarLayer({ layer }: { layer: AvatarLayer }) {
       source={require('@/assets/avatar/pentava_cat_idle1.json')}
       style={[
         StyleSheet.absoluteFill,
-
         {
           zIndex: layer.layerOrder,
         },
@@ -34,9 +49,9 @@ function BaseAvatarLayer({ layer }: { layer: AvatarLayer }) {
       }}
     />
   );
-}
+});
 
-function AccessoryAvatarLayer({ layer }: { layer: AvatarLayer }) {
+const AccessoryAvatarLayer = React.memo(function AccessoryAvatarLayer({ layer }: { layer: AvatarLayer }) {
   return (
     <Image
       cachePolicy="memory-disk"
@@ -53,12 +68,12 @@ function AccessoryAvatarLayer({ layer }: { layer: AvatarLayer }) {
       ]}
     />
   );
-}
+});
 
-export function AvatarLayerStack({ layers }: AvatarLayerStackProps) {
-  const orderedLayers = [...layers].sort(
-    (left, right) => left.layerOrder - right.layerOrder,
-  );
+export const AvatarLayerStack = React.memo(function AvatarLayerStack({ layers }: AvatarLayerStackProps) {
+  const orderedLayers = React.useMemo(() => {
+    return [...layers].sort((left, right) => left.layerOrder - right.layerOrder);
+  }, [layers]);
 
   return (
     <View pointerEvents="none" style={StyleSheet.absoluteFill}>
@@ -71,4 +86,5 @@ export function AvatarLayerStack({ layers }: AvatarLayerStackProps) {
       )}
     </View>
   );
-}
+});
+

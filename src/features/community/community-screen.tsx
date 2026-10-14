@@ -56,7 +56,13 @@ export default function CommunityScreen() {
         style={styles.flex}
       >
         <CommunityHeader
-          onBack={() => router.replace("/(tabs)")}
+          onBack={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace("/(tabs)");
+            }
+          }}
           onFriendRequestsPress={() => router.push("/friend-requests")}
         />
 

@@ -130,6 +130,14 @@ export function useDailyTasks({
           (task) => task.progressId != null,
         );
 
+        // SWR: Hiển thị ngay lập tức từ cache trong 0ms trước khi chờ network
+        if (isActive && cachedStatus && cacheHasProgressIds) {
+          setCurrentGoal(goalResponse.currentGoal ?? null);
+          setCurrentGoalId(goalId);
+          setDailyStatus(cachedStatus);
+          setIsDailyStatusLoaded(true);
+        }
+
         const statusResponse = await taskService.getDailyTaskStatus(goalId);
         if (isActive) {
           setCurrentGoal(goalResponse.currentGoal ?? null);

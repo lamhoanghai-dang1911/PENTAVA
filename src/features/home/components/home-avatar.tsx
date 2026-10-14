@@ -1,5 +1,5 @@
+import React, { useEffect } from 'react';
 import type { AvatarLayer } from '@/src/types/api/skin';
-import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
   Easing,
@@ -27,7 +27,7 @@ type HomeAvatarProps = {
   isImmersiveView: boolean;
 };
 
-export function HomeAvatar({ avatarLayers, isImmersiveView }: HomeAvatarProps) {
+export const HomeAvatar = React.memo(function HomeAvatar({ avatarLayers, isImmersiveView }: HomeAvatarProps) {
   const mascotFloatY = useSharedValue(0);
   const mascotScale = useSharedValue(1);
 
@@ -69,4 +69,4 @@ export function HomeAvatar({ avatarLayers, isImmersiveView }: HomeAvatarProps) {
       </Animated.View>
     </View>
   );
-}
+});

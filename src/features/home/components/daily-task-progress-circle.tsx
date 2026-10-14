@@ -1,9 +1,11 @@
 import { CircularProgress } from '@/src/components/ui/circular-progress';
 import { FontFamily } from '@/src/constants/design';
+import { getCurrentUserId } from '@/src/services/authStorage';
+import { getCachedDailyStatus } from '@/src/services/taskCacheStorage';
 import { taskService } from '@/src/services/taskService';
 import * as Haptics from 'expo-haptics';
 import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { Pressable, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 type DailyTaskProgressCircleProps = {
@@ -13,7 +15,7 @@ type DailyTaskProgressCircleProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export function DailyTaskProgressCircle({
+export const DailyTaskProgressCircle = memo(function DailyTaskProgressCircle({
   goalId,
   isNight = false,
   onPress,
@@ -28,6 +30,23 @@ export function DailyTaskProgressCircle({
     }
 
     let isMounted = true;
+
+    // SWR: Kiểm tra cache trước để hiện tiến độ ngay lập tức (0ms)
+    void getCurrentUserId()
+      .then((userId) => {
+        if (!isMounted || !userId) return;
+        return getCachedDailyStatus(userId, goalId);
+      })
+      .then((cached) => {
+        if (!isMounted || !cached) return;
+        const tasks = cached.todayTasks ?? [];
+        const completed = tasks.filter((t) => t.isCompleted).length;
+        const total = tasks.length > 0 ? tasks.length : 5;
+        const computedPercent = Math.min(100, Math.round((completed / (total || 5)) * 100));
+        setPercentage(computedPercent);
+      })
+      .catch(() => {});
+
     taskService
       .getDailyTaskStatus(goalId)
       .then((response) => {
@@ -41,7 +60,6 @@ export function DailyTaskProgressCircle({
       })
       .catch(() => {
         if (!isMounted) return;
-        setPercentage(0);
       });
 
     return () => {
@@ -99,7 +117,7 @@ export function DailyTaskProgressCircle({
       </CircularProgress>
     </Pressable>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

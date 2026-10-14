@@ -7,7 +7,7 @@ type SectionTabsProps = {
   active: ToggleTab;
 };
 
-export function SectionTabs({ active }: SectionTabsProps) {
+export const SectionTabs = React.memo(function SectionTabs({ active }: SectionTabsProps) {
   return (
     <View style={styles.container}>
       <AnimatedTogglePill
@@ -26,7 +26,7 @@ export function SectionTabs({ active }: SectionTabsProps) {
       />
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

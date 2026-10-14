@@ -1,6 +1,7 @@
 import { Design, FontFamily } from "@/src/constants/design";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { memo } from "react";
 import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 
 type StreakFreezeModalProps = {
@@ -12,7 +13,7 @@ type StreakFreezeModalProps = {
   streakFrozenYesterday?: boolean;
 };
 
-export function StreakFreezeModal({
+export const StreakFreezeModal = memo(function StreakFreezeModal({
   visible,
   onClose,
   hasStreakProtection,
@@ -132,7 +133,7 @@ export function StreakFreezeModal({
       </Pressable>
     </Modal>
   );
-}
+});
 
 const styles = StyleSheet.create({
   overlay: {

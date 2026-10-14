@@ -1,6 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Animated, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import React, { useEffect } from 'react';
+import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import Animated, {
+  Easing,
+  useAnimatedProps,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export type CircularProgressProps = {
   size: number;
@@ -15,7 +23,7 @@ export type CircularProgressProps = {
   style?: StyleProp<ViewStyle>;
 };
 
-export function CircularProgress({
+export const CircularProgress = React.memo(function CircularProgress({
   size,
   width,
   fill,
@@ -27,36 +35,28 @@ export function CircularProgress({
   children,
   style,
 }: CircularProgressProps) {
-  const animatedFill = useRef(new Animated.Value(fill)).current;
-  const [currentFill, setCurrentFill] = useState(fill);
+  const animatedFill = useSharedValue(fill);
 
   useEffect(() => {
-    const animation = Animated.timing(animatedFill, {
-      toValue: fill,
+    animatedFill.value = withTiming(fill, {
       duration,
-      useNativeDriver: false,
+      easing: Easing.out(Easing.cubic),
     });
-
-    const listenerId = animatedFill.addListener(({ value }) => {
-      setCurrentFill(value);
-    });
-
-    animation.start();
-
-    return () => {
-      animatedFill.removeListener(listenerId);
-      animation.stop();
-    };
   }, [fill, duration, animatedFill]);
 
-  const clampedFill = Math.min(100, Math.max(0, currentFill));
   const radius = (size - width) / 2;
   const cx = size / 2;
   const cy = size / 2;
   const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (circumference * clampedFill) / 100;
 
-  // Bắt đầu vẽ từ 12h (-90deg) và hỗ trợ góc xoay tuỳ chọn
+  const animatedCircleProps = useAnimatedProps(() => {
+    const clampedFill = Math.min(100, Math.max(0, animatedFill.value));
+    const strokeDashoffset = circumference - (circumference * clampedFill) / 100;
+    return {
+      strokeDashoffset,
+    };
+  });
+
   const svgRotation = -90 + rotation;
 
   return (
@@ -76,14 +76,14 @@ export function CircularProgress({
             strokeWidth={width}
           />
         ) : null}
-        <Circle
+        <AnimatedCircle
+          animatedProps={animatedCircleProps}
           cx={cx}
           cy={cy}
           fill="none"
           r={radius}
           stroke={tintColor}
           strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
           strokeLinecap={lineCap}
           strokeWidth={width}
         />
@@ -91,12 +91,12 @@ export function CircularProgress({
 
       {children ? (
         <View pointerEvents="box-none" style={[StyleSheet.absoluteFill, styles.childrenContainer]}>
-          {typeof children === 'function' ? children(currentFill) : children}
+          {typeof children === 'function' ? children(fill) : children}
         </View>
       ) : null}
     </View>
   );
-}
+});
 
 export const AnimatedCircularProgress = CircularProgress;
 export default CircularProgress;

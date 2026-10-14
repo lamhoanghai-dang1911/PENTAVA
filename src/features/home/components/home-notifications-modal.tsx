@@ -1,6 +1,7 @@
 import { Design } from '@/src/constants/design';
 import type { SocialNotification } from '@/src/services/socialService';
 import { Ionicons } from '@expo/vector-icons';
+import { memo } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { getNotificationKey, getNotificationMessage } from '../utils/home-notifications';
@@ -17,7 +18,7 @@ type HomeNotificationsModalProps = {
   onMarkAsRead: (notification: SocialNotification) => void;
 };
 
-export function HomeNotificationsModal({
+export const HomeNotificationsModal = memo(function HomeNotificationsModal({
   isVisible,
   notifications,
   notificationError,
@@ -84,4 +85,4 @@ export function HomeNotificationsModal({
       </SafeAreaView>
     </Modal>
   );
-}
+});

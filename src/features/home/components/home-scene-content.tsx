@@ -1,3 +1,4 @@
+import React from 'react';
 import { AnimatedTogglePill } from '@/src/components/home/animated-toggle-pill';
 import type { AvatarLayer } from '@/src/types/api/skin';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,7 +23,7 @@ type HomeSceneContentProps = {
 // Chiều cao ước lượng của hàng icon trên cùng (lửa, kim cương, mắt, mặt trời, chuông)
 const TOP_ICON_ROW_OFFSET = 60;
 
-export function HomeSceneContent({
+export const HomeSceneContent = React.memo(function HomeSceneContent({
   avatarLayers,
   currentGoalId,
   isNight,
@@ -115,4 +116,4 @@ export function HomeSceneContent({
       )}
     </>
   );
-}
+});

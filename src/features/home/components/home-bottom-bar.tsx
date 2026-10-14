@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { memo } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { styles } from '../home-screen.styles';
 
@@ -12,7 +13,7 @@ type HomeBottomBarProps = {
   onOpenSettings: () => void;
 };
 
-export function HomeBottomBar({
+export const HomeBottomBar = memo(function HomeBottomBar({
   isNight,
   onOpenShop,
   onOpenWardrobe,
@@ -131,4 +132,4 @@ export function HomeBottomBar({
       </Pressable>
     </View>
   );
-}
+});

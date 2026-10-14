@@ -14,7 +14,13 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
                     accessibilityRole="button"
                     accessibilityLabel="Quay lại"
                     hitSlop={10}
-                    onPress={() => router.replace('/(tabs)')}
+                    onPress={() => {
+                        if (router.canGoBack()) {
+                            router.back();
+                        } else {
+                            router.replace('/(tabs)');
+                        }
+                    }}
                     style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
                     <Ionicons color="#1E293B" name="chevron-back" size={24} />
                 </Pressable>

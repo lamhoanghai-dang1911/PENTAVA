@@ -35,7 +35,7 @@ const springConfig = {
   mass: 0.65,
 };
 
-export function AnimatedTogglePill({
+export const AnimatedTogglePill = React.memo(function AnimatedTogglePill({
   activeTab = 'tasks',
   onSelectTasks,
   onSelectCinema,
@@ -70,19 +70,14 @@ export function AnimatedTogglePill({
     progress.value = withSpring(tab === 'cinema' ? 1 : 0, springConfig);
 
     isNavigatingRef.current = true;
-    const isSameTab = activeTab === tab;
-
-    setTimeout(
-      () => {
-        isNavigatingRef.current = false;
-        if (tab === 'tasks') {
-          onSelectTasks();
-        } else {
-          onSelectCinema();
-        }
-      },
-      isSameTab ? 60 : 140,
-    );
+    requestAnimationFrame(() => {
+      isNavigatingRef.current = false;
+      if (tab === 'tasks') {
+        onSelectTasks();
+      } else {
+        onSelectCinema();
+      }
+    });
   };
 
   const handlePressIn = () => {
@@ -157,7 +152,7 @@ export function AnimatedTogglePill({
       </Pressable>
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

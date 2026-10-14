@@ -5,9 +5,18 @@ import type { ShopItem } from '@/src/types/api/shop';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    Modal,
+    Platform,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+} from 'react-native';
 import { InsufficientRubyModal, PurchaseSuccessModal } from './purchase-success-modal';
 
 type ShopSheetProps = {
@@ -24,15 +33,124 @@ function getErrorMessage(error: unknown, fallback: string) {
     return error instanceof Error ? error.message : fallback;
 }
 
-function getShopThumbnailLayers(item: ShopItem) {
-    return Array.from(new Set([
-        ...(item.thumbnailLayers ?? []),
-        item.thumbnailUrl ?? item.imageUrl,
-    ].filter((imageUrl): imageUrl is string =>
-        Boolean(imageUrl) && imageUrl !== item.itemBackgroundUrl)));
+function getShopThumbnailLayers(item: ShopItem): string[] {
+    return Array.from(
+        new Set(
+            [
+                ...(item.thumbnailLayers ?? []),
+                item.thumbnailUrl ?? item.imageUrl,
+            ].filter(
+                (imageUrl): imageUrl is string =>
+                    Boolean(imageUrl) && imageUrl !== item.itemBackgroundUrl,
+            ),
+        ),
+    );
 }
 
-export function ShopSheet({
+// ⚡ Component thẻ sản phẩm riêng lẻ, bọc React.memo để chỉ re-render card bị thay đổi
+type ShopItemCardProps = {
+    item: ShopItem;
+    isPurchasing: boolean;
+    onBuy: (item: ShopItem) => void;
+};
+
+const ShopItemCard = React.memo(function ShopItemCard({
+    item,
+    isPurchasing,
+    onBuy,
+}: ShopItemCardProps) {
+    const thumbnailLayers = useMemo(() => getShopThumbnailLayers(item), [item]);
+
+    return (
+        <View style={styles.productCard}>
+            <View
+                style={[
+                    styles.productBadge,
+                    item.owned ? styles.ownedBadge : styles.notOwnedBadge,
+                ]}
+            >
+                <Ionicons
+                    color={item.owned ? '#059669' : '#D97706'}
+                    name={item.owned ? 'checkmark-circle' : 'sparkles'}
+                    size={11}
+                />
+                <Text
+                    style={[
+                        styles.productBadgeText,
+                        item.owned ? styles.ownedBadgeText : styles.notOwnedBadgeText,
+                    ]}
+                >
+                    {item.owned ? 'Đã có' : 'Mới'}
+                </Text>
+            </View>
+
+            <View style={styles.imageShowcase}>
+                {thumbnailLayers.map((imageUrl, layerIndex) => (
+                    <Image
+                        key={`${item.id}-${layerIndex}`}
+                        cachePolicy="memory-disk"
+                        contentFit="contain"
+                        recyclingKey={imageUrl}
+                        source={{ uri: imageUrl }}
+                        style={[
+                            styles.thumbnailLayer,
+                            layerIndex > 0 && styles.thumbnailItemLayer,
+                            { zIndex: layerIndex },
+                        ]}
+                    />
+                ))}
+            </View>
+
+            <Text numberOfLines={1} style={styles.productName}>
+                {item.name}
+            </Text>
+            <Text numberOfLines={2} style={styles.productDescription}>
+                {item.description}
+            </Text>
+
+            <View style={styles.productBottomRow}>
+                <View style={styles.productPriceWrap}>
+                    <Image
+                        contentFit="contain"
+                        source={require('@/assets/images/ruby.png')}
+                        style={styles.productRubyIcon}
+                    />
+                    <Text style={styles.productPrice}>{item.priceRuby}</Text>
+                </View>
+
+                <Pressable
+                    accessibilityRole="button"
+                    accessibilityState={{
+                        disabled: item.owned || isPurchasing,
+                    }}
+                    disabled={item.owned || isPurchasing}
+                    onPress={() => onBuy(item)}
+                    style={({ pressed }) => [
+                        styles.buyButton,
+                        item.owned && styles.buyButtonOwned,
+                        isPurchasing && styles.buyButtonDisabled,
+                        pressed && !isPurchasing && !item.owned && styles.buyButtonPressed,
+                    ]}
+                >
+                    {isPurchasing ? (
+                        <ActivityIndicator color={Design.colors.white} size="small" />
+                    ) : (
+                        <Text
+                            style={[
+                                styles.buyButtonText,
+                                item.owned && styles.buyButtonOwnedText,
+                            ]}
+                        >
+                            {item.owned ? 'Đã sở hữu' : 'Mua ngay'}
+                        </Text>
+                    )}
+                </Pressable>
+            </View>
+        </View>
+    );
+});
+
+export const ShopSheet = React.memo(function ShopSheet({
     visible,
     balance,
     onBalanceChange,
@@ -41,19 +159,25 @@ export function ShopSheet({
     onClose,
     onTopUpRuby,
 }: ShopSheetProps) {
-    // Fast cache-first initialization to eliminate loading spinner whenever cached
+    // SWR / Memory cache initialization: hiển thị đồ tức thì trong 0ms nếu đã có trong cache
     const [items, setItems] = useState<ShopItem[]>(() => {
-        return cacheManager.get<ShopItem[]>('shop:items') ?? [];
+        return (
+            cacheManager.get<ShopItem[]>('shop:items') ??
+            cacheManager.getStale<ShopItem[]>('shop:items') ??
+            []
+        );
     });
     const [hasLoadedItems, setHasLoadedItems] = useState(() => {
-        return (cacheManager.get<ShopItem[]>('shop:items')?.length ?? 0) > 0;
+        return (
+            (cacheManager.get<ShopItem[]>('shop:items')?.length ?? 0) > 0 ||
+            (cacheManager.getStale<ShopItem[]>('shop:items')?.length ?? 0) > 0
+        );
     });
     const [itemsError, setItemsError] = useState<string | null>(null);
     const [walletError, setWalletError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     const [purchasingItemId, setPurchasingItemId] = useState<number | null>(null);
 
-    // Inline modals to prevent conflicting modal slide transitions and double-jank
     const [insufficientItem, setInsufficientItem] = useState<{
         item: ShopItem;
         message: string;
@@ -63,69 +187,73 @@ export function ShopSheet({
     const isLoadingItems = visible && !hasLoadedItems && itemsError === null;
     const isLoadingWallet = visible && balance === null && walletError === null;
 
-    const retryLoading = () => {
+    const retryLoading = useCallback(() => {
         setItemsError(null);
         setWalletError(null);
         setHasLoadedItems(false);
         setRetryCount((count) => count + 1);
-    };
+    }, []);
 
-    const handleBuy = async (item: ShopItem) => {
-        if (item.owned || purchasingItemId !== null) return;
+    const handleBuy = useCallback(
+        async (item: ShopItem) => {
+            if (item.owned || purchasingItemId !== null) return;
 
-        // Instant check: if user already has insufficient ruby, show immediately without waiting for server 402
-        if (balance !== null && balance < item.priceRuby) {
-            const diff = item.priceRuby - balance;
-            const message = `Bạn cần thêm ${diff} Ruby để mua ${item.name}.`;
-            setInsufficientItem({ item, message });
-            onInsufficientRuby?.(item, message);
-            return;
-        }
-
-        setPurchasingItemId(item.id);
-        try {
-            const purchase = await shopService.buyItem(item.skinItemId);
-            if (!purchase.success) {
-                throw new Error(purchase.message || 'Không thể mua skin.');
-            }
-
-            onBalanceChange(purchase.remainingRuby);
-            setItems((currentItems) =>
-                currentItems.map((currentItem) =>
-                    currentItem.id === item.id ? { ...currentItem, owned: true } : currentItem,
-                ),
-            );
-            setSuccessItem(item);
-            onPurchaseSuccess?.(item, purchase.remainingRuby);
-        } catch (error: unknown) {
-            const message = getErrorMessage(error, 'Không thể mua skin.');
-            const isInsufficientRuby =
-                /không đủ|insufficient|not enough/i.test(message) ||
-                (error instanceof ShopServiceError && error.status === 402);
-
-            if (isInsufficientRuby) {
+            // Kiểm tra tức thì số dư Ruby
+            if (balance !== null && balance < item.priceRuby) {
+                const diff = item.priceRuby - balance;
+                const message = `Bạn cần thêm ${diff} Ruby để mua ${item.name}.`;
                 setInsufficientItem({ item, message });
                 onInsufficientRuby?.(item, message);
-            } else {
-                Alert.alert('Không thể mua vật phẩm', message);
+                return;
             }
-        } finally {
-            setPurchasingItemId(null);
-        }
-    };
+
+            setPurchasingItemId(item.id);
+            try {
+                const purchase = await shopService.buyItem(item.skinItemId);
+                if (!purchase.success) {
+                    throw new Error(purchase.message || 'Không thể mua skin.');
+                }
+
+                onBalanceChange(purchase.remainingRuby);
+                setItems((currentItems) =>
+                    currentItems.map((currentItem) =>
+                        currentItem.id === item.id ? { ...currentItem, owned: true } : currentItem,
+                    ),
+                );
+                setSuccessItem(item);
+                onPurchaseSuccess?.(item, purchase.remainingRuby);
+            } catch (error: unknown) {
+                const message = getErrorMessage(error, 'Không thể mua skin.');
+                const isInsufficientRuby =
+                    /không đủ|insufficient|not enough/i.test(message) ||
+                    (error instanceof ShopServiceError && error.status === 402);
+
+                if (isInsufficientRuby) {
+                    setInsufficientItem({ item, message });
+                    onInsufficientRuby?.(item, message);
+                } else {
+                    Alert.alert('Không thể mua vật phẩm', message);
+                }
+            } finally {
+                setPurchasingItemId(null);
+            }
+        },
+        [balance, purchasingItemId, onBalanceChange, onInsufficientRuby, onPurchaseSuccess],
+    );
 
     useEffect(() => {
         if (!visible) return;
 
         let isMounted = true;
 
-        void shopService.getItems()
+        void shopService
+            .getItems()
             .then((catalog) => {
                 if (isMounted) {
                     setItems(catalog);
                     setItemsError(null);
                 }
-                // Background prefetch all images so they are ready instantly
+                // Prefetch ngầm ảnh vào cache
                 const urls: string[] = [];
                 catalog.forEach((item) => {
                     if (item.imageUrl) urls.push(item.imageUrl);
@@ -146,36 +274,103 @@ export function ShopSheet({
                 if (isMounted) setHasLoadedItems(true);
             });
 
-        void shopService.getMyWallet()
-            .then((wallet) => {
-                if (isMounted) {
-                    onBalanceChange(wallet.rubyBalance);
-                    setWalletError(null);
-                }
-            })
-            .catch((error: unknown) => {
-                if (isMounted) setWalletError(getErrorMessage(error, 'Không thể tải số dư Ruby.'));
-            });
+        // Chỉ tải lại ví nếu chưa có số dư
+        if (balance === null) {
+            void shopService
+                .getMyWallet()
+                .then((wallet) => {
+                    if (isMounted) {
+                        onBalanceChange(wallet.rubyBalance);
+                        setWalletError(null);
+                    }
+                })
+                .catch((error: unknown) => {
+                    if (isMounted) setWalletError(getErrorMessage(error, 'Không thể tải số dư Ruby.'));
+                });
+        }
 
         return () => {
             isMounted = false;
         };
-    }, [visible, retryCount, onBalanceChange]);
+    }, [visible, retryCount, balance, onBalanceChange]);
+
+    const renderItem = useCallback(
+        ({ item }: { item: ShopItem }) => (
+            <ShopItemCard
+                isPurchasing={purchasingItemId === item.id}
+                item={item}
+                onBuy={handleBuy}
+            />
+        ),
+        [purchasingItemId, handleBuy],
+    );
+
+    const keyExtractor = useCallback((item: ShopItem) => String(item.id), []);
+
+    const renderHeader = useCallback(() => {
+        if (!walletError) return null;
+        return (
+            <View style={styles.walletErrorRow}>
+                <Text accessibilityRole="alert" style={styles.errorText}>
+                    {walletError}
+                </Text>
+                <Pressable accessibilityRole="button" onPress={retryLoading} style={styles.retryButton}>
+                    <Text style={styles.retryButtonText}>Thử lại</Text>
+                </Pressable>
+            </View>
+        );
+    }, [walletError, retryLoading]);
+
+    const renderEmpty = useCallback(() => {
+        if (isLoadingItems) {
+            return (
+                <ActivityIndicator
+                    color={Design.colors.primaryGreen}
+                    size="large"
+                    style={styles.loading}
+                />
+            );
+        }
+        if (itemsError) {
+            return (
+                <View style={styles.emptyState}>
+                    <Text accessibilityRole="alert" style={styles.errorText}>
+                        {itemsError}
+                    </Text>
+                    <Pressable
+                        accessibilityRole="button"
+                        onPress={retryLoading}
+                        style={styles.retryButton}
+                    >
+                        <Text style={styles.retryButtonText}>Thử lại</Text>
+                    </Pressable>
+                </View>
+            );
+        }
+        return <Text style={styles.emptyText}>Chưa có skin nào trong cửa hàng.</Text>;
+    }, [isLoadingItems, itemsError, retryLoading]);
 
     return (
-        <Modal animationType="fade" onRequestClose={onClose} transparent visible={visible}>
-            <Animated.View entering={FadeIn.duration(150)} exiting={FadeOut.duration(100)} style={styles.overlay}>
+        <Modal
+            animationType="fade"
+            onRequestClose={onClose}
+            statusBarTranslucent
+            transparent
+            visible={visible}
+        >
+            <View style={styles.overlay}>
                 <Pressable accessibilityLabel="Đóng cửa hàng" onPress={onClose} style={styles.backdrop} />
 
                 <View style={styles.sheet}>
                     <View style={styles.grabber} />
                     <View style={styles.header}>
                         <Pressable
-                            accessibilityRole="button"
                             accessibilityLabel="Đóng cửa hàng"
+                            accessibilityRole="button"
                             hitSlop={10}
                             onPress={onClose}
-                            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
+                            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
+                        >
                             <Ionicons color="#1E293B" name="chevron-back" size={22} />
                         </Pressable>
                         <View style={styles.titleWrap}>
@@ -194,110 +389,25 @@ export function ShopSheet({
                         </View>
                     </View>
 
-                    {walletError ? (
-                        <View style={styles.walletErrorRow}>
-                            <Text accessibilityRole="alert" style={styles.errorText}>{walletError}</Text>
-                            <Pressable accessibilityRole="button" onPress={retryLoading} style={styles.retryButton}>
-                                <Text style={styles.retryButtonText}>Thử lại</Text>
-                            </Pressable>
-                        </View>
-                    ) : null}
-
-                    <ScrollView contentContainerStyle={styles.grid} showsVerticalScrollIndicator={false}>
-                        {isLoadingItems ? (
-                            <ActivityIndicator color={Design.colors.primaryGreen} size="large" style={styles.loading} />
-                        ) : itemsError ? (
-                            <View style={styles.emptyState}>
-                                <Text accessibilityRole="alert" style={styles.errorText}>{itemsError}</Text>
-                                <Pressable
-                                    accessibilityRole="button"
-                                    onPress={retryLoading}
-                                    style={styles.retryButton}>
-                                    <Text style={styles.retryButtonText}>Thử lại</Text>
-                                </Pressable>
-                            </View>
-                        ) : items.length === 0 ? (
-                            <Text style={styles.emptyText}>Chưa có skin nào trong cửa hàng.</Text>
-                        ) : (
-                            <Animated.View entering={FadeIn.duration(150)} style={styles.cardsContainer}>
-                                {items.map((item) => (
-                                    <View key={item.id} style={styles.productCard}>
-                                        <View style={[
-                                            styles.productBadge,
-                                            item.owned ? styles.ownedBadge : styles.notOwnedBadge,
-                                        ]}>
-                                            <Ionicons
-                                                color={item.owned ? '#059669' : '#D97706'}
-                                                name={item.owned ? 'checkmark-circle' : 'sparkles'}
-                                                size={11}
-                                            />
-                                            <Text style={[
-                                                styles.productBadgeText,
-                                                item.owned ? styles.ownedBadgeText : styles.notOwnedBadgeText,
-                                            ]}>
-                                                {item.owned ? 'Đã có' : 'Mới'}
-                                            </Text>
-                                        </View>
-                                        <View style={styles.imageShowcase}>
-                                            {getShopThumbnailLayers(item).map((imageUrl, layerIndex) => (
-                                                <Image
-                                                    key={`${item.id}-${layerIndex}`}
-                                                    cachePolicy="memory-disk"
-                                                    contentFit="contain"
-                                                    priority="high"
-                                                    source={{ uri: imageUrl }}
-                                                    style={[
-                                                        styles.thumbnailLayer,
-                                                        layerIndex > 0 && styles.thumbnailItemLayer,
-                                                        { zIndex: layerIndex },
-                                                    ]}
-                                                />
-                                            ))}
-                                        </View>
-                                        <Text numberOfLines={1} style={styles.productName}>{item.name}</Text>
-                                        <Text numberOfLines={2} style={styles.productDescription}>{item.description}</Text>
-                                        <View style={styles.productBottomRow}>
-                                            <View style={styles.productPriceWrap}>
-                                                <Image
-                                                    contentFit="contain"
-                                                    source={require('@/assets/images/ruby.png')}
-                                                    style={styles.productRubyIcon}
-                                                />
-                                                <Text style={styles.productPrice}>{item.priceRuby}</Text>
-                                            </View>
-                                            <Pressable
-                                                accessibilityRole="button"
-                                                accessibilityState={{
-                                                    disabled: item.owned || purchasingItemId !== null,
-                                                }}
-                                                disabled={item.owned || purchasingItemId !== null}
-                                                onPress={() => void handleBuy(item)}
-                                                style={({ pressed }) => [
-                                                    styles.buyButton,
-                                                    item.owned && styles.buyButtonOwned,
-                                                    purchasingItemId !== null && styles.buyButtonDisabled,
-                                                    pressed && purchasingItemId === null && !item.owned && styles.buyButtonPressed,
-                                                ]}>
-                                                {purchasingItemId === item.id ? (
-                                                    <ActivityIndicator color={Design.colors.white} size="small" />
-                                                ) : (
-                                                    <Text style={[
-                                                        styles.buyButtonText,
-                                                        item.owned && styles.buyButtonOwnedText,
-                                                    ]}>
-                                                        {item.owned ? 'Đã sở hữu' : 'Mua ngay'}
-                                                    </Text>
-                                                )}
-                                            </Pressable>
-                                        </View>
-                                    </View>
-                                ))}
-                            </Animated.View>
-                        )}
-                    </ScrollView>
+                    {/* ⚡ FlatList ảo hóa 2 cột mượt mà 60 FPS, không render dồn dập */}
+                    <FlatList
+                        ListEmptyComponent={renderEmpty}
+                        ListHeaderComponent={renderHeader}
+                        columnWrapperStyle={items.length > 1 ? styles.columnWrapper : undefined}
+                        contentContainerStyle={styles.grid}
+                        data={hasLoadedItems && !itemsError ? items : []}
+                        initialNumToRender={6}
+                        keyExtractor={keyExtractor}
+                        maxToRenderPerBatch={6}
+                        numColumns={2}
+                        removeClippedSubviews={Platform.OS === 'android'}
+                        renderItem={renderItem}
+                        showsVerticalScrollIndicator={false}
+                        windowSize={5}
+                    />
                 </View>
 
-                {/* Inline Insufficient Ruby & Purchase Success modals to prevent modal conflict */}
+                {/* Inline Insufficient Ruby & Purchase Success modals */}
                 <InsufficientRubyModal
                     balance={balance}
                     message={insufficientItem?.message ?? ''}
@@ -319,10 +429,10 @@ export function ShopSheet({
                     onClose={() => setSuccessItem(null)}
                     product={successItem}
                 />
-            </Animated.View>
+            </View>
         </Modal>
     );
-}
+});
 
 const styles = StyleSheet.create({
     overlay: {
@@ -338,7 +448,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#FFFFFF',
         borderTopLeftRadius: 28,
         borderTopRightRadius: 28,
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         paddingTop: 10,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
@@ -418,14 +528,12 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     grid: {
-        paddingBottom: 54,
+        paddingBottom: 40,
         paddingTop: 4,
     },
-    cardsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
+    columnWrapper: {
         justifyContent: 'space-between',
-        width: '100%',
+        marginBottom: 12,
     },
     loading: {
         paddingVertical: 40,
@@ -456,12 +564,11 @@ const styles = StyleSheet.create({
         fontSize: Design.fontSize.caption,
     },
     productCard: {
-        width: '48%',
+        width: '48.5%',
         borderWidth: 1.5,
         borderColor: '#E2EFE6',
         borderRadius: 18,
         padding: 12,
-        marginBottom: 14,
         backgroundColor: '#FFFFFF',
         shadowColor: '#10B981',
         shadowOffset: { width: 0, height: 2 },

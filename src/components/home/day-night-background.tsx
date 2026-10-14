@@ -1,5 +1,5 @@
 import { Image } from 'expo-image';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { StyleSheet, View } from 'react-native';
 import Animated, {
   Easing,
@@ -15,7 +15,7 @@ type DayNightBackgroundProps = {
   isNight: boolean;
 };
 
-export default function DayNightBackground({ isNight }: DayNightBackgroundProps) {
+export const DayNightBackground = React.memo(function DayNightBackground({ isNight }: DayNightBackgroundProps) {
   const transitionProgress = useSharedValue(isNight ? 1 : 0);
 
   useEffect(() => {
@@ -39,7 +39,6 @@ export default function DayNightBackground({ isNight }: DayNightBackgroundProps)
         <Image
           cachePolicy="memory-disk"
           contentFit="cover"
-          priority="high"
           source={DAY_BACKGROUND}
           style={styles.image}
         />
@@ -49,14 +48,15 @@ export default function DayNightBackground({ isNight }: DayNightBackgroundProps)
         <Image
           cachePolicy="memory-disk"
           contentFit="cover"
-          priority="high"
           source={NIGHT_BACKGROUND}
           style={styles.image}
         />
       </Animated.View>
     </View>
   );
-}
+});
+
+export default DayNightBackground;
 
 const styles = StyleSheet.create({
   container: {
