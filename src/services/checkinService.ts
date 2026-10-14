@@ -1,6 +1,11 @@
 import { API_ENDPOINTS } from "@/src/constants/api";
 import apiClient from "@/src/services/apiClient";
+import { getCurrentUserId, subscribeAuthState } from "@/src/services/authStorage";
 import { getSupabase } from "@/src/services/supabaseClient";
+import {
+  cacheCheckinImage,
+  getCachedCheckinImage,
+} from "@/src/services/taskCacheStorage";
 import type {
   CheckinRequestDTO,
   CheckinResponse,
@@ -10,8 +15,24 @@ import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 const CHECKIN_BUCKET =
   process.env.EXPO_PUBLIC_SUPABASE_CHECKIN_BUCKET || "pentava-checkin-images";
 
-// Bộ nhớ đệm tạm thời trên client để hiển thị ảnh ngay lập tức khi đang upload ngầm
-const localCheckinCache = new Map<number, string>();
+// Quản lý currentUserId đồng bộ cho memory cache
+let cachedCurrentUserId = "anonymous";
+getCurrentUserId().then((id) => {
+  cachedCurrentUserId = id;
+});
+subscribeAuthState((userId) => {
+  cachedCurrentUserId = userId || "anonymous";
+});
+
+function getMemKey(userId: string, progressId: number): string {
+  return `${userId}:${progressId}`;
+}
+
+// Bộ nhớ đệm RAM theo user để hiển thị tức thì (0ms)
+const localCheckinCache = new Map<string, string>();
+
+// Subscriber để cập nhật real-time các component đang mở (vd: TaskCard)
+const checkinListeners = new Map<number, Set<(url: string) => void>>();
 
 async function compressImageForUpload(uri: string): Promise<string> {
   if (uri.startsWith("http://") || uri.startsWith("https://") || uri.startsWith("data:")) {
@@ -28,7 +49,7 @@ async function compressImageForUpload(uri: string): Promise<string> {
       },
     );
     return result.uri;
-  } catch (error) {
+  } catch {
     return uri;
   }
 }
@@ -67,33 +88,109 @@ function getImageInfo(uri: string) {
 }
 
 export const checkinService = {
-  async getImage(progressId: number): Promise<CheckinResponse> {
+  /**
+   * Đăng ký lắng nghe thay đổi ảnh check-in cho một progressId (vd: khi upload ngầm hoàn tất)
+   */
+  subscribe(progressId: number, listener: (url: string) => void): () => void {
+    if (!checkinListeners.has(progressId)) {
+      checkinListeners.set(progressId, new Set());
+    }
+    checkinListeners.get(progressId)!.add(listener);
+    return () => {
+      checkinListeners.get(progressId)?.delete(listener);
+    };
+  },
+
+  /**
+   * Thông báo cho các subscriber đang nghe
+   */
+  notify(progressId: number, url: string): void {
+    checkinListeners.get(progressId)?.forEach((cb) => {
+      try {
+        cb(url);
+      } catch (err) {
+        console.error("[checkinService] Lỗi subscriber:", err);
+      }
+    });
+  },
+
+  /**
+   * Lấy ảnh check-in nhanh từ memory cache (đồng bộ, 0ms latency)
+   */
+  getCachedImage(progressId: number): string | null {
+    const memKey = getMemKey(cachedCurrentUserId, progressId);
+    if (localCheckinCache.has(memKey)) {
+      return localCheckinCache.get(memKey)!;
+    }
+    const anonKey = getMemKey("anonymous", progressId);
+    if (localCheckinCache.has(anonKey)) {
+      return localCheckinCache.get(anonKey)!;
+    }
+    return null;
+  },
+
+  /**
+   * Lấy ảnh check-in: ưu tiên đọc từ RAM cache, sau đó đến AsyncStorage.
+   * Chỉ khi không còn cache thì mới gọi API server.
+   */
+  async getImage(progressId: number, forceRefresh = false): Promise<CheckinResponse> {
+    const userId = await getCurrentUserId();
+    const memKey = getMemKey(userId, progressId);
+
+    // 1. Kiểm tra cache nếu không yêu cầu làm mới bắt buộc
+    if (!forceRefresh) {
+      // RAM cache
+      const memImage = localCheckinCache.get(memKey) || localCheckinCache.get(getMemKey("anonymous", progressId));
+      if (memImage) {
+        return {
+          message: "Ảnh check-in từ bộ nhớ tạm",
+          taskProgressId: progressId,
+          imageUrl: memImage,
+          checkinDate: new Date().toISOString().split("T")[0],
+        };
+      }
+
+      // Persistent cache (AsyncStorage theo userId)
+      const diskImage = await getCachedCheckinImage(userId, progressId);
+      if (diskImage) {
+        localCheckinCache.set(memKey, diskImage);
+        return {
+          message: "Ảnh check-in từ bộ nhớ thiết bị",
+          taskProgressId: progressId,
+          imageUrl: diskImage,
+          checkinDate: new Date().toISOString().split("T")[0],
+        };
+      }
+    }
+
+    // 2. Chỉ gọi API khi chưa có cache hoặc người dùng yêu cầu forceRefresh
     try {
       const response = await apiClient.get(
         API_ENDPOINTS.CHECKIN.GET_IMAGE(progressId),
       );
 
       if (response.data?.imageUrl) {
-        localCheckinCache.set(progressId, response.data.imageUrl);
+        localCheckinCache.set(memKey, response.data.imageUrl);
+        await cacheCheckinImage(userId, progressId, response.data.imageUrl);
         return response.data;
       }
 
-      if (localCheckinCache.has(progressId)) {
+      if (localCheckinCache.has(memKey)) {
         return {
           message: "Ảnh check-in từ thiết bị",
           taskProgressId: progressId,
-          imageUrl: localCheckinCache.get(progressId)!,
+          imageUrl: localCheckinCache.get(memKey)!,
           checkinDate: new Date().toISOString().split("T")[0],
         };
       }
 
       return response.data;
     } catch (error) {
-      if (localCheckinCache.has(progressId)) {
+      if (localCheckinCache.has(memKey)) {
         return {
           message: "Ảnh check-in từ thiết bị",
           taskProgressId: progressId,
-          imageUrl: localCheckinCache.get(progressId)!,
+          imageUrl: localCheckinCache.get(memKey)!,
           checkinDate: new Date().toISOString().split("T")[0],
         };
       }
@@ -145,20 +242,40 @@ export const checkinService = {
       API_ENDPOINTS.CHECKIN.SAVE_IMAGE(progressId),
       payload,
     );
+    try {
+      const userId = await getCurrentUserId();
+      localCheckinCache.set(getMemKey(userId, progressId), imageUrl);
+      await cacheCheckinImage(userId, progressId, imageUrl);
+      this.notify(progressId, imageUrl);
+    } catch (e) {
+      console.warn("[checkinService] Không thể lưu cache ảnh vừa lưu:", e);
+    }
     return response.data;
   },
 
   uploadAndSaveInBackground(imageUri: string, progressId: number): void {
-    localCheckinCache.set(progressId, imageUri);
+    // 1. Lưu ngay vào memory cache đồng bộ và notify (0ms latency cho UI hiển thị ngay)
+    const currentMemKey = getMemKey(cachedCurrentUserId, progressId);
+    localCheckinCache.set(currentMemKey, imageUri);
+    this.notify(progressId, imageUri);
 
+    // 2. Chạy ngầm lưu AsyncStorage và upload lên cloud
     (async () => {
       try {
+        const userId = await getCurrentUserId();
+        const memKey = getMemKey(userId, progressId);
+        localCheckinCache.set(memKey, imageUri);
+        await cacheCheckinImage(userId, progressId, imageUri);
+
         const uploadResult = await this.uploadImage(imageUri, progressId);
         await this.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
-        localCheckinCache.set(progressId, uploadResult.publicUrl);
+        localCheckinCache.set(memKey, uploadResult.publicUrl);
+        await cacheCheckinImage(userId, progressId, uploadResult.publicUrl);
+        this.notify(progressId, uploadResult.publicUrl);
       } catch (error) {
         console.error(`[checkinService] Lỗi upload ngầm ảnh check-in (task: ${progressId}):`, error);
       }
     })();
   },
 };
+

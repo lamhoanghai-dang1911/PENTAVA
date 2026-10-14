@@ -2,6 +2,7 @@ import { Design, FontFamily } from "@/src/constants/design";
 import { TASK_COLORS_BY_INDEX } from "@/src/features/tasks/constants";
 import type { TaskCardProps } from "@/src/features/tasks/types/task-card";
 import { checkinService } from "@/src/services/checkinService";
+import { toAndroidSafeUri } from "@/src/services/fileUri";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -32,7 +33,11 @@ export function TaskCard({
     const [isCheckInModalVisible, setIsCheckInModalVisible] = useState(false);
     const [isImageModalVisible, setIsImageModalVisible] = useState(false);
     const [isLoadingCheckInImage, setIsLoadingCheckInImage] = useState(false);
-    const [checkInImageUrl, setCheckInImageUrl] = useState<string | null>(null);
+    // Khởi tạo ngay từ memory cache nếu đã có (0ms latency, không bị nhấp nháy nút Check-in)
+    const [checkInImageUrl, setCheckInImageUrl] = useState<string | null>(() => {
+        if (!task.progressId) return null;
+        return checkinService.getCachedImage(task.progressId);
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -43,6 +48,23 @@ export function TaskCard({
             };
         }
 
+        // Lắng nghe cập nhật ảnh check-in mới (vd: khi upload ngầm lên Supabase hoàn tất)
+        const unsubscribe = checkinService.subscribe(task.progressId, (newUrl) => {
+            if (isMounted) {
+                setCheckInImageUrl(newUrl);
+            }
+        });
+
+        // Nếu đã có ảnh trong memory cache thì không cần gọi API (state đã được khởi tạo trước đó)
+        const memCached = checkinService.getCachedImage(task.progressId);
+        if (memCached) {
+            return () => {
+                isMounted = false;
+                unsubscribe();
+            };
+        }
+
+        // Nếu chưa có trong RAM, gọi getImage (hàm này sẽ kiểm tra AsyncStorage cache trước, chỉ khi không còn mới gọi API)
         checkinService
             .getImage(task.progressId)
             .then((response) => {
@@ -58,16 +80,24 @@ export function TaskCard({
 
         return () => {
             isMounted = false;
+            unsubscribe();
         };
     }, [task.isCompleted, task.progressId]);
 
     const handleViewCheckInImage = async () => {
+        // Nếu đã có ảnh trong state rồi thì xem luôn không cần gọi API hay chờ đợi
+        if (checkInImageUrl) {
+            setIsImageModalVisible(true);
+            return;
+        }
+
         if (!task.progressId || isLoadingCheckInImage) {
             return;
         }
 
         try {
             setIsLoadingCheckInImage(true);
+            // getImage sẽ đọc cache trước, chỉ khi không có cache mới gọi API
             const response = await checkinService.getImage(task.progressId);
             if (!response.imageUrl) {
                 Alert.alert("Chưa có ảnh check-in", "Task này chưa có ảnh check-in.");
@@ -341,7 +371,7 @@ export function TaskCard({
                         {checkInImageUrl ? (
                             <Image
                                 resizeMode="contain"
-                                source={{ uri: checkInImageUrl }}
+                                source={{ uri: toAndroidSafeUri(checkInImageUrl) }}
                                 style={styles.checkInImage}
                             />
                         ) : null}

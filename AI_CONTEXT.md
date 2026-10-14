@@ -324,6 +324,7 @@ Các namespace hiện tại:
 @pentava/onboarding-response:{userId}
 @pentava/task-history:{userId}:{startDate}:{endDate}
 @pentava/daily-status:{userId}:{goalId}
+@pentava/checkin-image:{userId}:{progressId}
 ```
 
 Mục tiêu bắt buộc:

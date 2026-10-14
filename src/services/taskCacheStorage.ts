@@ -3,6 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const TASK_HISTORY_PREFIX = "@pentava/task-history";
 const DAILY_STATUS_PREFIX = "@pentava/daily-status";
+const CHECKIN_IMAGE_PREFIX = "@pentava/checkin-image";
 
 function getKey(prefix: string, userId: string, identifier: string) {
   return `${prefix}:${userId}:${identifier}`;
@@ -96,3 +97,36 @@ export async function cacheDailyStatus(
     JSON.stringify(payload),
   );
 }
+
+export async function getCachedCheckinImage(
+  userId: string,
+  progressId: number,
+): Promise<string | null> {
+  if (userId === "anonymous") return null;
+  return AsyncStorage.getItem(
+    getKey(CHECKIN_IMAGE_PREFIX, userId, String(progressId)),
+  );
+}
+
+export async function cacheCheckinImage(
+  userId: string,
+  progressId: number,
+  imageUrl: string,
+): Promise<void> {
+  if (userId === "anonymous" || !imageUrl) return;
+  await AsyncStorage.setItem(
+    getKey(CHECKIN_IMAGE_PREFIX, userId, String(progressId)),
+    imageUrl,
+  );
+}
+
+export async function removeCachedCheckinImage(
+  userId: string,
+  progressId: number,
+): Promise<void> {
+  if (userId === "anonymous") return;
+  await AsyncStorage.removeItem(
+    getKey(CHECKIN_IMAGE_PREFIX, userId, String(progressId)),
+  );
+}
+
