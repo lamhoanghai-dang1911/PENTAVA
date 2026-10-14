@@ -24,7 +24,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, InteractionManager, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './home-screen.styles';
 
@@ -59,10 +59,11 @@ export default function HomeScreen() {
   const isLoadingNotificationsRef = useRef(false);
   const hasShownStreakFrozenAlertRef = useRef(false);
   const lastFetchTimeRef = useRef(0);
-  const toggleKey = 0;
+  const [toggleKey, setToggleKey] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
+      setToggleKey((prev) => prev + 1);
       let isFocused = true;
       const now = Date.now();
       // Không gọi lại dồn dập 4 API nếu vừa mới focus trong vòng 15 giây
@@ -131,29 +132,27 @@ export default function HomeScreen() {
         // Fallback silently to onboarding name
       });
 
-    // 2. Chuyển prefetch Shop sang chế độ Idle (3.5 giây sau khi mở màn hình và sau tương tác)
+    // 2. Chuyển prefetch Shop sang chế độ Idle sau khi mở màn hình
     const idleTimer = setTimeout(() => {
-      InteractionManager.runAfterInteractions(() => {
-        if (!isMounted) return;
-        void shopService
-          .getItems()
-          .then((catalog) => {
-            const urls: string[] = [];
-            catalog.forEach((item) => {
-              if (item.imageUrl) urls.push(item.imageUrl);
-              if (item.thumbnailUrl) urls.push(item.thumbnailUrl);
-              if (item.itemBackgroundUrl) urls.push(item.itemBackgroundUrl);
-              item.thumbnailLayers?.forEach((layer) => {
-                if (layer) urls.push(layer);
-              });
+      if (!isMounted) return;
+      void shopService
+        .getItems()
+        .then((catalog) => {
+          const urls: string[] = [];
+          catalog.forEach((item) => {
+            if (item.imageUrl) urls.push(item.imageUrl);
+            if (item.thumbnailUrl) urls.push(item.thumbnailUrl);
+            if (item.itemBackgroundUrl) urls.push(item.itemBackgroundUrl);
+            item.thumbnailLayers?.forEach((layer) => {
+              if (layer) urls.push(layer);
             });
-            if (urls.length > 0) {
-              void Image.prefetch(Array.from(new Set(urls)));
-            }
-          })
-          .catch(() => { });
-      });
-    }, 1200);
+          });
+          if (urls.length > 0) {
+            void Image.prefetch(Array.from(new Set(urls)));
+          }
+        })
+        .catch(() => { });
+    }, 1500);
 
     return () => {
       isMounted = false;

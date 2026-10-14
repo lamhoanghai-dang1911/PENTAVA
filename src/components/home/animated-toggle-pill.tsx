@@ -1,6 +1,6 @@
 import { Design, FontFamily } from '@/src/constants/design';
 import * as Haptics from 'expo-haptics';
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   LayoutChangeEvent,
   Pressable,
@@ -49,6 +49,21 @@ export const AnimatedTogglePill = React.memo(function AnimatedTogglePill({
   const tabWidth = useSharedValue(142);
   const pillScale = useSharedValue(1);
   const isNavigatingRef = useRef(false);
+  const navTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const target = activeTab ?? 'tasks';
+    setSelectedTab(target);
+    progress.value = target === 'cinema' ? 1 : 0;
+  }, [activeTab, progress]);
+
+  useEffect(() => {
+    return () => {
+      if (navTimerRef.current) {
+        clearTimeout(navTimerRef.current);
+      }
+    };
+  }, []);
 
   const onLayout = (event: LayoutChangeEvent) => {
     const width = event.nativeEvent.layout.width;
@@ -66,18 +81,30 @@ export const AnimatedTogglePill = React.memo(function AnimatedTogglePill({
       // Haptics fallback on web/unsupported devices
     }
 
+    if (tab === selectedTab) {
+      if (tab === 'tasks') {
+        onSelectTasks();
+      } else {
+        onSelectCinema();
+      }
+      return;
+    }
+
     setSelectedTab(tab);
     progress.value = withSpring(tab === 'cinema' ? 1 : 0, springConfig);
 
+    if (navTimerRef.current) {
+      clearTimeout(navTimerRef.current);
+    }
     isNavigatingRef.current = true;
-    requestAnimationFrame(() => {
+    navTimerRef.current = setTimeout(() => {
       isNavigatingRef.current = false;
       if (tab === 'tasks') {
         onSelectTasks();
       } else {
         onSelectCinema();
       }
-    });
+    }, 120);
   };
 
   const handlePressIn = () => {

@@ -15,6 +15,8 @@ const apiClient = create({
   },
 });
 
+console.log('[API Base URL]:', API_BASE_URL);
+
 let accessToken: string | null = null;
 
 const publicAuthEndpoints = [
@@ -95,6 +97,12 @@ apiClient.interceptors.response.use(
       } catch (storageError) {
         console.error("Unable to clear the expired authentication session.", storageError);
       }
+    }
+
+    if (isAxiosError(error) && !error.response) {
+      console.warn(
+        `[Network Error] Cannot reach: ${error.config?.baseURL ?? ''}${error.config?.url ?? ''} (${error.message})`,
+      );
     }
 
     return Promise.reject(error);

@@ -91,8 +91,20 @@ function RootStack() {
       <Stack.Screen name="verify-otp" />
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
-      <Stack.Screen name="daily-tasks" />
-      <Stack.Screen name="cinema" />
+      <Stack.Screen
+        name="daily-tasks"
+        options={{
+          animation: 'fade',
+          animationDuration: 180,
+        }}
+      />
+      <Stack.Screen
+        name="cinema"
+        options={{
+          animation: 'fade',
+          animationDuration: 180,
+        }}
+      />
       <Stack.Screen name="wardrobe" />
       <Stack.Screen name="community" />
       <Stack.Screen name="mood" />
