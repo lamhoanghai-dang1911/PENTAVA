@@ -3,7 +3,10 @@ import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { Design } from "@/src/constants/design";
 import { formatVnd } from "../utils/shop-utils";
 import { styles } from "../shop.styles";
+import { TopupPackagesSkeleton } from "./topup-skeleton";
 import type { TopupPackagesListProps } from "../types/shop";
+
+import { useAppTheme } from "@/src/context/theme-context";
 
 export function TopupPackagesList({
   isLoading,
@@ -12,17 +15,19 @@ export function TopupPackagesList({
   submittingPackageCode,
   onBuyPackage,
 }: TopupPackagesListProps) {
+  const { isNight } = useAppTheme();
+
   return (
     <View style={styles.packagesSection}>
-      <Text style={styles.sectionTitle}>Bảng giá các gói Ruby</Text>
+      <Text style={[styles.sectionTitle, isNight && { color: '#F8FAFC' }]}>Bảng giá các gói Ruby</Text>
       {isLoading ? (
-        <ActivityIndicator color={Design.colors.primaryGreen} style={styles.packagesLoading} />
+        <TopupPackagesSkeleton />
       ) : pricing ? (
         pricing.packages.map((pack) => (
-          <View key={pack.code} style={styles.packageCard}>
+          <View key={pack.code} style={[styles.packageCard, isNight && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
             <View style={styles.packageInfo}>
               <View style={styles.packageNameRow}>
-                <Text style={styles.packageName}>{pack.name}</Text>
+                <Text style={[styles.packageName, isNight && { color: '#F8FAFC' }]}>{pack.name}</Text>
                 {pack.popular ? (
                   <Text style={[styles.packageTag, styles.popularTag]}>Phổ biến</Text>
                 ) : null}
@@ -30,13 +35,13 @@ export function TopupPackagesList({
                   <Text style={[styles.packageTag, styles.bestValueTag]}>Tốt nhất</Text>
                 ) : null}
               </View>
-              <Text style={styles.packageRuby}>{pack.rubyAmount} Ruby</Text>
+              <Text style={[styles.packageRuby, isNight && { color: '#94A3B8' }]}>{pack.rubyAmount} Ruby</Text>
               {pack.bonusRuby > 0 ? (
                 <Text style={styles.packageBonus}>Thưởng thêm {pack.bonusRuby} Ruby</Text>
               ) : null}
             </View>
             <View style={styles.packagePrice}>
-              <Text style={styles.packageCurrentPrice}>{formatVnd(pack.priceVnd)}</Text>
+              <Text style={[styles.packageCurrentPrice, isNight && { color: '#34D399' }]}>{formatVnd(pack.priceVnd)}</Text>
               {pack.discountVnd > 0 ? (
                 <>
                   <Text style={styles.packageOriginalPrice}>

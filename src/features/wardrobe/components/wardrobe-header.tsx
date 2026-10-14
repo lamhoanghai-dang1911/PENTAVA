@@ -1,25 +1,16 @@
-import { Ionicons } from '@expo/vector-icons';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import type { WardrobeHeaderProps } from '../types/wardrobe';
 import { styles } from '../wardrobe.styles';
 
-export function WardrobeHeader({ inventoryCount, onBack }: WardrobeHeaderProps) {
+export function WardrobeHeader({ inventoryCount, isNight }: WardrobeHeaderProps & { isNight?: boolean }) {
   return (
     <View style={styles.header}>
-      <Pressable
-        accessibilityLabel="Quay lại"
-        accessibilityRole="button"
-        hitSlop={10}
-        onPress={onBack}
-        style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-        <Ionicons color="#1E293B" name="chevron-back" size={24} />
-      </Pressable>
       <View style={styles.headerTitleWrap}>
-        <Text style={styles.headerTitle}>Kho trang phục</Text>
-        <Text style={styles.headerSubtitle}>Tùy biến phong cách cho linh vật</Text>
+        <Text style={[styles.headerTitle, isNight && { color: '#F8FAFC' }]}>Kho trang phục</Text>
+        <Text style={[styles.headerSubtitle, isNight && { color: '#94A3B8' }]}>Tùy biến phong cách cho linh vật</Text>
       </View>
-      <View style={styles.inventoryCountBadge}>
-        <Text style={styles.inventoryCountText}>🎒 {inventoryCount}</Text>
+      <View style={[styles.inventoryCountBadge, isNight && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+        <Text style={[styles.inventoryCountText, isNight && { color: '#34D399' }]}>🎒 {inventoryCount}</Text>
       </View>
     </View>
   );

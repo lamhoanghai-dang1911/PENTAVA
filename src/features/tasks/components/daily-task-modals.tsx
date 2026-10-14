@@ -1,6 +1,8 @@
 import { Design, FontFamily } from '@/src/constants/design';
+import { HomeBottomBar } from '@/src/features/home/components/home-bottom-bar';
 import type { DailyTaskModalsProps } from '@/src/features/tasks/types/daily-task-modals';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { useEffect } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -34,6 +36,12 @@ export function DailyTaskModals({
                 transparent
                 visible={dailyStatusVisible && yesterdayTasks.length > 0}>
                 <View style={styles.overlay}>
+                    <Pressable
+                        accessibilityLabel="Đóng modal"
+                        accessibilityRole="button"
+                        onPress={onCloseDailyStatus}
+                        style={styles.overlayBackdrop}
+                    />
                     <View style={styles.dailyStatusModal}>
                         <Text style={styles.modalTitle}>Nhiệm vụ hôm qua</Text>
                         <Text style={styles.modalSubtitle}>
@@ -88,6 +96,26 @@ export function DailyTaskModals({
                             </Pressable>
                         </View>
                     </View>
+                    {/* Thanh menu footer cứng cố định ở đáy modal, bấm Home về trang chủ ngay lập tức */}
+                    <HomeBottomBar
+                        activeTab="home"
+                        onOpenHome={() => {
+                            onCloseDailyStatus();
+                            router.replace('/(tabs)');
+                        }}
+                        onOpenWardrobe={() => {
+                            onCloseDailyStatus();
+                            router.push('/wardrobe');
+                        }}
+                        onOpenCommunity={() => {
+                            onCloseDailyStatus();
+                            router.push('/community');
+                        }}
+                        onOpenSettings={() => {
+                            onCloseDailyStatus();
+                            router.push('/settings');
+                        }}
+                    />
                 </View>
             </Modal>
 
@@ -184,19 +212,32 @@ export function DailyTaskModals({
 
 const styles = StyleSheet.create({
     overlay: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0, 0, 0, 0.45)' },
+    overlayBackdrop: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
     dailyStatusModal: {
-        maxHeight: '88%',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 24,
+        maxHeight: '78%',
+        borderRadius: 24,
+        marginHorizontal: 14,
+        marginBottom: 8,
+        padding: 22,
         backgroundColor: Design.colors.white,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 10,
     },
     swapModal: {
-        maxHeight: '80%',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        padding: 24,
+        maxHeight: '78%',
+        borderRadius: 24,
+        marginHorizontal: 14,
+        marginBottom: 8,
+        padding: 22,
         backgroundColor: Design.colors.white,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.15,
+        shadowRadius: 16,
+        elevation: 10,
     },
     successModal: {
         alignItems: 'center',

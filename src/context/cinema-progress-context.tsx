@@ -67,14 +67,14 @@ export function CinemaProgressProvider({ children }: { children: ReactNode }) {
         if (!isPolling) return;
         setClip(updatedClip);
         if (updatedClip.status !== "COMPLETED" && updatedClip.status !== "FAILED") {
-          timer = setTimeout(() => void pollClip(), 2500);
+          timer = setTimeout(() => void pollClip(), 1200);
         }
       } catch (error) {
         if (isPolling) setClipErrorMessage(getErrorMessage(error));
       }
     };
 
-    timer = setTimeout(() => void pollClip(), 2500);
+    timer = setTimeout(() => void pollClip(), 1200);
     return () => {
       isPolling = false;
       if (timer) clearTimeout(timer);
@@ -112,6 +112,14 @@ export function useCinemaProgress() {
   return context;
 }
 
+function sanitizeProgressError(msg: string | null | undefined): string {
+  if (!msg) return "Video không thể render.";
+  if (msg.toLowerCase().includes("ffmpeg") || msg.toLowerCase().includes("cannot run program") || msg.includes("error=2")) {
+    return "Quá trình tạo video trước đây bị gián đoạn. Bạn có thể xóa để tạo lại.";
+  }
+  return msg;
+}
+
 function CinemaProgressBanner({
   clip,
   errorMessage,
@@ -121,9 +129,54 @@ function CinemaProgressBanner({
   errorMessage: string | null;
   onDismiss: () => void;
 }) {
-  const progress = getClipProgress(clip.status);
   const isCompleted = clip.status === "COMPLETED";
   const isFailed = clip.status === "FAILED";
+
+  const [animatedProgress, setAnimatedProgress] = useState<number>(() => {
+    if (isCompleted) return 100;
+    if (isFailed) return 0;
+    return getClipProgress(clip.status);
+  });
+
+  useEffect(() => {
+    if (isCompleted) {
+      setAnimatedProgress(100);
+      return;
+    }
+    if (isFailed) {
+      setAnimatedProgress(0);
+      return;
+    }
+
+    if (clip.status === "PENDING") {
+      setAnimatedProgress((prev) => Math.max(prev, 15));
+    } else if (clip.status === "PROCESSING") {
+      setAnimatedProgress((prev) => Math.max(prev, 25));
+      const interval = setInterval(() => {
+        setAnimatedProgress((prev) => {
+          if (prev < 80) {
+            const step = prev < 45 ? 3 : prev < 65 ? 2 : 1;
+            return Math.min(80, prev + step);
+          }
+          return prev;
+        });
+      }, 500);
+      return () => clearInterval(interval);
+    } else if (clip.status === "UPLOADING") {
+      setAnimatedProgress((prev) => Math.max(prev, 85));
+      const interval = setInterval(() => {
+        setAnimatedProgress((prev) => {
+          if (prev < 96) {
+            return Math.min(96, prev + 1);
+          }
+          return prev;
+        });
+      }, 400);
+      return () => clearInterval(interval);
+    }
+  }, [clip.status, isCompleted, isFailed]);
+
+  const progress = animatedProgress;
 
   return (
     <View
@@ -170,7 +223,7 @@ function CinemaProgressBanner({
         {isCompleted
           ? "Video đã sẵn sàng. Nhấn dấu tích để đóng."
           : isFailed
-            ? errorMessage || clip.errorMessage || "Video không thể render."
+            ? sanitizeProgressError(errorMessage || clip.errorMessage)
             : errorMessage || getClipStatusLabel(clip.status)}
       </Text>
     </View>

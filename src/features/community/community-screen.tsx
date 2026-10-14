@@ -1,4 +1,5 @@
 import { Design } from "@/src/constants/design";
+import { useAppTheme } from "@/src/context/theme-context";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import {
@@ -13,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { styles } from "./community.styles";
 import { CommunityHeader } from "./components/community-header";
 import { DeleteCommentModal, ErrorModal } from "./components/community-modals";
+import { CommunitySkeleton } from "./components/community-skeleton";
 import { FeedPostCard } from "./components/feed-post-card";
 import { FeedTabs } from "./components/feed-tabs";
 import { FriendSuggestionsSection } from "./components/friend-suggestions-section";
@@ -48,21 +50,16 @@ export default function CommunityScreen() {
     setErrorMessage,
     setCommentToDelete,
   } = useCommunity();
+  const { isNight } = useAppTheme();
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, isNight && { backgroundColor: "#0B132B" }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
       >
         <CommunityHeader
-          onBack={() => {
-            if (router.canGoBack()) {
-              router.back();
-            } else {
-              router.replace("/(tabs)");
-            }
-          }}
+          isNight={isNight}
           onFriendRequestsPress={() => router.push("/friend-requests")}
         />
 
@@ -85,10 +82,7 @@ export default function CommunityScreen() {
           ) : null}
 
           {isInitialLoading ? (
-            <View style={styles.centerState}>
-              <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
-              <Text style={styles.stateText}>Đang tải bảng tin...</Text>
-            </View>
+            <CommunitySkeleton />
           ) : (
             <FlatList
               contentContainerStyle={styles.scrollContent}

@@ -10,13 +10,14 @@ export function SettingsProfileCard({
   avatarLoadFailed,
   onAvatarError,
   onOpenSocialProfile,
-}: SettingsProfileCardProps) {
+  isNight,
+}: SettingsProfileCardProps & { isNight?: boolean }) {
   const avatarSource = avatarUrl && !avatarLoadFailed
     ? { uri: avatarUrl }
     : require('@/assets/images/default-avatar.png');
 
   return (
-    <View style={styles.profileCard}>
+    <View style={[styles.profileCard, isNight && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
       <Image
         cachePolicy="none"
         onError={onAvatarError}
@@ -29,7 +30,7 @@ export function SettingsProfileCard({
         onPress={onOpenSocialProfile}
         style={styles.profileInfo}>
         <View style={styles.nameRow}>
-          <Text style={styles.profileName}>{profile?.name ?? 'Đang tải...'}</Text>
+          <Text style={[styles.profileName, isNight && { color: '#F8FAFC' }]}>{profile?.name ?? 'Đang tải...'}</Text>
         </View>
         <View style={styles.levelBadge} />
       </Pressable>

@@ -16,7 +16,7 @@ import type {
   Task,
   TaskHistoryEntry,
 } from "@/src/types/api/task";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 
 function getErrorMessage(error: unknown) {
@@ -324,22 +324,40 @@ export function useDailyTasks({
     }
   };
 
+  const candidateTasksCacheRef = useRef<Map<number, Task[]>>(new Map());
+
+  const getCandidateTasks = async (goalId: number): Promise<Task[]> => {
+    const cached = candidateTasksCacheRef.current.get(goalId);
+    if (cached && cached.length > 0) {
+      return cached;
+    }
+    const responses = await Promise.all(
+      TASK_WEEKS.map((week) => taskService.getTasksByWeek(week)),
+    );
+    const allTasks = Array.from(
+      new Map(
+        responses
+          .flatMap((response) => response.tasks)
+          .map((item) => [item.id, item]),
+      ).values(),
+    );
+    candidateTasksCacheRef.current.set(goalId, allTasks);
+    return allTasks;
+  };
+
+  useEffect(() => {
+    if (currentGoalId) {
+      void getCandidateTasks(currentGoalId);
+    }
+  }, [currentGoalId]);
+
   const openSwap = async (task: Task) => {
     if (!currentGoalId) return;
 
     setSwapTask(task);
     setIsSwapLoading(true);
     try {
-      const responses = await Promise.all(
-        TASK_WEEKS.map((week) => taskService.getTasksByWeek(week)),
-      );
-      const allTasks = Array.from(
-        new Map(
-          responses
-            .flatMap((response) => response.tasks)
-            .map((item) => [item.id, item]),
-        ).values(),
-      );
+      const allTasks = await getCandidateTasks(currentGoalId);
       const selectedIds = new Set(selectedTasks.map((item) => item.id));
       setSwapCandidates(
         allTasks.filter(

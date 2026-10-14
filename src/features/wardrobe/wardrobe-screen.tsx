@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { useAppTheme } from '@/src/context/theme-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WardrobeContent } from './components/wardrobe-content';
 import { WardrobeHeader } from './components/wardrobe-header';
@@ -6,6 +6,7 @@ import { useWardrobe } from './hooks/use-wardrobe';
 import { styles } from './wardrobe.styles';
 
 export default function WardrobeScreen() {
+  const { isNight } = useAppTheme();
   const {
     avatar,
     inventory,
@@ -20,10 +21,10 @@ export default function WardrobeScreen() {
   } = useWardrobe();
 
   return (
-    <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+    <SafeAreaView edges={['top']} style={[styles.safeArea, isNight && { backgroundColor: '#0B132B' }]}>
       <WardrobeHeader
         inventoryCount={inventory.length}
-        onBack={() => router.back()}
+        isNight={isNight}
       />
       <WardrobeContent
         actionError={actionError}

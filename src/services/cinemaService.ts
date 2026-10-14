@@ -11,13 +11,13 @@ import type {
 } from "@/src/types/api/cinema";
 
 export const cinemaService = {
-  
   async getStorageQuota(): Promise<CinemaStorageQuota> {
     const response = await apiClient.get<CinemaStorageQuota>(
       API_ENDPOINTS.CINEMA.STORAGE_QUOTA,
     );
     return response.data;
   },
+
   async getGoals(): Promise<GoalSummary[]> {
     const response = await apiClient.get<GoalSummary[]>(
       API_ENDPOINTS.CINEMA.GOALS,
@@ -41,7 +41,6 @@ export const cinemaService = {
     );
     return response.data;
   },
-
 
   async createJourneyClip(goalId: number, photoIds: number[]): Promise<Clip> {
     const response = await apiClient.post<Clip>(
@@ -73,6 +72,10 @@ export const cinemaService = {
       API_ENDPOINTS.CINEMA.GET_CLIPS(goalId, weekNumber),
     );
     return response.data;
+  },
+
+  async deleteClip(clipId: number): Promise<void> {
+    await apiClient.delete(API_ENDPOINTS.CINEMA.DELETE_CLIP(clipId));
   },
 
   async createSocialPost(request: CreateSocialPostRequest): Promise<SocialPost> {

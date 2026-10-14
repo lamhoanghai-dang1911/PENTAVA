@@ -3,7 +3,7 @@ import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useRef } from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue } from 'react-native-reanimated';
 import { CameraPermissionFallback } from './CameraPermissionFallback';
@@ -18,6 +18,32 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
   const hasRequestedPermission = useRef(false);
   const pinchStartZoom = useSharedValue(0);
   const zoomValue = useSharedValue(0);
+
+  const handleRequestPermission = async () => {
+    if (permission && !permission.canAskAgain) {
+      Alert.alert(
+        'Cần cấp quyền Camera',
+        'Bạn đã từ chối quyền Camera trước đó. Vui lòng mở Cài đặt thiết bị để bật quyền cho Pentava.',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { text: 'Mở Cài đặt', onPress: () => void Linking.openSettings() },
+        ],
+      );
+      return;
+    }
+
+    const result = await requestPermission();
+    if (!result.granted && !result.canAskAgain) {
+      Alert.alert(
+        'Cần cấp quyền Camera',
+        'Bạn đã từ chối quyền Camera. Vui lòng vào Cài đặt để bật quyền cho Pentava.',
+        [
+          { text: 'Hủy', style: 'cancel' },
+          { text: 'Mở Cài đặt', onPress: () => void Linking.openSettings() },
+        ],
+      );
+    }
+  };
 
   const updateZoom = (value: number) => {
     const nextZoom = Math.max(0, Math.min(1, Number(value.toFixed(2))));
@@ -41,7 +67,7 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
     });
 
   useEffect(() => {
-    if (!hasRequestedPermission.current && permission && !permission.granted) {
+    if (!hasRequestedPermission.current && permission && !permission.granted && permission.canAskAgain) {
       hasRequestedPermission.current = true;
       requestPermission();
     }
@@ -92,7 +118,12 @@ export function TaskCameraCaptureScreen({ reviewPathname, routeParams }: TaskCam
   };
 
   if (!permission || !permission.granted) {
-    return <CameraPermissionFallback onRequestPermission={requestPermission} />;
+    return (
+      <CameraPermissionFallback
+        canAskAgain={permission?.canAskAgain ?? true}
+        onRequestPermission={handleRequestPermission}
+      />
+    );
   }
 
   return (

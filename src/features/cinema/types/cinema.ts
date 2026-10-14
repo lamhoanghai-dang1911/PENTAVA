@@ -16,6 +16,7 @@ export type WeekCardProps = {
   week: WeekSummary;
   index: number;
   onPress: () => void;
+  minPhotos?: number;
 };
 
 export type GoalWeeksContentProps = {
@@ -35,11 +36,13 @@ export type WeekOptionsContentProps = {
 export type ClipVideoCardProps = {
   clip: Clip;
   onPostPress: () => void;
+  onDeleteClip?: (clip: Clip) => void;
 };
 
 export type ClipsContentProps = {
   clips: Clip[];
   onPostPress: (clip: Clip) => void;
+  onDeleteClip?: (clip: Clip) => void;
   title?: string;
   subtitle?: string;
   emptyTitle?: string;

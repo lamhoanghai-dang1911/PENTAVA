@@ -1,4 +1,5 @@
 import { Design, FontFamily } from '@/src/constants/design';
+import { useAppTheme } from '@/src/context/theme-context';
 import { cacheManager } from '@/src/services/cacheManager';
 import { shopService, ShopServiceError } from '@/src/services/shopService';
 import type { ShopItem } from '@/src/types/api/shop';
@@ -18,6 +19,7 @@ import {
     View,
 } from 'react-native';
 import { InsufficientRubyModal, PurchaseSuccessModal } from './purchase-success-modal';
+import { ShopSheetSkeleton } from './shop-sheet-skeleton';
 
 type ShopSheetProps = {
     visible: boolean;
@@ -33,18 +35,34 @@ function getErrorMessage(error: unknown, fallback: string) {
     return error instanceof Error ? error.message : fallback;
 }
 
+function sanitizeThumbnailUrl(url: string | undefined, code?: string): string | undefined {
+    if (!url) return url;
+    if (url.includes('crown_background.png')) {
+        return url.replace('crown_background.png', 'crown_background_replace.png');
+    }
+    if (code === 'crown' && !url.includes('crown_background_replace.png') && !url.includes('crown.png')) {
+        return 'https://olgtvgfgpaydkopjhern.supabase.co/storage/v1/object/public/shop_thumbnail/crown_background_replace.png';
+    }
+    return url;
+}
+
 function getShopThumbnailLayers(item: ShopItem): string[] {
-    return Array.from(
-        new Set(
-            [
-                ...(item.thumbnailLayers ?? []),
-                item.thumbnailUrl ?? item.imageUrl,
-            ].filter(
-                (imageUrl): imageUrl is string =>
-                    Boolean(imageUrl) && imageUrl !== item.itemBackgroundUrl,
-            ),
-        ),
+    const sanitizedLayers = (item.thumbnailLayers ?? []).map((layer) => sanitizeThumbnailUrl(layer, item.code)!);
+    const fallbackUrl = sanitizeThumbnailUrl(item.thumbnailUrl, item.code) ?? item.imageUrl;
+
+    const rawLayers = [
+        ...sanitizedLayers,
+        fallbackUrl,
+    ].filter(
+        (imageUrl): imageUrl is string =>
+            Boolean(imageUrl) && imageUrl !== item.itemBackgroundUrl,
     );
+
+    if (rawLayers.length === 0 && item.imageUrl) {
+        rawLayers.push(item.imageUrl);
+    }
+
+    return Array.from(new Set(rawLayers));
 }
 
 // ⚡ Component thẻ sản phẩm riêng lẻ, bọc React.memo để chỉ re-render card bị thay đổi
@@ -159,6 +177,7 @@ export const ShopSheet = React.memo(function ShopSheet({
     onClose,
     onTopUpRuby,
 }: ShopSheetProps) {
+    const { isNight } = useAppTheme();
     // SWR / Memory cache initialization: hiển thị đồ tức thì trong 0ms nếu đã có trong cache
     const [items, setItems] = useState<ShopItem[]>(() => {
         return (
@@ -323,13 +342,7 @@ export const ShopSheet = React.memo(function ShopSheet({
 
     const renderEmpty = useCallback(() => {
         if (isLoadingItems) {
-            return (
-                <ActivityIndicator
-                    color={Design.colors.primaryGreen}
-                    size="large"
-                    style={styles.loading}
-                />
-            );
+            return <ShopSheetSkeleton />;
         }
         if (itemsError) {
             return (
@@ -361,29 +374,20 @@ export const ShopSheet = React.memo(function ShopSheet({
             <View style={styles.overlay}>
                 <Pressable accessibilityLabel="Đóng cửa hàng" onPress={onClose} style={styles.backdrop} />
 
-                <View style={styles.sheet}>
-                    <View style={styles.grabber} />
+                <View style={[styles.sheet, isNight && { backgroundColor: '#1E293B', borderColor: '#334155' }]}>
+                    <View style={[styles.grabber, isNight && { backgroundColor: '#475569' }]} />
                     <View style={styles.header}>
-                        <Pressable
-                            accessibilityLabel="Đóng cửa hàng"
-                            accessibilityRole="button"
-                            hitSlop={10}
-                            onPress={onClose}
-                            style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}
-                        >
-                            <Ionicons color="#1E293B" name="chevron-back" size={22} />
-                        </Pressable>
-                        <View style={styles.titleWrap}>
-                            <Text style={styles.title}>Cửa hàng PENTAVA</Text>
-                            <Text style={styles.subtitle}>Thời trang cho bé mèo cưng ✨</Text>
+                        <View style={[styles.titleWrap, { marginLeft: 0 }]}>
+                            <Text style={[styles.title, isNight && { color: '#F8FAFC' }]}>Cửa hàng PENTAVA</Text>
+                            <Text style={[styles.subtitle, isNight && { color: '#94A3B8' }]}>Thời trang cho bé mèo cưng ✨</Text>
                         </View>
-                        <View style={styles.balanceChip}>
+                        <View style={[styles.balanceChip, isNight && { backgroundColor: '#0F172A', borderColor: '#334155' }]}>
                             <Image
                                 contentFit="contain"
                                 source={require('@/assets/images/ruby.png')}
                                 style={styles.rubyImage}
                             />
-                            <Text style={styles.balanceText}>
+                            <Text style={[styles.balanceText, isNight && { color: '#F8FAFC' }]}>
                                 {isLoadingWallet && balance === null ? '...' : `${balance ?? 0}`}
                             </Text>
                         </View>

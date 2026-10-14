@@ -1,4 +1,5 @@
 import { FontFamily } from "@/src/constants/design";
+import { useAppTheme } from "@/src/context/theme-context";
 import { Ionicons } from "@expo/vector-icons";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { styles } from "../cinema.styles";
@@ -12,13 +13,17 @@ export function GoalWeeksContent({
   onViewJourneyClipsPress,
   isMultiAngleUnlocked = true,
 }: GoalWeeksContentProps) {
+  const { isNight } = useAppTheme();
+
   return (
     <ScrollView
       contentContainerStyle={styles.weeksContent}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.weeksGoalName}>{data.goalName}</Text>
-      <Text style={styles.goalHint}>
+      <Text style={[styles.weeksGoalName, isNight && { color: "#FFFFFF" }]}>
+        {data.goalName}
+      </Text>
+      <Text style={[styles.goalHint, isNight && { color: "#94A3B8" }]}>
         Mỗi tuần cần tối thiểu {data.minPhotos} ảnh check-in
       </Text>
 
@@ -74,6 +79,7 @@ export function GoalWeeksContent({
           <WeekCard
             key={week.weekNumber}
             index={index}
+            minPhotos={data.minPhotos}
             onPress={() => onWeekPress(week)}
             week={week}
           />

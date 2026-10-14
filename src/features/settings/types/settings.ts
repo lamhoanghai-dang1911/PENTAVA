@@ -8,7 +8,7 @@ export type MenuItem = {
 
 export type SettingsHeaderProps = {
   title?: string;
-  onBack: () => void;
+  onBack?: () => void;
 };
 
 export type SettingsProfileCardProps = {

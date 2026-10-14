@@ -1,17 +1,12 @@
-import { Design } from '@/src/constants/design';
-import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { styles } from '../settings.styles';
 import type { SettingsHeaderProps } from '../types/settings';
 
-export function SettingsHeader({ title = 'Hồ sơ của tôi', onBack }: SettingsHeaderProps) {
+export function SettingsHeader({ title = 'Hồ sơ của tôi', isNight }: SettingsHeaderProps & { isNight?: boolean }) {
   return (
     <View style={styles.headerRow}>
-      <Pressable onPress={onBack} style={styles.backButton}>
-        <Ionicons color={Design.colors.primaryGreen} name="chevron-back" size={24} />
-      </Pressable>
-      <Text style={styles.headerTitle}>{title}</Text>
+      <Text style={[styles.headerTitle, isNight && { color: '#F8FAFC' }]}>{title}</Text>
     </View>
   );
 }

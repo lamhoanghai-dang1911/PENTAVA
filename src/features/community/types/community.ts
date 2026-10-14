@@ -34,7 +34,7 @@ export type FeedPostCardProps = {
 };
 
 export type CommunityHeaderProps = {
-  onBack: () => void;
+  onBack?: () => void;
   onFriendRequestsPress: () => void;
 };
 

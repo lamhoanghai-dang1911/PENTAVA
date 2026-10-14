@@ -21,7 +21,7 @@ export function FeedPostCard({
   isCommentsLoading,
   pendingCommentId,
 }: FeedPostCardProps) {
-  const player = useVideoPlayer(post.videoUrl, (videoPlayer) => {
+  const player = useVideoPlayer(post.videoUrl ?? "", (videoPlayer) => {
     videoPlayer.loop = false;
   });
   const postId = String(post.id);
@@ -54,13 +54,20 @@ export function FeedPostCard({
       </View>
 
       <View style={styles.postImageWrap}>
-        <VideoView
-          contentFit="contain"
-          fullscreenOptions={{ enable: true }}
-          nativeControls
-          player={player}
-          style={styles.postVideo}
-        />
+        {post.videoUrl ? (
+          <VideoView
+            contentFit="contain"
+            fullscreenOptions={{ enable: true }}
+            nativeControls
+            player={player}
+            style={styles.postVideo}
+          />
+        ) : (
+          <View style={[styles.postVideo, { justifyContent: "center", alignItems: "center", backgroundColor: "#000" }]}>
+            <Ionicons color="#888" name="videocam-off-outline" size={40} />
+            <Text style={{ color: "#aaa", marginTop: 8, fontSize: 13 }}>Video không khả dụng</Text>
+          </View>
+        )}
       </View>
 
       <Text style={styles.postCaption}>{post.caption || "Một khoảnh khắc từ PENTAVA."}</Text>

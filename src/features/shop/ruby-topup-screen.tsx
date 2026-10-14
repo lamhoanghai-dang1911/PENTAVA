@@ -1,3 +1,4 @@
+import { useAppTheme } from "@/src/context/theme-context";
 import { router } from "expo-router";
 import { useRef } from "react";
 import {
@@ -53,8 +54,10 @@ export default function RubyTopupScreen() {
     }, 150);
   };
 
+  const { isNight } = useAppTheme();
+
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, isNight && { backgroundColor: "#0B132B" }]}>
       <KeyboardAvoidingView
         behavior={Platform.OS === "android" ? "padding" : undefined}
         keyboardVerticalOffset={Platform.OS === "android" ? 12 : 0}
@@ -62,7 +65,7 @@ export default function RubyTopupScreen() {
       >
         <ScrollView
           ref={scrollViewRef}
-          contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
+          contentContainerStyle={[styles.content, { paddingBottom: 100 }]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >

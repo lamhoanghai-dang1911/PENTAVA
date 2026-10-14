@@ -2,6 +2,7 @@ import { Design } from '@/src/constants/design';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { AvatarPreview } from './avatar-preview';
 import { InventoryCard } from './inventory-card';
+import { WardrobeSkeleton } from './wardrobe-skeleton';
 import type { WardrobeContentProps } from '../types/wardrobe';
 import { styles } from '../wardrobe.styles';
 
@@ -43,10 +44,7 @@ export function WardrobeContent({
       ) : null}
 
       {isLoading && !avatar ? (
-        <View style={styles.loading}>
-          <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
-          <Text style={styles.loadingText}>Đang tải kho trang phục...</Text>
-        </View>
+        <WardrobeSkeleton />
       ) : avatar ? (
         <>
           <AvatarPreview layers={avatar.layers} />

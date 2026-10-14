@@ -185,7 +185,7 @@ export const styles = StyleSheet.create({
     fontFamily: FontFamily.beVietnamSemiBold,
     fontSize: Design.fontSize.caption + 2,
   },
-  scrollContent: { paddingBottom: 28, paddingHorizontal: 20 },
+  scrollContent: { paddingBottom: 100, paddingHorizontal: 20 },
   postCard: {
     backgroundColor: Design.colors.white,
     borderColor: "#EDEDED",

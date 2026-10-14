@@ -1,6 +1,5 @@
 import DayNightBackground from '@/src/components/home/day-night-background';
 import { useOnboarding } from '@/src/context/onboarding-context';
-import { HomeBottomBar } from '@/src/features/home/components/home-bottom-bar';
 import { HomeHeader } from '@/src/features/home/components/home-header';
 import { HomeNotificationsModal } from '@/src/features/home/components/home-notifications-modal';
 import { HomeSceneContent } from '@/src/features/home/components/home-scene-content';
@@ -24,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, DeviceEventEmitter, Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './home-screen.styles';
 
@@ -394,12 +393,22 @@ export default function HomeScreen() {
     setIsStreakFreezeVisible(false);
   }, []);
 
+  useEffect(() => {
+    DeviceEventEmitter.emit('HOME_THEME_CHANGED', isNight);
+  }, [isNight]);
+
+
   const handleToggleImmersiveView = useCallback(() => {
-    setIsImmersiveView((prev) => !prev);
+    setIsImmersiveView((prev) => {
+      const next = !prev;
+      DeviceEventEmitter.emit('SET_IMMERSIVE_VIEW', next);
+      return next;
+    });
   }, []);
 
   const handleExitImmersiveView = useCallback(() => {
     setIsImmersiveView(false);
+    DeviceEventEmitter.emit('SET_IMMERSIVE_VIEW', false);
   }, []);
 
   const handleOpenCinema = useCallback(() => {
@@ -419,7 +428,10 @@ export default function HomeScreen() {
   }, []);
 
   const handleOpenShop = useCallback(() => {
-    setIsShopVisible(true);
+    router.navigate({
+      pathname: '/shop' as any,
+      params: { slide: 'slide_from_left' },
+    });
   }, []);
 
   const handleCloseShop = useCallback(() => {
@@ -467,7 +479,7 @@ export default function HomeScreen() {
   return (
     <View style={[styles.rootContainer, { backgroundColor: isNight ? '#0B132B' : '#68B6F2' }]}>
       <DayNightBackground isNight={isNight} />
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+      <SafeAreaView edges={['top']} style={styles.safeArea}>
         <ScrollView
           bounces={false}
           contentContainerStyle={[styles.scrollContent, isImmersiveView && styles.scrollContentImmersive]}
@@ -526,16 +538,6 @@ export default function HomeScreen() {
           />
         )}
 
-        {!isImmersiveView && (
-          <HomeBottomBar
-            isNight={isNight}
-            onOpenCommunity={handleOpenCommunity}
-            onOpenHome={handleNoop}
-            onOpenSettings={handleOpenSettings}
-            onOpenShop={handleOpenShop}
-            onOpenWardrobe={handleOpenWardrobe}
-          />
-        )}
 
         <HomeShopAndTaskModals
           insufficientRubyItem={insufficientRubyItem}

@@ -9,6 +9,7 @@ import type { ClipsContentProps } from "../types/cinema";
 export function ClipsContent({
   clips,
   onPostPress,
+  onDeleteClip,
   title = "Danh sách PENTA-CINEMA",
   subtitle = "Các video đã tạo trong tuần này",
   emptyTitle = "Chưa có video nào",
@@ -36,6 +37,7 @@ export function ClipsContent({
           <ClipVideoCard
             clip={clip}
             key={clip.clipId}
+            onDeleteClip={onDeleteClip}
             onPostPress={() => onPostPress(clip)}
           />
         ))

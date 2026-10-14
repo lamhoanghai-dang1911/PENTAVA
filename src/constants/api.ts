@@ -90,6 +90,7 @@ export const API_ENDPOINTS = {
     GET_CLIPS: (goalId: number, weekNumber: number) =>
       `/api/cinema/goals/${goalId}/weeks/${weekNumber}/clips`,
     GET_CLIP: (clipId: number) => `/api/cinema/clips/${clipId}`,
+    DELETE_CLIP: (clipId: number) => `/api/cinema/clips/${clipId}`,
   },
   SOCIAL: {
     CREATE_POST: "/api/social/posts",

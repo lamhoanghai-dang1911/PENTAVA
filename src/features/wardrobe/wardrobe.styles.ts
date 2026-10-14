@@ -26,7 +26,7 @@ export const styles = StyleSheet.create({
   },
   headerTitleWrap: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 0,
   },
   headerTitle: {
     color: "#0F291E",
@@ -55,7 +55,7 @@ export const styles = StyleSheet.create({
   content: {
     gap: 16,
     padding: 18,
-    paddingBottom: 36,
+    paddingBottom: 100,
   },
   loading: {
     alignItems: "center",

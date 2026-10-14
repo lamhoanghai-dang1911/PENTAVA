@@ -87,6 +87,12 @@
           }
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Pentava cần quyền Camera để chụp ảnh hoàn thành nhiệm vụ."
+        }
+      ],
       "expo-video"
     ],
     "experiments": {

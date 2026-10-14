@@ -13,7 +13,7 @@ export const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 20,
     paddingTop: 4,
-    paddingBottom: 4,
+    paddingBottom: 24,
     justifyContent: 'space-between',
   },
   headerRow: {

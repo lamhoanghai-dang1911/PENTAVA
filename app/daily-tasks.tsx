@@ -1,6 +1,8 @@
 import { Design, FontFamily } from '@/src/constants/design';
+import { useAppTheme } from '@/src/context/theme-context';
 import { DailyTaskModals } from '@/src/features/tasks/components/daily-task-modals';
 import { DailyTasksHeader } from '@/src/features/tasks/components/daily-tasks-header';
+import { DailyTasksSkeleton } from '@/src/features/tasks/components/daily-tasks-skeleton';
 import { EndGoalSection } from '@/src/features/tasks/components/end-goal-section';
 import { TaskCard } from '@/src/features/tasks/components/task-card';
 import { useDailyTasks } from '@/src/features/tasks/hooks/use-daily-tasks';
@@ -95,8 +97,10 @@ export default function DailyTasksScreen() {
         router.replace('/daily-tasks');
     };
 
+    const { isNight } = useAppTheme();
+
     return (
-        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+        <SafeAreaView edges={['top']} style={[styles.safeArea, isNight && { backgroundColor: '#0B132B' }]}>
             <ScrollView
                 contentContainerStyle={styles.scrollContent}
                 contentInsetAdjustmentBehavior="never"
@@ -132,11 +136,7 @@ export default function DailyTasksScreen() {
                 </Pressable> */}
 
                 {dailyTasks.isLoading ? (
-                    <ActivityIndicator
-                        color={Design.colors.primaryGreen}
-                        size="large"
-                        style={styles.loading}
-                    />
+                    <DailyTasksSkeleton />
                 ) : null}
 
                 {dailyTasks.isFutureSelected ? (
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
     scrollContent: {
         paddingHorizontal: 20,
         paddingTop: 8,
-        paddingBottom: 48,
+        paddingBottom: 100,
     },
 
     diaryCard: {

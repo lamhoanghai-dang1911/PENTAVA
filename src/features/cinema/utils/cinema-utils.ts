@@ -7,7 +7,7 @@ export const STATUS_LABELS: Record<string, string> = {
   FAILED: "Chưa hoàn thành",
 };
 
-export const WEEK_COLORS = ["#FBC653", "#F45D61", "#3D865D", "#4D96F4"] as const;
+export const WEEK_COLORS = ["#F59E0B", "#F45D61", "#3D865D", "#4D96F4"] as const;
 
 export function formatDate(date: string) {
   if (!date) return "";

@@ -1,4 +1,5 @@
 import { Design } from '@/src/constants/design';
+import { Skeleton } from '@/src/components/ui/skeleton';
 import type { ThemeMode } from '@/src/hooks/use-day-night-theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -136,9 +137,19 @@ export const HomeHeader = memo(function HomeHeader({
                 source={require('@/assets/images/ruby.png')}
                 style={styles.statIcon}
               />
-              <Text style={[styles.statValue, styles.rubyValue, isNight && styles.rubyValueNight]}>
-                {isRubyBalanceLoading ? '...' : rubyBalance ?? '—'}
-              </Text>
+              {isRubyBalanceLoading ? (
+                <Skeleton
+                  borderRadius={6}
+                  color={isNight ? 'rgba(255, 255, 255, 0.25)' : '#CBD5E1'}
+                  height={13}
+                  style={{ marginLeft: 2 }}
+                  width={24}
+                />
+              ) : (
+                <Text style={[styles.statValue, styles.rubyValue, isNight && styles.rubyValueNight]}>
+                  {rubyBalance ?? '—'}
+                </Text>
+              )}
               <View style={styles.plusButtonCircle}>
                 <Ionicons color="#FFFFFF" name="add" size={13} />
               </View>

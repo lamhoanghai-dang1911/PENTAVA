@@ -10,7 +10,7 @@ export type AvatarPreviewProps = {
 
 export type WardrobeHeaderProps = {
   inventoryCount: number;
-  onBack: () => void;
+  onBack?: () => void;
 };
 
 export type InventoryCardProps = {

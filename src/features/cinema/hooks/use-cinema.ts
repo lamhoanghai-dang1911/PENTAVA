@@ -259,6 +259,19 @@ export function useCinema() {
     });
   };
 
+  const handleDeleteClip = async (clipToDelete: Clip) => {
+    try {
+      await cinemaService.deleteClip(clipToDelete.clipId);
+      setSelectedWeekClips((prev) =>
+        prev ? prev.filter((item) => item.clipId !== clipToDelete.clipId) : null,
+      );
+      void loadStorageQuota();
+      Alert.alert("Thành công", "Đã xóa video thành công.");
+    } catch (error) {
+      Alert.alert("Không thể xóa video", getErrorMessage(error));
+    }
+  };
+
   return {
     goals,
     query,
@@ -300,5 +313,6 @@ export function useCinema() {
     handleCreateClip,
     handleBack,
     handlePostClip,
+    handleDeleteClip,
   };
 }

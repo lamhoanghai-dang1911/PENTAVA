@@ -1,4 +1,5 @@
 import { Design } from "@/src/constants/design";
+import { useAppTheme } from "@/src/context/theme-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -11,6 +12,12 @@ import {
   PhotoActionModal,
   PhotoViewerModal,
 } from "./components/cinema-modals";
+import {
+  CinemaClipsSkeleton,
+  CinemaGoalsSkeleton,
+  CinemaPhotosSkeleton,
+  CinemaWeeksSkeleton,
+} from "./components/cinema-skeleton";
 import { ClipsContent } from "./components/clips-content";
 import { GoalCard } from "./components/goal-card";
 import { GoalWeeksContent } from "./components/goal-weeks-content";
@@ -86,10 +93,12 @@ export default function CinemaScreen() {
     handleCreateClip,
     handleBack,
     handlePostClip,
+    handleDeleteClip,
   } = useCinema();
+  const { isNight } = useAppTheme();
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
+    <SafeAreaView edges={["top"]} style={[styles.safeArea, isNight && { backgroundColor: "#0B132B" }]}>
       <CinemaHeader
         onBack={handleBack}
         onQueryChange={setQuery}
@@ -99,15 +108,9 @@ export default function CinemaScreen() {
 
       {selectedGoal ? (
         isPhotosLoading ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
-            <Text style={styles.stateText}>Đang tải ảnh check-in...</Text>
-          </View>
+          <CinemaPhotosSkeleton />
         ) : isClipsLoading ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
-            <Text style={styles.stateText}>Đang tải danh sách video...</Text>
-          </View>
+          <CinemaClipsSkeleton />
         ) : selectedWeekPhotos ? (
           <WeekPhotosContent
             clip={clip}
@@ -131,6 +134,7 @@ export default function CinemaScreen() {
                 ? "Chưa có clip hành trình nào"
                 : "Chưa có video nào"
             }
+            onDeleteClip={handleDeleteClip}
             onPostPress={handlePostClip}
             subtitle={
               isViewingJourneyClips
@@ -150,10 +154,7 @@ export default function CinemaScreen() {
             week={selectedWeek}
           />
         ) : isWeeksLoading ? (
-          <View style={styles.centerState}>
-            <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
-            <Text style={styles.stateText}>Đang tải 4 tuần...</Text>
-          </View>
+          <CinemaWeeksSkeleton />
         ) : selectedGoalWeeks ? (
           <GoalWeeksContent
             data={selectedGoalWeeks}
@@ -164,10 +165,7 @@ export default function CinemaScreen() {
           />
         ) : null
       ) : isLoading ? (
-        <View style={styles.centerState}>
-          <ActivityIndicator color={Design.colors.primaryGreen} size="large" />
-          <Text style={styles.stateText}>Đang tải mục tiêu...</Text>
-        </View>
+        <CinemaGoalsSkeleton />
       ) : (
         <FlatList
           contentContainerStyle={[
