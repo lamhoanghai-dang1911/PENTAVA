@@ -117,6 +117,19 @@ export default function HomeScreen() {
     }, []),
   );
 
+  // Lắng nghe sự kiện cập nhật avatar realtime (khi đổi trang phục trong Kho đồ)
+  useEffect(() => {
+    const unsubscribe = skinService.subscribeAvatar((updatedAvatar) => {
+      if (updatedAvatar?.layers) {
+        setAvatarLayers(updatedAvatar.layers);
+      }
+    });
+
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
   useEffect(() => {
     let isMounted = true;
 

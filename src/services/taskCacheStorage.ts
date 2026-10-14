@@ -35,13 +35,48 @@ export async function cacheTaskHistory(
   );
 }
 
+function getLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+type CachedDailyStatusPayload = {
+  date: string;
+  status: DailyTaskStatus;
+};
+
 export async function getCachedDailyStatus(userId: string, goalId: number) {
   if (userId === "anonymous") return null;
 
   const value = await AsyncStorage.getItem(
     getKey(DAILY_STATUS_PREFIX, userId, String(goalId)),
   );
-  return value ? (JSON.parse(value) as DailyTaskStatus) : null;
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value);
+    // Nếu cache có bọc date
+    if (parsed && typeof parsed === "object" && "date" in parsed && "status" in parsed) {
+      const payload = parsed as CachedDailyStatusPayload;
+      if (payload.date !== getLocalDateString()) {
+        // Cache của ngày cũ -> Không dùng để tránh nhầm đã xác nhận nhiệm vụ hôm nay
+        return null;
+      }
+      return payload.status;
+    }
+
+    // Dữ liệu cache cũ chưa có date: nếu đã có confirmedToday thì bỏ qua vì có thể là ngày cũ
+    const legacy = parsed as DailyTaskStatus;
+    if (legacy?.hasConfirmedToday) {
+      return null;
+    }
+    return legacy;
+  } catch {
+    return null;
+  }
 }
 
 export async function cacheDailyStatus(
@@ -51,8 +86,13 @@ export async function cacheDailyStatus(
 ) {
   if (userId === "anonymous" || !status) return;
 
+  const payload: CachedDailyStatusPayload = {
+    date: getLocalDateString(),
+    status,
+  };
+
   await AsyncStorage.setItem(
     getKey(DAILY_STATUS_PREFIX, userId, String(goalId)),
-    JSON.stringify(status),
+    JSON.stringify(payload),
   );
 }

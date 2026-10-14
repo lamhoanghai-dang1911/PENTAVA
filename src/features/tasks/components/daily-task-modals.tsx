@@ -37,7 +37,7 @@ export function DailyTaskModals({
                     <View style={styles.dailyStatusModal}>
                         <Text style={styles.modalTitle}>Nhiệm vụ hôm qua</Text>
                         <Text style={styles.modalSubtitle}>
-                            Bạn có muốn tiếp tục 5 nhiệm vụ đã hoàn thành hôm qua không?
+                            Bạn có muốn tiếp tục 5 nhiệm vụ của ngày gần nhất không?
                         </Text>
                         <ScrollView
                             style={styles.yesterdayList}
@@ -72,7 +72,7 @@ export function DailyTaskModals({
                                     <ActivityIndicator color={Design.colors.white} />
                                 ) : (
                                     <Text style={styles.primaryActionText}>
-                                        Giữ lại task cũ hôm qua
+                                        Giữ lại task cũ
                                     </Text>
                                 )}
                             </Pressable>
