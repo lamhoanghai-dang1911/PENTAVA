@@ -1,17 +1,17 @@
-import React from "react";
+import { router } from "expo-router";
+import { useRef } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
-import { useRubyTopup } from "./hooks/use-ruby-topup";
-import { TopupHeader } from "./components/topup-header";
-import { TopupRateCard } from "./components/topup-rate-card";
-import { TopupPackagesList } from "./components/topup-packages-list";
 import { CustomTopupForm } from "./components/custom-topup-form";
-import { TopupTransactionCard } from "./components/topup-transaction-card";
+import { TopupHeader } from "./components/topup-header";
+import { TopupPackagesList } from "./components/topup-packages-list";
+import { TopupQrModal } from "./components/topup-qr-modal";
+import { TopupRateCard } from "./components/topup-rate-card";
+import { useRubyTopup } from "./hooks/use-ruby-topup";
 import { styles } from "./shop.styles";
 
 export default function RubyTopupScreen() {
@@ -34,7 +34,10 @@ export default function RubyTopupScreen() {
     handleBuyPackage,
     handleCustomSubmit,
     checkTransactionStatus,
+    closeTransaction,
   } = useRubyTopup();
+
+  const scrollViewRef = useRef<ScrollView>(null);
 
   const handleBack = () => {
     if (router.canGoBack()) {
@@ -44,15 +47,24 @@ export default function RubyTopupScreen() {
     }
   };
 
+  const handleInputFocus = () => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 150);
+  };
+
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "android" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "android" ? 12 : 0}
         style={styles.flex}
       >
         <ScrollView
-          contentContainerStyle={styles.content}
+          ref={scrollViewRef}
+          contentContainerStyle={[styles.content, { paddingBottom: 60 }]}
           keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
         >
           <TopupHeader onBack={handleBack} />
 
@@ -77,22 +89,23 @@ export default function RubyTopupScreen() {
             isSubmitting={isSubmitting}
             isValidAmount={isValidAmount}
             onChangeRubyInput={handleRubyInputChange}
+            onFocus={handleInputFocus}
             onSubmit={handleCustomSubmit}
             pricing={topupPricing}
             rubyInput={rubyInput}
           />
-
-          {transaction ? (
-            <TopupTransactionCard
-              isCheckingStatus={isCheckingStatus}
-              onCheckStatus={() => void checkTransactionStatus()}
-              rubyBalance={rubyBalance}
-              statusError={statusError}
-              transaction={transaction}
-            />
-          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <TopupQrModal
+        isCheckingStatus={isCheckingStatus}
+        onCheckStatus={() => void checkTransactionStatus()}
+        onClose={closeTransaction}
+        rubyBalance={rubyBalance}
+        statusError={statusError}
+        transaction={transaction}
+        visible={transaction !== null}
+      />
     </SafeAreaView>
   );
 }

@@ -435,7 +435,7 @@ export default function HomeScreen() {
     router.push('/friend-requests');
   }, []);
 
-  const handleNoop = useCallback(() => {}, []);
+  const handleNoop = useCallback(() => { }, []);
 
   const handleWalletBalanceChange = useCallback((balance: number) => {
     setRubyBalance(balance);

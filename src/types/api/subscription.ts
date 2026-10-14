@@ -52,6 +52,15 @@ export type UserSubscriptionDetailResponse = {
   endDate?: string | null;
   daysRemaining: number;
   activeFeatures: PlanFeatureItem[];
+  lastTransactionCode?: string | null;
+};
+
+export type SubscriptionOrderStatusResponse = {
+  transactionCode: string;
+  status: "PENDING" | "SUCCESS" | "FAILED" | "EXPIRED" | string;
+  planCode?: string | null;
+  planName?: string | null;
+  amountVnd?: number | null;
 };
 
 export type UserEntitlementCheckResponse = {

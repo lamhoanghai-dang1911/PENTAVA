@@ -37,6 +37,7 @@ export type CustomTopupFormProps = {
   isSubmitting: boolean;
   errorMessage: string | null;
   onSubmit: () => void;
+  onFocus?: () => void;
 };
 
 export type TopupTransactionCardProps = {
@@ -45,4 +46,14 @@ export type TopupTransactionCardProps = {
   isCheckingStatus: boolean;
   statusError: string | null;
   onCheckStatus: () => void;
+};
+
+export type TopupQrModalProps = {
+  visible: boolean;
+  transaction: InitTopupResponse | null;
+  rubyBalance: number | null;
+  isCheckingStatus: boolean;
+  statusError: string | null;
+  onCheckStatus: () => void;
+  onClose: () => void;
 };

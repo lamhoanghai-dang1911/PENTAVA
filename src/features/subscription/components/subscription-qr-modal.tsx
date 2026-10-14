@@ -148,7 +148,7 @@ export function SubscriptionQrModal({
                 )}
               </Pressable>
 
-              {onMockConfirm && (
+              {Boolean(__DEV__) && onMockConfirm && (
                 <Pressable
                   accessibilityRole="button"
                   disabled={isMockConfirming}

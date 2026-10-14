@@ -116,72 +116,96 @@ export function useRubyTopup() {
     void handleCreateTopup({ amountVnd });
   };
 
-  const checkTransactionStatus = useCallback(async () => {
-    const transactionCode = transaction?.transactionCode;
-    if (
-      !transactionCode ||
-      transaction.status !== "PENDING" ||
-      isCheckingStatusRef.current
-    ) {
-      return;
-    }
-
-    isCheckingStatusRef.current = true;
-    setIsCheckingStatus(true);
-    try {
-      const history = await shopService.getTopupHistory();
-      const updatedTransaction = history.find(
-        (item) => item.transactionCode === transactionCode,
-      );
-
-      if (!updatedTransaction) {
-        setStatusError("Chưa tìm thấy giao dịch trong lịch sử. Hệ thống sẽ tiếp tục kiểm tra.");
+  const checkTransactionStatus = useCallback(
+    async (isManual = true) => {
+      const transactionCode = transaction?.transactionCode;
+      if (
+        !transactionCode ||
+        transaction.status !== "PENDING" ||
+        isCheckingStatusRef.current
+      ) {
         return;
       }
 
-      setStatusError(null);
-      if (updatedTransaction.status !== transaction.status) {
-        setTransaction((current) =>
-          current?.transactionCode === transactionCode
-            ? {
-                ...current,
-                status: updatedTransaction.status,
-              }
-            : current,
-        );
+      isCheckingStatusRef.current = true;
+      if (isManual) {
+        setIsCheckingStatus(true);
+        setStatusError(null);
       }
 
-      if (updatedTransaction.status === "SUCCESS") {
-        const wallet = await shopService.getMyWallet();
-        setRubyBalance(wallet.rubyBalance);
+      try {
+        const history = await shopService.getTopupHistory();
+        const updatedTransaction = history.find(
+          (item) => item.transactionCode === transactionCode,
+        );
+
+        if (!updatedTransaction) {
+          if (isManual) {
+            setStatusError(
+              "Chưa tìm thấy giao dịch. Vui lòng đợi 1-2 phút để ngân hàng xử lý.",
+            );
+          }
+          return;
+        }
+
+        if (isManual) {
+          setStatusError(null);
+        }
+
+        if (updatedTransaction.status !== transaction.status) {
+          setTransaction((current) =>
+            current?.transactionCode === transactionCode
+              ? {
+                  ...current,
+                  status: updatedTransaction.status,
+                }
+              : current,
+          );
+        }
+
+        if (updatedTransaction.status === "SUCCESS") {
+          const wallet = await shopService.getMyWallet();
+          setRubyBalance(wallet.rubyBalance);
+        } else if (isManual && updatedTransaction.status === "PENDING") {
+          setStatusError(
+            "Giao dịch đang chờ ngân hàng xác nhận. Vui lòng đợi trong giây lát.",
+          );
+        }
+      } catch (error: unknown) {
+        if (isManual) {
+          setStatusError(
+            error instanceof Error
+              ? error.message
+              : "Không thể kiểm tra trạng thái giao dịch.",
+          );
+        }
+      } finally {
+        isCheckingStatusRef.current = false;
+        if (isManual) {
+          setIsCheckingStatus(false);
+        }
       }
-    } catch (error: unknown) {
-      setStatusError(
-        error instanceof Error
-          ? error.message
-          : "Không thể kiểm tra trạng thái giao dịch.",
-      );
-    } finally {
-      isCheckingStatusRef.current = false;
-      setIsCheckingStatus(false);
-    }
-  }, [transaction]);
+    },
+    [transaction],
+  );
 
   useEffect(() => {
     if (!transaction || transaction.status !== "PENDING") return;
 
-    const initialCheck = setTimeout(() => {
-      void checkTransactionStatus();
-    }, 0);
+    // Polling ngầm định kỳ mỗi 3 giây (không kích hoạt spinner trên nút bấm)
     const interval = setInterval(() => {
-      void checkTransactionStatus();
-    }, 2500);
+      void checkTransactionStatus(false);
+    }, 3000);
 
     return () => {
-      clearTimeout(initialCheck);
       clearInterval(interval);
     };
-  }, [transaction, checkTransactionStatus]);
+  }, [transaction?.transactionCode, transaction?.status, checkTransactionStatus]);
+
+  const closeTransaction = useCallback(() => {
+    setTransaction(null);
+    setStatusError(null);
+  }, []);
 
   return {
     topupPricing,
@@ -202,5 +226,6 @@ export function useRubyTopup() {
     handleBuyPackage,
     handleCustomSubmit,
     checkTransactionStatus,
+    closeTransaction,
   };
 }

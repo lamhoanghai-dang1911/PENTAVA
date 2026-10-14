@@ -93,7 +93,7 @@ export default function SubscriptionScreen() {
         onCheckStatus={checkStatus}
         isCheckingStatus={isCheckingStatus}
         statusMessage={statusMessage}
-        onMockConfirm={mockConfirm}
+        onMockConfirm={__DEV__ ? mockConfirm : undefined}
         isMockConfirming={isMockConfirming}
       />
 

@@ -128,15 +128,32 @@ export function useSubscription(): UseSubscriptionResult {
         setStatusMessage(null);
       }
       try {
+        let isSuccess = false;
+        try {
+          const order = await subscriptionService.getOrderStatus(
+            activeTransaction.transactionCode,
+          );
+          if (order.status === "SUCCESS") {
+            isSuccess = true;
+          }
+        } catch {
+          // Fallback kiểm tra qua thông tin my-subscription
+        }
+
         const updatedSub = await subscriptionService.getMySubscription();
         setMySubscription(updatedSub);
 
-        const isPurchasedPlanActive =
-          updatedSub.hasActiveSubscription &&
-          (updatedSub.planCode?.toUpperCase() === activeTransaction.planCode.toUpperCase() ||
-            updatedSub.daysRemaining > 0);
+        // Chỉ xác nhận thành công nếu đơn hàng có status SUCCESS hoặc lastTransactionCode khớp chính xác
+        if (
+          !isSuccess &&
+          updatedSub.lastTransactionCode &&
+          updatedSub.lastTransactionCode.toUpperCase() ===
+            activeTransaction.transactionCode.toUpperCase()
+        ) {
+          isSuccess = true;
+        }
 
-        if (isPurchasedPlanActive) {
+        if (isSuccess) {
           setActiveTransaction(null);
           setStatusMessage(null);
           setNotificationModal({
@@ -175,14 +192,15 @@ export function useSubscription(): UseSubscriptionResult {
   useEffect(() => {
     if (!activeTransaction) return;
 
+    // Polling ngầm mỗi 3 giây
     const interval = setInterval(() => {
       void checkStatus(false);
-    }, 2500);
+    }, 3000);
 
     return () => {
       clearInterval(interval);
     };
-  }, [activeTransaction, checkStatus]);
+  }, [activeTransaction?.transactionCode, checkStatus]);
 
   const mockConfirm = useCallback(async () => {
     if (!activeTransaction) return;
