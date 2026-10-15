@@ -32,7 +32,12 @@ export function TaskCard({
     const [isCheckInModalVisible, setIsCheckInModalVisible] = useState(false);
     const [isImageModalVisible, setIsImageModalVisible] = useState(false);
     const [isLoadingCheckInImage, setIsLoadingCheckInImage] = useState(false);
-    const [checkInImageUrl, setCheckInImageUrl] = useState<string | null>(null);
+    const [isUploadingImage, setIsUploadingImage] = useState<boolean>(() => {
+        return task.progressId ? checkinService.isUploading(task.progressId) : false;
+    });
+    const [checkInImageUrl, setCheckInImageUrl] = useState<string | null>(() => {
+        return task.progressId ? checkinService.getCachedImage(task.progressId) : null;
+    });
 
     useEffect(() => {
         let isMounted = true;
@@ -43,26 +48,50 @@ export function TaskCard({
             };
         }
 
+        const progressId = task.progressId;
+
+        // Đăng ký theo dõi trạng thái upload ngầm
+        const unsubscribe = checkinService.subscribeUploadStatus(
+            progressId,
+            (status) => {
+                if (!isMounted) return;
+                setIsUploadingImage(status.isUploading);
+                if (status.imageUrl) {
+                    setCheckInImageUrl(status.imageUrl);
+                }
+                if (status.error) {
+                    Alert.alert("Tải ảnh check-in thất bại", status.error);
+                }
+            }
+        );
+
+        // Fetch ảnh từ server nếu chưa có ảnh
         checkinService
-            .getImage(task.progressId)
+            .getImage(progressId)
             .then((response) => {
                 if (isMounted && response.imageUrl) {
                     setCheckInImageUrl(response.imageUrl);
                 }
             })
             .catch(() => {
-                if (isMounted) {
+                if (isMounted && !checkinService.isUploading(progressId)) {
                     setCheckInImageUrl(null);
                 }
             });
 
         return () => {
             isMounted = false;
+            unsubscribe();
         };
     }, [task.isCompleted, task.progressId]);
 
     const handleViewCheckInImage = async () => {
-        if (!task.progressId || isLoadingCheckInImage) {
+        if (!task.progressId || isLoadingCheckInImage || isUploadingImage) {
+            return;
+        }
+
+        if (checkInImageUrl) {
+            setIsImageModalVisible(true);
             return;
         }
 
@@ -213,7 +242,7 @@ export function TaskCard({
                                 Đổi task
                             </Text>
                         </Pressable>
-                    ) : !checkInImageUrl ? (
+                    ) : !checkInImageUrl && !isUploadingImage ? (
                         <Pressable
                             accessibilityRole="button"
                             onPress={() => onStartCheckIn(task)}
@@ -235,15 +264,16 @@ export function TaskCard({
                     ) : (
                         <Pressable
                             accessibilityRole="button"
-                            disabled={isLoadingCheckInImage}
+                            disabled={isLoadingCheckInImage || isUploadingImage}
                             onPress={handleViewCheckInImage}
                             style={({ pressed }) => [
                                 styles.action,
-                                pressed && { transform: [{ scale: 0.95 }] },
+                                (isUploadingImage || isLoadingCheckInImage) && styles.actionDisabled,
+                                pressed && !isUploadingImage && !isLoadingCheckInImage && { transform: [{ scale: 0.95 }] },
                             ]}
                         >
-                            {isLoadingCheckInImage ? (
-                                <ActivityIndicator color={Design.colors.primaryGreen} />
+                            {isUploadingImage || isLoadingCheckInImage ? (
+                                <ActivityIndicator size="small" color={Design.colors.primaryGreen} />
                             ) : (
                                 <Ionicons
                                     color={Design.colors.primaryGreen}
@@ -422,6 +452,10 @@ const styles = StyleSheet.create({
 
     actionCompleted: {
         opacity: 0.7,
+    },
+
+    actionDisabled: {
+        opacity: 0.65,
     },
 
     actionText: {

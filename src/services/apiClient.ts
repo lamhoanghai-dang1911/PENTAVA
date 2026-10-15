@@ -17,6 +17,12 @@ const apiClient = create({
 
 console.log('[API Base URL]:', API_BASE_URL);
 
+if (__DEV__) {
+  fetch(`${API_BASE_URL}/api/shop/subscription/plans`)
+    .then((res) => console.log('[Expo Dev Fetch Test]: SUCCESS status =', res.status))
+    .catch((err) => console.warn('[Expo Dev Fetch Test]: FAILED =', err.message));
+}
+
 let accessToken: string | null = null;
 
 const publicAuthEndpoints = [
@@ -100,8 +106,9 @@ apiClient.interceptors.response.use(
     }
 
     if (isAxiosError(error) && !error.response) {
+      const targetUrl = `${error.config?.baseURL ?? ''}${error.config?.url ?? ''}`;
       console.warn(
-        `[Network Error] Cannot reach: ${error.config?.baseURL ?? ''}${error.config?.url ?? ''} (${error.message})`,
+        `[Network Error] Không thể kết nối tới: ${targetUrl} (${error.code || 'TIMEOUT'})`,
       );
     }
 

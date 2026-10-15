@@ -350,6 +350,30 @@ export const styles = StyleSheet.create({
     fontFamily: FontFamily.beVietnamSemiBold,
     fontSize: Design.fontSize.body,
   },
+  viewClipsButton: {
+    alignItems: "center",
+    backgroundColor: "#F0FDF4",
+    borderColor: "#A7F3D0",
+    borderRadius: 26,
+    borderWidth: 1.5,
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 10,
+    paddingVertical: 13,
+  },
+  viewClipsButtonNight: {
+    backgroundColor: "#132A22",
+    borderColor: "#059669",
+  },
+  viewClipsButtonText: {
+    color: "#059669",
+    fontFamily: FontFamily.beVietnamSemiBold,
+    fontSize: Design.fontSize.body - 1,
+  },
+  viewClipsButtonTextNight: {
+    color: "#34D399",
+  },
   clipProgressCard: {
     backgroundColor: "#F8FAF8",
     borderColor: "#EAF3ED",

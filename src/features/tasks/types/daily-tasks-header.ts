@@ -7,4 +7,5 @@ export type DailyTasksHeaderProps = {
   weekNumber: number;
   onSelectDay: (index: number) => void;
   onChangeWeek: (week: number) => void;
+  isNight?: boolean;
 };

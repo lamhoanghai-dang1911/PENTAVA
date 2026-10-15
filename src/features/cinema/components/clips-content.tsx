@@ -14,23 +14,24 @@ export function ClipsContent({
   subtitle = "Các video đã tạo trong tuần này",
   emptyTitle = "Chưa có video nào",
   emptySubtitle = "Hãy tạo video từ danh sách ảnh của tuần này.",
+  isNight,
 }: ClipsContentProps) {
   return (
     <ScrollView
       contentContainerStyle={styles.clipsContent}
       showsVerticalScrollIndicator={false}
     >
-      <Text style={styles.photosSectionTitle}>{title}</Text>
-      <Text style={styles.photosSectionHint}>{subtitle}</Text>
+      <Text style={[styles.photosSectionTitle, isNight && { color: "#F8FAFC" }]}>{title}</Text>
+      <Text style={[styles.photosSectionHint, isNight && { color: "#94A3B8" }]}>{subtitle}</Text>
       {clips.length === 0 ? (
-        <View style={styles.emptyPhotosCard}>
+        <View style={[styles.emptyPhotosCard, isNight && { backgroundColor: "#111C44", borderColor: "#1E293B" }]}>
           <Ionicons
             color={Design.colors.disabled}
             name="film-outline"
             size={40}
           />
-          <Text style={styles.emptyTitle}>{emptyTitle}</Text>
-          <Text style={styles.stateText}>{emptySubtitle}</Text>
+          <Text style={[styles.emptyTitle, isNight && { color: "#F8FAFC" }]}>{emptyTitle}</Text>
+          <Text style={[styles.stateText, isNight && { color: "#94A3B8" }]}>{emptySubtitle}</Text>
         </View>
       ) : (
         clips.map((clip) => (

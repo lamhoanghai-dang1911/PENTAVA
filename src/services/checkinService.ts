@@ -10,8 +10,34 @@ import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 const CHECKIN_BUCKET =
   process.env.EXPO_PUBLIC_SUPABASE_CHECKIN_BUCKET || "pentava-checkin-images";
 
+export type CheckinUploadStatus = {
+  isUploading: boolean;
+  imageUrl?: string;
+  error?: string;
+};
+
+type UploadListener = (status: CheckinUploadStatus) => void;
+
 // Bộ nhớ đệm tạm thời trên client để hiển thị ảnh ngay lập tức khi đang upload ngầm
 const localCheckinCache = new Map<number, string>();
+const uploadingTasks = new Set<number>();
+const uploadListeners = new Map<number, Set<UploadListener>>();
+
+function notifyUploadListeners(progressId: number, status: CheckinUploadStatus) {
+  const listeners = uploadListeners.get(progressId);
+  if (listeners) {
+    listeners.forEach((listener) => {
+      try {
+        listener(status);
+      } catch (e) {
+        console.error(
+          `[checkinService] Lỗi trong listener của task ${progressId}:`,
+          e,
+        );
+      }
+    });
+  }
+}
 
 async function compressImageForUpload(uri: string): Promise<string> {
   if (uri.startsWith("http://") || uri.startsWith("https://") || uri.startsWith("data:")) {
@@ -67,7 +93,50 @@ function getImageInfo(uri: string) {
 }
 
 export const checkinService = {
+  isUploading(progressId: number): boolean {
+    return uploadingTasks.has(progressId);
+  },
+
+  getCachedImage(progressId: number): string | null {
+    return localCheckinCache.get(progressId) ?? null;
+  },
+
+  subscribeUploadStatus(progressId: number, listener: UploadListener): () => void {
+    if (!uploadListeners.has(progressId)) {
+      uploadListeners.set(progressId, new Set());
+    }
+    uploadListeners.get(progressId)!.add(listener);
+
+    // Bắn ngay trạng thái hiện tại cho subscriber
+    listener({
+      isUploading: uploadingTasks.has(progressId),
+      imageUrl: localCheckinCache.get(progressId),
+    });
+
+    return () => {
+      const listeners = uploadListeners.get(progressId);
+      if (listeners) {
+        listeners.delete(listener);
+        if (listeners.size === 0) {
+          uploadListeners.delete(progressId);
+        }
+      }
+    };
+  },
+
   async getImage(progressId: number): Promise<CheckinResponse> {
+    const cachedUrl = localCheckinCache.get(progressId);
+
+    // Nếu đang trong tiến trình upload ngầm và đã có ảnh local thì trả về ngay
+    if (uploadingTasks.has(progressId) && cachedUrl) {
+      return {
+        message: "Ảnh check-in đang được tải lên",
+        taskProgressId: progressId,
+        imageUrl: cachedUrl,
+        checkinDate: new Date().toISOString().split("T")[0],
+      };
+    }
+
     try {
       const response = await apiClient.get(
         API_ENDPOINTS.CHECKIN.GET_IMAGE(progressId),
@@ -78,22 +147,22 @@ export const checkinService = {
         return response.data;
       }
 
-      if (localCheckinCache.has(progressId)) {
+      if (cachedUrl) {
         return {
           message: "Ảnh check-in từ thiết bị",
           taskProgressId: progressId,
-          imageUrl: localCheckinCache.get(progressId)!,
+          imageUrl: cachedUrl,
           checkinDate: new Date().toISOString().split("T")[0],
         };
       }
 
       return response.data;
     } catch (error) {
-      if (localCheckinCache.has(progressId)) {
+      if (cachedUrl) {
         return {
           message: "Ảnh check-in từ thiết bị",
           taskProgressId: progressId,
-          imageUrl: localCheckinCache.get(progressId)!,
+          imageUrl: cachedUrl,
           checkinDate: new Date().toISOString().split("T")[0],
         };
       }
@@ -150,14 +219,35 @@ export const checkinService = {
 
   uploadAndSaveInBackground(imageUri: string, progressId: number): void {
     localCheckinCache.set(progressId, imageUri);
+    uploadingTasks.add(progressId);
+    notifyUploadListeners(progressId, {
+      isUploading: true,
+      imageUrl: imageUri,
+    });
 
     (async () => {
       try {
         const uploadResult = await this.uploadImage(imageUri, progressId);
-        await this.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
-        localCheckinCache.set(progressId, uploadResult.publicUrl);
+        const saveRes = await this.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
+        const activeUrl = saveRes?.imageUrl || uploadResult.publicUrl;
+        localCheckinCache.set(progressId, activeUrl);
+        uploadingTasks.delete(progressId);
+        notifyUploadListeners(progressId, {
+          isUploading: false,
+          imageUrl: activeUrl,
+        });
       } catch (error) {
         console.error(`[checkinService] Lỗi upload ngầm ảnh check-in (task: ${progressId}):`, error);
+        uploadingTasks.delete(progressId);
+        localCheckinCache.delete(progressId);
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Không thể tải ảnh check-in lên hệ thống.";
+        notifyUploadListeners(progressId, {
+          isUploading: false,
+          error: errorMessage,
+        });
       }
     })();
   },

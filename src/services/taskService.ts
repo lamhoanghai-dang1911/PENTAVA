@@ -136,8 +136,17 @@ export const taskService = {
   },
 
   async completeTask(progressId: number): Promise<TaskResponse> {
-    const response = await apiClient.post(API_ENDPOINTS.TASK.COMPLETE(progressId));
-    cacheManager.invalidate("task:daily-status:", true);
-    return response.data;
+    try {
+      const response = await apiClient.post(API_ENDPOINTS.TASK.COMPLETE(progressId));
+      cacheManager.invalidate("task:daily-status:", true);
+      return response.data;
+    } catch (error: any) {
+      throw new Error(
+        getTaskErrorMessage(
+          error,
+          `Không thể hoàn thành nhiệm vụ (${error?.response?.status || 500})`,
+        ),
+      );
+    }
   },
 };

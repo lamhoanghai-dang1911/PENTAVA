@@ -71,19 +71,50 @@ export function useWardrobe(): UseWardrobeResult {
   const handleEquip = useCallback(async (item: SkinInventoryItem) => {
     setActiveItemId(item.id);
     setActionError(null);
+
+    // Lưu state cũ để rollback nếu API lỗi
+    const prevAvatar = avatar;
+    const prevInventory = inventory;
+
+    // ⚡ Optimistic UI: Cập nhật ngay lập tức trong 0ms
+    setInventory((current) =>
+      current.map((inventoryItem) => ({
+        ...inventoryItem,
+        isEquipped:
+          inventoryItem.slot === item.slot
+            ? inventoryItem.id === item.id
+            : inventoryItem.isEquipped,
+      })),
+    );
+
+    if (avatar) {
+      const filteredLayers = avatar.layers.filter(
+        (layer) => layer.slot !== item.slot,
+      );
+      const newLayer = {
+        code: item.code,
+        slot: item.slot,
+        name: item.name,
+        layerOrder: item.layerOrder,
+        imageUrl: item.imageUrl,
+      };
+      setAvatar({
+        ...avatar,
+        layers: [...filteredLayers, newLayer].sort(
+          (a, b) => a.layerOrder - b.layerOrder,
+        ),
+      });
+    }
+
     try {
       const updatedAvatar = await skinService.equipSkin(item.id);
       if (!isMounted.current) return;
       setAvatar(updatedAvatar);
-      setInventory((current) =>
-        current.map((inventoryItem) => ({
-          ...inventoryItem,
-          isEquipped:
-            inventoryItem.slot === item.slot && inventoryItem.id === item.id,
-        })),
-      );
     } catch (equipError) {
       if (isMounted.current) {
+        // Rollback lại state cũ nếu có lỗi
+        setAvatar(prevAvatar);
+        setInventory(prevInventory);
         setActionError(
           equipError instanceof Error
             ? equipError.message
@@ -93,25 +124,42 @@ export function useWardrobe(): UseWardrobeResult {
     } finally {
       if (isMounted.current) setActiveItemId(null);
     }
-  }, []);
+  }, [avatar, inventory]);
 
   const handleUnequip = useCallback(async (item: SkinInventoryItem) => {
     if (item.slot === 'BASE') return;
     setActiveItemId(item.id);
     setActionError(null);
+
+    // Lưu state cũ để rollback nếu API lỗi
+    const prevAvatar = avatar;
+    const prevInventory = inventory;
+
+    // ⚡ Optimistic UI: Gỡ bỏ ngay lập tức trong 0ms
+    setInventory((current) =>
+      current.map((inventoryItem) =>
+        inventoryItem.id === item.id
+          ? { ...inventoryItem, isEquipped: false }
+          : inventoryItem,
+      ),
+    );
+
+    if (avatar) {
+      setAvatar({
+        ...avatar,
+        layers: avatar.layers.filter((layer) => layer.slot !== item.slot),
+      });
+    }
+
     try {
       const updatedAvatar = await skinService.unequipSkin(item.slot);
       if (!isMounted.current) return;
       setAvatar(updatedAvatar);
-      setInventory((current) =>
-        current.map((inventoryItem) =>
-          inventoryItem.slot === item.slot
-            ? { ...inventoryItem, isEquipped: false }
-            : inventoryItem,
-        ),
-      );
     } catch (unequipError) {
       if (isMounted.current) {
+        // Rollback lại state cũ nếu có lỗi
+        setAvatar(prevAvatar);
+        setInventory(prevInventory);
         setActionError(
           unequipError instanceof Error
             ? unequipError.message
@@ -121,7 +169,7 @@ export function useWardrobe(): UseWardrobeResult {
     } finally {
       if (isMounted.current) setActiveItemId(null);
     }
-  }, []);
+  }, [avatar, inventory]);
 
   const sortedInventory = useMemo(
     () =>

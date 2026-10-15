@@ -7,6 +7,7 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
+  Pressable,
   Text,
   View,
 } from "react-native";
@@ -62,6 +63,37 @@ export default function CommunityScreen() {
           isNight={isNight}
           onFriendRequestsPress={() => router.push("/friend-requests")}
         />
+
+        <View style={styles.postCtaContainer}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Đăng video của bạn"
+            onPress={() => router.push("/cinema")}
+            style={({ pressed }) => [
+              styles.postCtaCard,
+              isNight && styles.postCtaCardNight,
+              pressed && { opacity: 0.85, transform: [{ scale: 0.98 }] },
+            ]}
+          >
+            <View style={styles.postCtaLeft}>
+              <View style={[styles.postCtaIconWrap, isNight && styles.postCtaIconWrapNight]}>
+                <Ionicons color="#FFFFFF" name="videocam" size={20} />
+              </View>
+              <View>
+                <Text style={[styles.postCtaTitle, isNight && { color: "#F8FAFC" }]}>
+                  Đăng video của bạn
+                </Text>
+                <Text style={[styles.postCtaSubtitle, isNight && { color: "#94A3B8" }]}>
+                  Chọn video từ PENTA-CINEMA để chia sẻ
+                </Text>
+              </View>
+            </View>
+            <View style={styles.postCtaBadge}>
+              <Text style={styles.postCtaBadgeText}>Đăng ngay</Text>
+              <Ionicons color="#FFFFFF" name="arrow-forward" size={14} />
+            </View>
+          </Pressable>
+        </View>
 
         <View style={styles.content}>
           <FeedTabs activeTab={activeTab} onTabChange={handleTabChange} />

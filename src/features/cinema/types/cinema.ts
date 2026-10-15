@@ -47,6 +47,7 @@ export type ClipsContentProps = {
   subtitle?: string;
   emptyTitle?: string;
   emptySubtitle?: string;
+  isNight?: boolean;
 };
 
 export type WeekPhotosContentProps = {
@@ -55,8 +56,10 @@ export type WeekPhotosContentProps = {
   onPhotoPress: (photoId: number) => void;
   onToggleSelectAll: () => void;
   onCreateClip: () => void;
+  onViewClips?: () => void;
   clip: Clip | null;
   selectionMessage: string | null;
+  isNight?: boolean;
 };
 
 export type CinemaHeaderProps = {
@@ -64,6 +67,7 @@ export type CinemaHeaderProps = {
   query: string;
   onQueryChange: (query: string) => void;
   onBack: () => void;
+  isNight?: boolean;
 };
 
 export type ErrorAlertModalProps = {

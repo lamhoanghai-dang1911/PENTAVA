@@ -62,7 +62,6 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      setToggleKey((prev) => prev + 1);
       let isFocused = true;
       const now = Date.now();
       // Không gọi lại dồn dập 4 API nếu vừa mới focus trong vòng 15 giây

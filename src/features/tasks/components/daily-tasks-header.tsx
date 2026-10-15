@@ -1,12 +1,12 @@
 import { SectionTabs } from '@/src/components/home/section-tabs';
-import { Design, FontFamily } from '@/src/constants/design';
+import { FontFamily } from '@/src/constants/design';
 import type { DailyTasksHeaderProps } from '@/src/features/tasks/types/daily-tasks-header';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { ZoomIn } from 'react-native-reanimated';
 
-export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber, onSelectDay, onChangeWeek }: DailyTasksHeaderProps) {
+export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber, onSelectDay, onChangeWeek, isNight }: DailyTasksHeaderProps) {
     return (
         <>
             <View style={styles.header}>
@@ -21,36 +21,36 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
                             router.replace('/(tabs)');
                         }
                     }}
-                    style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-                    <Ionicons color="#1E293B" name="chevron-back" size={24} />
+                    style={({ pressed }) => [styles.backButton, isNight && { backgroundColor: '#1E293B' }, pressed && { opacity: 0.7 }]}>
+                    <Ionicons color={isNight ? '#F8FAFC' : '#1E293B'} name="chevron-back" size={24} />
                 </Pressable>
                 <SectionTabs active="tasks" />
             </View>
 
             <View style={styles.titleRow}>
                 <View style={styles.titleWrap}>
-                    <Text style={styles.title}>Nhiệm vụ{'\n'}hàng ngày</Text>
+                    <Text style={[styles.title, isNight && { color: '#F8FAFC' }]}>Nhiệm vụ{'\n'}hàng ngày</Text>
                 </View>
-                <View style={styles.weekControl}>
+                <View style={[styles.weekControl, isNight && { backgroundColor: '#132A22', borderColor: '#065F46' }]}>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Tuần trước"
                         onPress={() => onChangeWeek(weekNumber - 1)}
                         style={({ pressed }) => [styles.weekArrow, pressed && { transform: [{ scale: 0.85 }] }]}>
-                        <Ionicons color="#065F46" name="chevron-back" size={16} />
+                        <Ionicons color={isNight ? '#34D399' : '#065F46'} name="chevron-back" size={16} />
                     </Pressable>
-                    <Text style={styles.weekLabel}>Tuần {weekNumber}</Text>
+                    <Text style={[styles.weekLabel, isNight && { color: '#34D399' }]}>Tuần {weekNumber}</Text>
                     <Pressable
                         accessibilityRole="button"
                         accessibilityLabel="Tuần sau"
                         onPress={() => onChangeWeek(weekNumber + 1)}
                         style={({ pressed }) => [styles.weekArrow, pressed && { transform: [{ scale: 0.85 }] }]}>
-                        <Ionicons color="#065F46" name="chevron-forward" size={16} />
+                        <Ionicons color={isNight ? '#34D399' : '#065F46'} name="chevron-forward" size={16} />
                     </Pressable>
                 </View>
             </View>
 
-            <View style={styles.dateStrip}>
+            <View style={[styles.dateStrip, isNight && { backgroundColor: '#111C44', borderColor: '#1E293B', shadowColor: '#000000' }]}>
                 {dates.map((item, index) => {
                     const isSelected = index === selectedDayIndex;
                     const isFuture = item.dateKey > todayKey;
@@ -65,8 +65,8 @@ export function DailyTasksHeader({ dates, todayKey, selectedDayIndex, weekNumber
                                 isFuture && styles.dateCellDisabled,
                                 pressed && !isFuture && { transform: [{ scale: 0.94 }] },
                             ]}>
-                            <Text style={[styles.weekdayText, isSelected && styles.dateTextSelected]}>{item.weekday}</Text>
-                            <Text style={[styles.dateText, isSelected && styles.dateTextSelected]}>{item.day}</Text>
+                            <Text style={[styles.weekdayText, isNight && !isSelected && { color: '#94A3B8' }, isSelected && styles.dateTextSelected]}>{item.weekday}</Text>
+                            <Text style={[styles.dateText, isNight && !isSelected && { color: '#F8FAFC' }, isSelected && styles.dateTextSelected]}>{item.day}</Text>
                             {isSelected ? (
                                 <Animated.View entering={ZoomIn.springify().damping(12)} style={[styles.dateDot, styles.dateDotSelected]} />
                             ) : (

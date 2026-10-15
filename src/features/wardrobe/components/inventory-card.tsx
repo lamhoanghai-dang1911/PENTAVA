@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Design } from '@/src/constants/design';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -6,31 +7,32 @@ import { SLOT_NAMES } from '../constants';
 import type { InventoryCardProps } from '../types/wardrobe';
 import { styles } from '../wardrobe.styles';
 
-export function InventoryCard({
+export const InventoryCard = memo(function InventoryCard({
   item,
   isEquipped,
   isBusy,
   hasActiveItem,
   onEquip,
   onUnequip,
+  isNight,
 }: InventoryCardProps) {
   const canUnequip = item.slot !== 'BASE';
 
   return (
-    <View style={styles.inventoryCard}>
+    <View style={[styles.inventoryCard, isNight && { backgroundColor: '#111C44', borderColor: '#1E293B' }]}>
       <View style={styles.cardHeaderRow}>
-        <View style={styles.slotBadge}>
-          <Text style={styles.slotBadgeText}>{SLOT_NAMES[item.slot] ?? item.slot}</Text>
+        <View style={[styles.slotBadge, isNight && { backgroundColor: '#1E293B' }]}>
+          <Text style={[styles.slotBadgeText, isNight && { color: '#94A3B8' }]}>{SLOT_NAMES[item.slot] ?? item.slot}</Text>
         </View>
         {isEquipped && (
-          <View style={styles.equippedBadge}>
+          <View style={[styles.equippedBadge, isNight && { backgroundColor: '#132A22' }]}>
             <Ionicons color="#059669" name="checkmark-circle" size={12} />
-            <Text style={styles.equippedBadgeText}>Đang mặc</Text>
+            <Text style={[styles.equippedBadgeText, isNight && { color: '#34D399' }]}>Đang mặc</Text>
           </View>
         )}
       </View>
 
-      <View style={styles.itemImageShowcase}>
+      <View style={[styles.itemImageShowcase, isNight && { backgroundColor: '#0B132B' }]}>
         <Image
           cachePolicy="memory-disk"
           contentFit="contain"
@@ -40,7 +42,7 @@ export function InventoryCard({
         />
       </View>
 
-      <Text numberOfLines={1} style={styles.itemName}>{item.name}</Text>
+      <Text numberOfLines={1} style={[styles.itemName, isNight && { color: '#F8FAFC' }]}>{item.name}</Text>
 
       <Pressable
         accessibilityLabel={isEquipped ? 'Gỡ trang phục' : 'Trang bị'}
@@ -70,4 +72,4 @@ export function InventoryCard({
       </Pressable>
     </View>
   );
-}
+});

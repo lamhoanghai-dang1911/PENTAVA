@@ -66,7 +66,8 @@ export const HomeBottomBar = memo(function HomeBottomBar({
     // Trang bên phải -> slide qua phải ('slide_from_right')
     const slide = targetIdx < currentIdx ? 'slide_from_left' : 'slide_from_right';
 
-    router.navigate({
+    // Dùng router.replace để thay thế màn hình thay vì chồng chất stack vô hạn gây tràn RAM/out app
+    router.replace({
       pathname: targetPath,
       params: { slide },
     } as any);

@@ -33,6 +33,7 @@ export default function WardrobeScreen() {
         error={error}
         inventory={inventory}
         isLoading={isLoading}
+        isNight={isNight}
         onEquip={(item) => void handleEquip(item)}
         onRefresh={loadWardrobe}
         onUnequip={(item) => void handleUnequip(item)}

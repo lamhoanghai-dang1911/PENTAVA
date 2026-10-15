@@ -108,6 +108,7 @@ export default function DailyTasksScreen() {
 
                 <DailyTasksHeader
                     dates={dailyTasks.dates}
+                    isNight={isNight}
                     onChangeWeek={dailyTasks.changeWeek}
                     onSelectDay={dailyTasks.setSelectedDayIndex}
                     selectedDayIndex={dailyTasks.selectedDayIndex}

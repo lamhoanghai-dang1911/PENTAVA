@@ -13,8 +13,10 @@ export function WeekPhotosContent({
   onPhotoPress,
   onToggleSelectAll,
   onCreateClip,
+  onViewClips,
   clip,
   selectionMessage,
+  isNight,
 }: WeekPhotosContentProps) {
   const selectablePhotoCount = Math.min(data.photos.length, 20);
   const selectablePhotoIds = data.photos
@@ -29,13 +31,13 @@ export function WeekPhotosContent({
       contentContainerStyle={styles.photosContent}
       showsVerticalScrollIndicator={false}
     >
-      <View style={styles.photosHero}>
+      <View style={[styles.photosHero, isNight && { backgroundColor: "#111C44", borderColor: "#1E293B" }]}>
         <View style={styles.photosHeroIcon}>
           <Ionicons color={Design.colors.primaryGreen} name="images-outline" size={24} />
         </View>
         <View style={styles.photosHeroText}>
-          <Text style={styles.photosTitle}>WEEK {data.weekNumber}</Text>
-          <Text style={styles.photosRange}>
+          <Text style={[styles.photosTitle, isNight && { color: "#F8FAFC" }]}>WEEK {data.weekNumber}</Text>
+          <Text style={[styles.photosRange, isNight && { color: "#94A3B8" }]}>
             {formatDate(data.weekStart)} - {formatDate(data.weekEnd)}
           </Text>
         </View>
@@ -46,8 +48,8 @@ export function WeekPhotosContent({
       </View>
       <View style={styles.photosSectionHeader}>
         <View>
-          <Text style={styles.photosSectionTitle}>Ảnh check-in</Text>
-          <Text style={styles.photosSectionHint}>Nhấn ảnh để xem hoặc chọn</Text>
+          <Text style={[styles.photosSectionTitle, isNight && { color: "#F8FAFC" }]}>Ảnh check-in</Text>
+          <Text style={[styles.photosSectionHint, isNight && { color: "#94A3B8" }]}>Nhấn ảnh để xem hoặc chọn</Text>
         </View>
         <View style={styles.photosSelectionActions}>
           <Pressable
@@ -70,14 +72,14 @@ export function WeekPhotosContent({
               {areAllPhotosSelected ? "Bỏ chọn tất cả" : "Chọn tất cả"}
             </Text>
           </Pressable>
-          <Text style={styles.selectedCount}>{selectedPhotoIds.size}/20 đã chọn</Text>
+          <Text style={[styles.selectedCount, isNight && { color: "#94A3B8" }]}>{selectedPhotoIds.size}/20 đã chọn</Text>
         </View>
       </View>
       {data.photos.length === 0 ? (
-        <View style={styles.emptyPhotosCard}>
+        <View style={[styles.emptyPhotosCard, isNight && { backgroundColor: "#111C44", borderColor: "#1E293B" }]}>
           <Ionicons color={Design.colors.disabled} name="images-outline" size={40} />
-          <Text style={styles.emptyTitle}>Tuần này chưa có ảnh check-in</Text>
-          <Text style={styles.stateText}>Hãy hoàn thành check-in để lưu lại khoảnh khắc.</Text>
+          <Text style={[styles.emptyTitle, isNight && { color: "#F8FAFC" }]}>Tuần này chưa có ảnh check-in</Text>
+          <Text style={[styles.stateText, isNight && { color: "#94A3B8" }]}>Hãy hoàn thành check-in để lưu lại khoảnh khắc.</Text>
         </View>
       ) : (
         <View style={styles.photoGrid}>
@@ -89,6 +91,7 @@ export function WeekPhotosContent({
               onPress={() => onPhotoPress(photo.photoId)}
               style={({ pressed }) => [
                 styles.photoItem,
+                isNight && { backgroundColor: "#111C44", borderColor: "#1E293B" },
                 selectedPhotoIds.has(photo.photoId) && styles.photoItemSelected,
                 pressed && styles.cardPressed,
               ]}
@@ -101,9 +104,9 @@ export function WeekPhotosContent({
                 style={styles.photo}
                 transition={150}
               />
-              <View style={styles.photoCaption}>
+              <View style={[styles.photoCaption, isNight && { backgroundColor: "#0E1A38" }]}>
                 <Ionicons color={Design.colors.primaryGreen} name="calendar-outline" size={14} />
-                <Text style={styles.photoDate}>{formatDate(photo.checkinDate)}</Text>
+                <Text style={[styles.photoDate, isNight && { color: "#E2E8F0" }]}>{formatDate(photo.checkinDate)}</Text>
                 {selectedPhotoIds.has(photo.photoId) ? (
                   <Ionicons color={Design.colors.primaryGreen} name="checkmark-circle" size={18} />
                 ) : null}
@@ -114,22 +117,22 @@ export function WeekPhotosContent({
       )}
       {selectionMessage ? <Text style={styles.selectionMessage}>{selectionMessage}</Text> : null}
       {clip ? (
-        <View style={styles.clipProgressCard}>
+        <View style={[styles.clipProgressCard, isNight && { backgroundColor: "#111C44", borderColor: "#1E293B" }]}>
           <View style={styles.clipProgressHeader}>
-            <Text style={styles.clipProgressTitle}>Đang tạo video</Text>
+            <Text style={[styles.clipProgressTitle, isNight && { color: "#F8FAFC" }]}>Đang tạo video</Text>
             <Text style={styles.clipProgressPercent}>{getClipProgress(clip.status)}%</Text>
           </View>
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${getClipProgress(clip.status)}%` }]} />
           </View>
-          <Text style={styles.clipProgressText}>{getClipStatusLabel(clip.status)}</Text>
+          <Text style={[styles.clipProgressText, isNight && { color: "#94A3B8" }]}>{getClipStatusLabel(clip.status)}</Text>
           {clip.status === "FAILED" && clip.errorMessage ? (
             <Text style={styles.clipErrorText}>{clip.errorMessage}</Text>
           ) : null}
         </View>
       ) : null}
       {selectedPhotoIds.size < 3 ? (
-        <Text style={styles.minimumPhotosHint}>
+        <Text style={[styles.minimumPhotosHint, isNight && { color: "#94A3B8" }]}>
           Chọn ít nhất 3 hình ảnh để có thể tạo video.
         </Text>
       ) : (
@@ -150,6 +153,33 @@ export function WeekPhotosContent({
           <Text style={styles.createClipButtonText}>Tạo video</Text>
         </Pressable>
       )}
+
+      {onViewClips ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Xem các video đã tạo"
+          onPress={onViewClips}
+          style={({ pressed }) => [
+            styles.viewClipsButton,
+            isNight && styles.viewClipsButtonNight,
+            pressed && styles.cardPressed,
+          ]}
+        >
+          <Ionicons
+            color={isNight ? "#34D399" : "#059669"}
+            name="film-outline"
+            size={19}
+          />
+          <Text
+            style={[
+              styles.viewClipsButtonText,
+              isNight && styles.viewClipsButtonTextNight,
+            ]}
+          >
+            Xem các video đã tạo
+          </Text>
+        </Pressable>
+      ) : null}
     </ScrollView>
   );
 }

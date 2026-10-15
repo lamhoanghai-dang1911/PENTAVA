@@ -100,6 +100,7 @@ export default function CinemaScreen() {
   return (
     <SafeAreaView edges={["top"]} style={[styles.safeArea, isNight && { backgroundColor: "#0B132B" }]}>
       <CinemaHeader
+        isNight={isNight}
         onBack={handleBack}
         onQueryChange={setQuery}
         query={query}
@@ -115,9 +116,11 @@ export default function CinemaScreen() {
           <WeekPhotosContent
             clip={clip}
             data={selectedWeekPhotos}
+            isNight={isNight}
             onCreateClip={() => void handleCreateClip()}
             onPhotoPress={handlePhotoPress}
             onToggleSelectAll={handleToggleSelectAll}
+            onViewClips={() => void handleSelectWeekClips()}
             selectedPhotoIds={selectedPhotoIds}
             selectionMessage={selectionMessage}
           />
@@ -134,6 +137,7 @@ export default function CinemaScreen() {
                 ? "Chưa có clip hành trình nào"
                 : "Chưa có video nào"
             }
+            isNight={isNight}
             onDeleteClip={handleDeleteClip}
             onPostPress={handlePostClip}
             subtitle={

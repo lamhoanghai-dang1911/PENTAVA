@@ -1,5 +1,6 @@
+import { useMemo } from 'react';
 import { Design } from '@/src/constants/design';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { AvatarPreview } from './avatar-preview';
 import { InventoryCard } from './inventory-card';
 import { WardrobeSkeleton } from './wardrobe-skeleton';
@@ -17,7 +18,13 @@ export function WardrobeContent({
   onRefresh,
   onEquip,
   onUnequip,
+  isNight,
 }: WardrobeContentProps) {
+  const equippedCodes = useMemo(
+    () => new Set(avatar?.layers.map((l) => l.code) ?? []),
+    [avatar?.layers],
+  );
+
   return (
     <ScrollView
       contentContainerStyle={styles.content}
@@ -47,7 +54,7 @@ export function WardrobeContent({
         <WardrobeSkeleton />
       ) : avatar ? (
         <>
-          <AvatarPreview layers={avatar.layers} />
+          <AvatarPreview isNight={isNight} layers={avatar.layers} />
 
           <View style={styles.inventorySection}>
             {actionError ? (
@@ -56,16 +63,17 @@ export function WardrobeContent({
               </Text>
             ) : null}
             {inventory.length === 0 ? (
-              <Text style={styles.emptyInventory}>
+              <Text style={[styles.emptyInventory, isNight && { backgroundColor: '#111C44', borderColor: '#1E293B', color: '#94A3B8' }]}>
                 Kho đồ của bạn đang trống. Hãy ghé Cửa hàng nhé!
               </Text>
             ) : (
               sortedInventory.map((item) => (
                 <InventoryCard
-                  item={item}
-                  isEquipped={avatar.layers.some((layer) => layer.code === item.code)}
-                  isBusy={activeItemId === item.id}
                   hasActiveItem={activeItemId !== null}
+                  isBusy={activeItemId === item.id}
+                  isEquipped={equippedCodes.has(item.code)}
+                  isNight={isNight}
+                  item={item}
                   key={item.id}
                   onEquip={() => onEquip(item)}
                   onUnequip={() => onUnequip(item)}

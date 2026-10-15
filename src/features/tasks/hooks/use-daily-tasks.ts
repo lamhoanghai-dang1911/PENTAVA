@@ -20,7 +20,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Alert } from "react-native";
 
 function getErrorMessage(error: unknown) {
-  return error instanceof Error ? error.message : "Đã có lỗi xảy ra.";
+  const anyError = error as any;
+  const responseData = anyError?.response?.data;
+  const validationErrors = responseData?.errors;
+
+  if (Array.isArray(validationErrors) && validationErrors.length > 0) {
+    return validationErrors
+      .map((item: any) => (typeof item === "string" ? item : item?.message))
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return (
+    responseData?.message ||
+    responseData?.error ||
+    (error instanceof Error ? error.message : "Đã có lỗi xảy ra.")
+  );
 }
 
 export function useDailyTasks({
@@ -331,23 +346,28 @@ export function useDailyTasks({
     if (cached && cached.length > 0) {
       return cached;
     }
-    const responses = await Promise.all(
-      TASK_WEEKS.map((week) => taskService.getTasksByWeek(week)),
-    );
-    const allTasks = Array.from(
-      new Map(
-        responses
-          .flatMap((response) => response.tasks)
-          .map((item) => [item.id, item]),
-      ).values(),
-    );
-    candidateTasksCacheRef.current.set(goalId, allTasks);
-    return allTasks;
+    try {
+      const responses = await Promise.all(
+        TASK_WEEKS.map((week) => taskService.getTasksByWeek(week)),
+      );
+      const allTasks = Array.from(
+        new Map(
+          responses
+            .flatMap((response) => response.tasks)
+            .map((item) => [item.id, item]),
+        ).values(),
+      );
+      candidateTasksCacheRef.current.set(goalId, allTasks);
+      return allTasks;
+    } catch (error) {
+      console.warn("[getCandidateTasks] Không thể tải danh sách nhiệm vụ dự phòng:", error);
+      return [];
+    }
   };
 
   useEffect(() => {
     if (currentGoalId) {
-      void getCandidateTasks(currentGoalId);
+      void getCandidateTasks(currentGoalId).catch(() => {});
     }
   }, [currentGoalId]);
 
@@ -358,6 +378,9 @@ export function useDailyTasks({
     setIsSwapLoading(true);
     try {
       const allTasks = await getCandidateTasks(currentGoalId);
+      if (allTasks.length === 0) {
+        throw new Error("Không thể kết nối đến máy chủ để tải nhiệm vụ thay thế.");
+      }
       const selectedIds = new Set(selectedTasks.map((item) => item.id));
       setSwapCandidates(
         allTasks.filter(

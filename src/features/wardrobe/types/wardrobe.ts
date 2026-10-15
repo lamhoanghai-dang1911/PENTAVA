@@ -6,11 +6,13 @@ import type {
 
 export type AvatarPreviewProps = {
   layers: AvatarLayer[];
+  isNight?: boolean;
 };
 
 export type WardrobeHeaderProps = {
   inventoryCount: number;
   onBack?: () => void;
+  isNight?: boolean;
 };
 
 export type InventoryCardProps = {
@@ -20,6 +22,7 @@ export type InventoryCardProps = {
   hasActiveItem: boolean;
   onEquip: () => void;
   onUnequip: () => void;
+  isNight?: boolean;
 };
 
 export type WardrobeContentProps = {
@@ -33,6 +36,7 @@ export type WardrobeContentProps = {
   onRefresh: () => void;
   onEquip: (item: SkinInventoryItem) => void;
   onUnequip: (item: SkinInventoryItem) => void;
+  isNight?: boolean;
 };
 
 export type UseWardrobeResult = {

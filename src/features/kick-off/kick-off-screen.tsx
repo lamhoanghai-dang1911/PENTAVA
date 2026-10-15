@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+const APP_LOGO = require('../../../assets/images/pentava_icon.png');
+
 export function KickOffScreen() {
   const router = useRouter();
   const [scaleAnim] = useState(() => new Animated.Value(1));
@@ -52,9 +54,11 @@ export function KickOffScreen() {
         <View style={styles.centerSection}>
           <View style={styles.logoCard}>
             <Image
+              cachePolicy="memory-disk"
               contentFit="contain"
-              source={require('@/assets/images/auth/pentava_icon.png')}
+              source={APP_LOGO}
               style={styles.logoImage}
+              transition={150}
             />
           </View>
 
@@ -131,6 +135,7 @@ const styles = StyleSheet.create({
     width: 136,
     height: 136,
     borderRadius: 34,
+    backgroundColor: Design.colors.white,
     shadowColor: '#3B8157',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.18,
@@ -141,8 +146,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logoImage: {
-    width: '100%',
-    height: '100%',
+    width: 136,
+    height: 136,
+    borderRadius: 34,
   },
   brandTitle: {
     fontFamily: FontFamily.poppinsSemiBold,

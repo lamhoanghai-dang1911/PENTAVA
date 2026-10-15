@@ -25,8 +25,7 @@ const BaseAvatarLayer = React.memo(function BaseAvatarLayer({ layer }: { layer: 
     <LottieView
       autoPlay={isFocused}
       loop={isFocused}
-      renderMode="HARDWARE"
-      hardwareAccelerationAndroid
+      renderMode="AUTOMATIC"
       speed={1}
       onAnimationFailure={(error) => {
         console.error('Unable to load the avatar Lottie animation.', error);
