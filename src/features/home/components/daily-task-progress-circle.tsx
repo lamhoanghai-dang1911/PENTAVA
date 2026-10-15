@@ -152,3 +152,5 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 });
+
+export { DailyTaskProgressBar } from './daily-task-progress-bar';
