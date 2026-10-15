@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { styles } from '../home-screen.styles';
-import { DailyTaskProgressCircle } from './daily-task-progress-circle';
+import { DailyTaskProgressBar } from './daily-task-progress-bar';
 import { HomeAvatar } from './home-avatar';
 
 type HomeSceneContentProps = {
@@ -45,16 +45,18 @@ export const HomeSceneContent = React.memo(function HomeSceneContent({
 
       {!isImmersiveView ? (
         <>
-          {/* Vòng tròn tiến độ: góc phải trên, nằm dưới hàng icon */}
+          {/* Vòng tròn tiến độ hàng ngày với Lottie Mặt trời / Mặt trăng */}
           <View
             pointerEvents="box-none"
             style={{
               position: 'absolute',
               top: insets.top + TOP_ICON_ROW_OFFSET,
-              right: 16,
+              left: 20,
+              right: 20,
+              alignItems: 'center',
               zIndex: 10,
             }}>
-            <DailyTaskProgressCircle
+            <DailyTaskProgressBar
               goalId={currentGoalId}
               isNight={isNight}
               onPress={onOpenTasks}
