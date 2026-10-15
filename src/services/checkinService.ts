@@ -1,6 +1,11 @@
 import { API_ENDPOINTS } from "@/src/constants/api";
 import apiClient from "@/src/services/apiClient";
+import { getCurrentUserId, subscribeAuthState } from "@/src/services/authStorage";
 import { getSupabase } from "@/src/services/supabaseClient";
+import {
+  cacheCheckinImage,
+  getCachedCheckinImage,
+} from "@/src/services/taskCacheStorage";
 import type {
   CheckinRequestDTO,
   CheckinResponse,
@@ -54,7 +59,7 @@ async function compressImageForUpload(uri: string): Promise<string> {
       },
     );
     return result.uri;
-  } catch (error) {
+  } catch {
     return uri;
   }
 }
@@ -143,7 +148,8 @@ export const checkinService = {
       );
 
       if (response.data?.imageUrl) {
-        localCheckinCache.set(progressId, response.data.imageUrl);
+        localCheckinCache.set(memKey, response.data.imageUrl);
+        await cacheCheckinImage(userId, progressId, response.data.imageUrl);
         return response.data;
       }
 
@@ -214,6 +220,14 @@ export const checkinService = {
       API_ENDPOINTS.CHECKIN.SAVE_IMAGE(progressId),
       payload,
     );
+    try {
+      const userId = await getCurrentUserId();
+      localCheckinCache.set(getMemKey(userId, progressId), imageUrl);
+      await cacheCheckinImage(userId, progressId, imageUrl);
+      this.notify(progressId, imageUrl);
+    } catch (e) {
+      console.warn("[checkinService] Không thể lưu cache ảnh vừa lưu:", e);
+    }
     return response.data;
   },
 
@@ -225,8 +239,14 @@ export const checkinService = {
       imageUrl: imageUri,
     });
 
+    // 2. Chạy ngầm lưu AsyncStorage và upload lên cloud
     (async () => {
       try {
+        const userId = await getCurrentUserId();
+        const memKey = getMemKey(userId, progressId);
+        localCheckinCache.set(memKey, imageUri);
+        await cacheCheckinImage(userId, progressId, imageUri);
+
         const uploadResult = await this.uploadImage(imageUri, progressId);
         const saveRes = await this.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
         const activeUrl = saveRes?.imageUrl || uploadResult.publicUrl;
@@ -252,3 +272,4 @@ export const checkinService = {
     })();
   },
 };
+

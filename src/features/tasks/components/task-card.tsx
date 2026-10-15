@@ -2,6 +2,7 @@ import { Design, FontFamily } from "@/src/constants/design";
 import { TASK_COLORS_BY_INDEX } from "@/src/features/tasks/constants";
 import type { TaskCardProps } from "@/src/features/tasks/types/task-card";
 import { checkinService } from "@/src/services/checkinService";
+import { toAndroidSafeUri } from "@/src/services/fileUri";
 import { Ionicons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
@@ -97,6 +98,7 @@ export function TaskCard({
 
         try {
             setIsLoadingCheckInImage(true);
+            // getImage sẽ đọc cache trước, chỉ khi không có cache mới gọi API
             const response = await checkinService.getImage(task.progressId);
             if (!response.imageUrl) {
                 Alert.alert("Chưa có ảnh check-in", "Task này chưa có ảnh check-in.");
@@ -371,7 +373,7 @@ export function TaskCard({
                         {checkInImageUrl ? (
                             <Image
                                 resizeMode="contain"
-                                source={{ uri: checkInImageUrl }}
+                                source={{ uri: toAndroidSafeUri(checkInImageUrl) }}
                                 style={styles.checkInImage}
                             />
                         ) : null}
