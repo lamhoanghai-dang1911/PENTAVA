@@ -3,7 +3,7 @@ import { View, Text, ScrollView, Pressable } from "react-native";
 import { Image } from "expo-image";
 import { Ionicons } from "@expo/vector-icons";
 import { Design } from "@/src/constants/design";
-import { formatDate, getClipProgress, getClipStatusLabel } from "../utils/cinema-utils";
+import { formatDate } from "../utils/cinema-utils";
 import { styles } from "../cinema.styles";
 import type { WeekPhotosContentProps } from "../types/cinema";
 
@@ -116,21 +116,6 @@ export function WeekPhotosContent({
         </View>
       )}
       {selectionMessage ? <Text style={styles.selectionMessage}>{selectionMessage}</Text> : null}
-      {clip ? (
-        <View style={[styles.clipProgressCard, isNight && { backgroundColor: "#111C44", borderColor: "#1E293B" }]}>
-          <View style={styles.clipProgressHeader}>
-            <Text style={[styles.clipProgressTitle, isNight && { color: "#F8FAFC" }]}>Đang tạo video</Text>
-            <Text style={styles.clipProgressPercent}>{getClipProgress(clip.status)}%</Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <View style={[styles.progressFill, { width: `${getClipProgress(clip.status)}%` }]} />
-          </View>
-          <Text style={[styles.clipProgressText, isNight && { color: "#94A3B8" }]}>{getClipStatusLabel(clip.status)}</Text>
-          {clip.status === "FAILED" && clip.errorMessage ? (
-            <Text style={styles.clipErrorText}>{clip.errorMessage}</Text>
-          ) : null}
-        </View>
-      ) : null}
       {selectedPhotoIds.size < 3 ? (
         <Text style={[styles.minimumPhotosHint, isNight && { color: "#94A3B8" }]}>
           Chọn ít nhất 3 hình ảnh để có thể tạo video.

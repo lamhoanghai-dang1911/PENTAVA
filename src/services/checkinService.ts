@@ -23,10 +23,43 @@ export type CheckinUploadStatus = {
 
 type UploadListener = (status: CheckinUploadStatus) => void;
 
-// Bộ nhớ đệm tạm thời trên client để hiển thị ảnh ngay lập tức khi đang upload ngầm
-const localCheckinCache = new Map<number, string>();
+// Quản lý currentUserId đồng bộ cho memory cache
+let cachedCurrentUserId = "anonymous";
+getCurrentUserId().then((id) => {
+  cachedCurrentUserId = id;
+});
+subscribeAuthState((userId) => {
+  cachedCurrentUserId = userId || "anonymous";
+});
+
+function getMemKey(userId: string, progressId: number): string {
+  return `${userId}:${progressId}`;
+}
+
+// Bộ nhớ đệm RAM theo user để hiển thị tức thì (0ms latency)
+const localCheckinCache = new Map<string, string>();
 const uploadingTasks = new Set<number>();
 const uploadListeners = new Map<number, Set<UploadListener>>();
+
+function setLocalCache(progressId: number, url: string, userId = cachedCurrentUserId) {
+  localCheckinCache.set(getMemKey(userId, progressId), url);
+  if (userId !== "anonymous") {
+    localCheckinCache.set(getMemKey("anonymous", progressId), url);
+  }
+}
+
+function getLocalCache(progressId: number, userId = cachedCurrentUserId): string | null {
+  return (
+    localCheckinCache.get(getMemKey(userId, progressId)) ||
+    localCheckinCache.get(getMemKey("anonymous", progressId)) ||
+    null
+  );
+}
+
+function deleteLocalCache(progressId: number, userId = cachedCurrentUserId) {
+  localCheckinCache.delete(getMemKey(userId, progressId));
+  localCheckinCache.delete(getMemKey("anonymous", progressId));
+}
 
 function notifyUploadListeners(progressId: number, status: CheckinUploadStatus) {
   const listeners = uploadListeners.get(progressId);
@@ -103,9 +136,12 @@ export const checkinService = {
   },
 
   getCachedImage(progressId: number): string | null {
-    return localCheckinCache.get(progressId) ?? null;
+    return getLocalCache(progressId);
   },
 
+  /**
+   * Đăng ký lắng nghe thay đổi trạng thái upload
+   */
   subscribeUploadStatus(progressId: number, listener: UploadListener): () => void {
     if (!uploadListeners.has(progressId)) {
       uploadListeners.set(progressId, new Set());
@@ -115,7 +151,7 @@ export const checkinService = {
     // Bắn ngay trạng thái hiện tại cho subscriber
     listener({
       isUploading: uploadingTasks.has(progressId),
-      imageUrl: localCheckinCache.get(progressId),
+      imageUrl: getLocalCache(progressId) ?? undefined,
     });
 
     return () => {
@@ -129,8 +165,32 @@ export const checkinService = {
     };
   },
 
-  async getImage(progressId: number): Promise<CheckinResponse> {
-    const cachedUrl = localCheckinCache.get(progressId);
+  /**
+   * Đăng ký lắng nghe thay đổi ảnh check-in (tương thích backward)
+   */
+  subscribe(progressId: number, listener: (url: string) => void): () => void {
+    return this.subscribeUploadStatus(progressId, (status) => {
+      if (status.imageUrl) {
+        listener(status.imageUrl);
+      }
+    });
+  },
+
+  /**
+   * Thông báo cho subscriber khi có thay đổi URL ảnh
+   */
+  notify(progressId: number, url: string): void {
+    notifyUploadListeners(progressId, {
+      isUploading: uploadingTasks.has(progressId),
+      imageUrl: url,
+    });
+  },
+
+  /**
+   * Lấy ảnh check-in: ưu tiên đọc RAM cache, sau đó đến AsyncStorage, cuối cùng mới gọi API
+   */
+  async getImage(progressId: number, forceRefresh = false): Promise<CheckinResponse> {
+    const cachedUrl = getLocalCache(progressId);
 
     // Nếu đang trong tiến trình upload ngầm và đã có ảnh local thì trả về ngay
     if (uploadingTasks.has(progressId) && cachedUrl) {
@@ -142,13 +202,41 @@ export const checkinService = {
       };
     }
 
+    const userId = await getCurrentUserId();
+
+    // 1. Kiểm tra cache nếu không yêu cầu làm mới bắt buộc
+    if (!forceRefresh) {
+      // RAM cache
+      if (cachedUrl) {
+        return {
+          message: "Ảnh check-in từ bộ nhớ tạm",
+          taskProgressId: progressId,
+          imageUrl: cachedUrl,
+          checkinDate: new Date().toISOString().split("T")[0],
+        };
+      }
+
+      // Persistent cache (AsyncStorage theo userId)
+      const diskImage = await getCachedCheckinImage(userId, progressId);
+      if (diskImage) {
+        setLocalCache(progressId, diskImage, userId);
+        return {
+          message: "Ảnh check-in từ bộ nhớ thiết bị",
+          taskProgressId: progressId,
+          imageUrl: diskImage,
+          checkinDate: new Date().toISOString().split("T")[0],
+        };
+      }
+    }
+
+    // 2. Chỉ gọi API khi chưa có cache hoặc người dùng yêu cầu forceRefresh
     try {
       const response = await apiClient.get(
         API_ENDPOINTS.CHECKIN.GET_IMAGE(progressId),
       );
 
       if (response.data?.imageUrl) {
-        localCheckinCache.set(memKey, response.data.imageUrl);
+        setLocalCache(progressId, response.data.imageUrl, userId);
         await cacheCheckinImage(userId, progressId, response.data.imageUrl);
         return response.data;
       }
@@ -222,7 +310,7 @@ export const checkinService = {
     );
     try {
       const userId = await getCurrentUserId();
-      localCheckinCache.set(getMemKey(userId, progressId), imageUrl);
+      setLocalCache(progressId, imageUrl, userId);
       await cacheCheckinImage(userId, progressId, imageUrl);
       this.notify(progressId, imageUrl);
     } catch (e) {
@@ -232,25 +320,25 @@ export const checkinService = {
   },
 
   uploadAndSaveInBackground(imageUri: string, progressId: number): void {
-    localCheckinCache.set(progressId, imageUri);
+    setLocalCache(progressId, imageUri);
     uploadingTasks.add(progressId);
     notifyUploadListeners(progressId, {
       isUploading: true,
       imageUrl: imageUri,
     });
 
-    // 2. Chạy ngầm lưu AsyncStorage và upload lên cloud
+    // Chạy ngầm lưu AsyncStorage và upload lên cloud
     (async () => {
       try {
         const userId = await getCurrentUserId();
-        const memKey = getMemKey(userId, progressId);
-        localCheckinCache.set(memKey, imageUri);
+        setLocalCache(progressId, imageUri, userId);
         await cacheCheckinImage(userId, progressId, imageUri);
 
         const uploadResult = await this.uploadImage(imageUri, progressId);
         const saveRes = await this.saveImage(progressId, uploadResult.publicUrl, uploadResult.fileSizeBytes);
         const activeUrl = saveRes?.imageUrl || uploadResult.publicUrl;
-        localCheckinCache.set(progressId, activeUrl);
+        setLocalCache(progressId, activeUrl, userId);
+        await cacheCheckinImage(userId, progressId, activeUrl);
         uploadingTasks.delete(progressId);
         notifyUploadListeners(progressId, {
           isUploading: false,
@@ -259,7 +347,7 @@ export const checkinService = {
       } catch (error) {
         console.error(`[checkinService] Lỗi upload ngầm ảnh check-in (task: ${progressId}):`, error);
         uploadingTasks.delete(progressId);
-        localCheckinCache.delete(progressId);
+        deleteLocalCache(progressId);
         const errorMessage =
           error instanceof Error
             ? error.message
@@ -272,4 +360,3 @@ export const checkinService = {
     })();
   },
 };
-
