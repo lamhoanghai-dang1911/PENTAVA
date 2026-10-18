@@ -2,7 +2,7 @@
   "expo": {
     "name": "pentava",
     "slug": "pentava-6jlvcpng3erd8joudc77c",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "owner": "dannylams-team",
     "extra": {
       "eas": {
@@ -43,11 +43,20 @@
         {
           "action": "VIEW",
           "data": [
-            { "scheme": "pentava" },
-            { "scheme": "com.pentava" },
-            { "scheme": "com.googleusercontent.apps.172089826941-ctgqcqtha95g660csgah5m4kld93raoi" }
+            {
+              "scheme": "pentava"
+            },
+            {
+              "scheme": "com.pentava"
+            },
+            {
+              "scheme": "com.googleusercontent.apps.172089826941-ctgqcqtha95g660csgah5m4kld93raoi"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ]
     },

@@ -27,6 +27,14 @@ import { Alert, DeviceEventEmitter, Modal, Pressable, ScrollView, Text, View } f
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { styles } from './home-screen.styles';
 
+function getTodayDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 export default function HomeScreen() {
   const { data } = useOnboarding();
   const { mode: themeMode, isNight, toggleDayNight, cycleMode } = useDayNightTheme();
@@ -42,6 +50,7 @@ export default function HomeScreen() {
   const [isRubyBalanceLoading, setIsRubyBalanceLoading] = useState(true);
   const [avatarLayers, setAvatarLayers] = useState<AvatarLayer[] | null>(null);
   const [dailyStatus, setDailyStatus] = useState<DailyTaskStatus | null>(null);
+  const [dailyStatusDate, setDailyStatusDate] = useState<string | null>(null);
   const [isDailyStatusVisible, setIsDailyStatusVisible] = useState(false);
   const [, setIsDailyStatusLoading] = useState(false);
   const [isConfirmingDailyTasks, setIsConfirmingDailyTasks] = useState(false);
@@ -58,6 +67,7 @@ export default function HomeScreen() {
   const isLoadingNotificationsRef = useRef(false);
   const hasShownStreakFrozenAlertRef = useRef(false);
   const lastFetchTimeRef = useRef(0);
+  const lastAutoDailyStatusCheckRef = useRef<string | null>(null);
   const [toggleKey, setToggleKey] = useState(0);
 
   useFocusEffect(
@@ -80,8 +90,41 @@ export default function HomeScreen() {
         if (!isFocused) return;
 
         if (goalRes.status === 'fulfilled' && goalRes.value) {
-          setCurrentGoalId(goalRes.value.currentGoal?.goalId ?? null);
-          setCurrentGoal(goalRes.value.currentGoal ?? null);
+          const currentGoalData = goalRes.value.currentGoal ?? null;
+          const goalId = currentGoalData?.goalId ?? null;
+          setCurrentGoalId(goalId);
+          setCurrentGoal(currentGoalData);
+
+          // Tự động kiểm tra nhiệm vụ khi vào app ngày mới
+          if (goalId) {
+            const todayKey = getTodayDateString();
+            if (lastAutoDailyStatusCheckRef.current !== todayKey) {
+              lastAutoDailyStatusCheckRef.current = todayKey;
+              void taskService.getDailyTaskStatus(goalId).then((statusRes) => {
+                if (!isFocused || !statusRes?.dailyTaskStatus) return;
+                const status = statusRes.dailyTaskStatus;
+                setDailyStatus(status);
+                setDailyStatusDate(todayKey);
+                void getCurrentUserId().then((uid) => {
+                  void cacheDailyStatus(uid, goalId, status);
+                });
+
+                const isGoalCreatedToday =
+                  currentGoalData?.createdAt &&
+                  new Date(currentGoalData.createdAt).toDateString() === new Date().toDateString();
+
+                const hasValidYesterdayTasks =
+                  !isGoalCreatedToday &&
+                  Boolean(status.hasYesterdayTasks) &&
+                  Boolean(status.yesterdayTasks && status.yesterdayTasks.length === 5) &&
+                  status.yesterdayTasks.every((t) => !t.goalId || Number(t.goalId) === Number(goalId));
+
+                if (!status.hasConfirmedToday && hasValidYesterdayTasks) {
+                  setIsDailyStatusVisible(true);
+                }
+              }).catch(() => {});
+            }
+          }
         }
 
         if (streakRes.status === 'fulfilled' && streakRes.value?.streak) {
@@ -253,8 +296,11 @@ export default function HomeScreen() {
       return;
     }
 
-    // ⚡ Fast path 1: Nếu state đã có nhiệm vụ -> Chuyển màn hình ngay trong 0ms!
-    if (dailyStatus?.hasConfirmedToday || (dailyStatus?.todayTasks && dailyStatus.todayTasks.length > 0)) {
+    const todayKey = getTodayDateString();
+    const isStateFromToday = dailyStatusDate === todayKey;
+
+    // ⚡ Fast path 1: Nếu state đã có nhiệm vụ trong hôm nay -> Chuyển màn hình ngay trong 0ms!
+    if (isStateFromToday && (dailyStatus?.hasConfirmedToday || (dailyStatus?.todayTasks && dailyStatus.todayTasks.length > 0))) {
       router.push('/daily-tasks');
       return;
     }
@@ -265,6 +311,7 @@ export default function HomeScreen() {
       const cached = await getCachedDailyStatus(userId, goalId);
       if (cached && (cached.hasConfirmedToday || (cached.todayTasks && cached.todayTasks.length > 0))) {
         setDailyStatus(cached);
+        setDailyStatusDate(todayKey);
         router.push('/daily-tasks');
         return;
       }
@@ -283,6 +330,7 @@ export default function HomeScreen() {
       }
 
       setDailyStatus(status);
+      setDailyStatusDate(todayKey);
       await cacheDailyStatus(userId, goalId, status);
 
       // 1. Nếu hôm nay đã có dữ liệu / đã xác nhận nhiệm vụ -> Chuyển vào Daily Tasks
@@ -301,7 +349,7 @@ export default function HomeScreen() {
         !isGoalCreatedToday &&
         Boolean(status.hasYesterdayTasks) &&
         Boolean(status.yesterdayTasks && status.yesterdayTasks.length === 5) &&
-        status.yesterdayTasks.every((t) => !t.goalId || t.goalId === goalId);
+        status.yesterdayTasks.every((t) => !t.goalId || Number(t.goalId) === Number(goalId));
 
       if (hasValidYesterdayTasks) {
         setIsDailyStatusVisible(true);
@@ -316,6 +364,7 @@ export default function HomeScreen() {
         const cached = await getCachedDailyStatus(userId, goalId);
         if (cached) {
           setDailyStatus(cached);
+          setDailyStatusDate(todayKey);
           if (cached.hasConfirmedToday || (cached.todayTasks && cached.todayTasks.length > 0)) {
             router.push('/daily-tasks');
             return;
@@ -327,7 +376,7 @@ export default function HomeScreen() {
             !isGoalCreatedToday &&
             Boolean(cached.hasYesterdayTasks) &&
             Boolean(cached.yesterdayTasks && cached.yesterdayTasks.length === 5) &&
-            cached.yesterdayTasks.every((t) => !t.goalId || t.goalId === goalId);
+            cached.yesterdayTasks.every((t) => !t.goalId || Number(t.goalId) === Number(goalId));
 
           if (hasValidYesterdayTasks) {
             setIsDailyStatusVisible(true);
@@ -347,7 +396,7 @@ export default function HomeScreen() {
     } finally {
       setIsDailyStatusLoading(false);
     }
-  }, [currentGoal, currentGoalId, handleChooseNewTasks]);
+  }, [currentGoal, currentGoalId, dailyStatus?.hasConfirmedToday, dailyStatus?.todayTasks, dailyStatusDate, handleChooseNewTasks]);
 
   const handleKeepYesterdayTasks = useCallback(async () => {
     if (!currentGoalId || !dailyStatus?.yesterdayTasks.length) return;
@@ -362,6 +411,7 @@ export default function HomeScreen() {
       const updatedResponse = await taskService.getDailyTaskStatus(currentGoalId);
       if (updatedResponse.dailyTaskStatus) {
         setDailyStatus(updatedResponse.dailyTaskStatus);
+        setDailyStatusDate(getTodayDateString());
         await cacheDailyStatus(userId, currentGoalId, updatedResponse.dailyTaskStatus);
       }
       setIsDailyStatusVisible(false);

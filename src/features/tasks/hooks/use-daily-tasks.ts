@@ -159,6 +159,18 @@ export function useDailyTasks({
           setCurrentGoalId(goalId);
           setDailyStatus(statusResponse.dailyTaskStatus);
           setIsDailyStatusLoaded(true);
+
+          if (
+            statusResponse.dailyTaskStatus &&
+            !statusResponse.dailyTaskStatus.hasConfirmedToday &&
+            Boolean(statusResponse.dailyTaskStatus.hasYesterdayTasks) &&
+            Boolean(
+              statusResponse.dailyTaskStatus.yesterdayTasks &&
+                statusResponse.dailyTaskStatus.yesterdayTasks.length > 0,
+            )
+          ) {
+            setIsDailyStatusVisible(true);
+          }
         }
         if (isActive)
           await cacheDailyStatus(
@@ -267,71 +279,65 @@ export function useDailyTasks({
       return false;
     }
 
+    // 1. Snapshot previous state for rollback
+    const previousStatus = dailyStatus;
+
+    // 2. ⚡ OPTIMISTIC UPDATE: Cập nhật UI ngay lập tức trong 0ms
+    const updatedTasks = (dailyStatus?.todayTasks ?? []).map((item) =>
+      item.progressId === task.progressId
+        ? { ...item, isCompleted: true }
+        : item,
+    );
+    const updatedStatus: DailyTaskStatus | null = dailyStatus
+      ? {
+          ...dailyStatus,
+          todayTasks: updatedTasks,
+        }
+      : null;
+
+    setDailyStatus(updatedStatus);
     setCompletingTaskId(task.id);
+
     try {
+      // 3. Chỉ gọi duy nhất 1 API completeTask
       await taskService.completeTask(task.progressId);
-      const statusResponse = currentGoalId
-        ? await taskService.getDailyTaskStatus(currentGoalId)
-        : null;
-      const serverStatus = statusResponse?.dailyTaskStatus;
-      if (!serverStatus) {
-        throw new Error("Không nhận được trạng thái nhiệm vụ sau khi hoàn thành.");
+
+      // 4. Ghi cache chạy ngầm (không await chặn luồng UI)
+      if (currentGoalId && updatedStatus) {
+        void getCurrentUserId().then((userId) => {
+          void cacheDailyStatus(userId, currentGoalId, updatedStatus);
+        });
       }
 
-      // POST complete is authoritative. Merge it into GET in case daily-status
-      // is briefly stale while the backend updates the daily task record.
-      const updatedTasks = serverStatus.todayTasks.map((item) =>
-        item.progressId === task.progressId
-          ? { ...item, isCompleted: true }
-          : item,
-      );
-      const updatedStatus = {
-        ...serverStatus,
-        todayTasks: updatedTasks,
-      };
-
-      setDailyStatus(updatedStatus);
-      if (currentGoalId) {
-        await cacheDailyStatus(
-          await getCurrentUserId(),
-          currentGoalId,
-          updatedStatus,
-        );
-      }
-
+      // 5. Nếu hoàn thành cả 5 task, fetch streak chạy ngầm để hiển thị ăn mừng
       if (
         updatedTasks.length === 5 &&
         updatedTasks.every((item) => item.isCompleted)
       ) {
-        const streakResponse = await onboardingService.getCurrentStreak();
-        setCompletedStreak(streakResponse.streak);
+        void onboardingService
+          .getCurrentStreak()
+          .then((streakResponse) => {
+            if (streakResponse?.streak) {
+              setCompletedStreak(streakResponse.streak);
+            }
+          })
+          .catch(() => {});
       }
+
       return true;
     } catch (error) {
       const errorMessage = getErrorMessage(error);
       if (/đã (được )?hoàn thành trước đó/i.test(errorMessage)) {
-        const updatedStatus = dailyStatus
-          ? {
-            ...dailyStatus,
-            todayTasks: dailyStatus.todayTasks.map((item) =>
-              item.progressId === task.progressId
-                ? { ...item, isCompleted: true }
-                : item,
-            ),
-          }
-          : null;
-
-        setDailyStatus(updatedStatus);
         if (currentGoalId && updatedStatus) {
-          await cacheDailyStatus(
-            await getCurrentUserId(),
-            currentGoalId,
-            updatedStatus,
-          );
+          void getCurrentUserId().then((userId) => {
+            void cacheDailyStatus(userId, currentGoalId, updatedStatus);
+          });
         }
         return true;
       }
 
+      // 🛡️ Rollback nếu thực sự xảy ra lỗi mạng
+      setDailyStatus(previousStatus);
       Alert.alert("Không thể hoàn thành nhiệm vụ", errorMessage);
       return false;
     } finally {

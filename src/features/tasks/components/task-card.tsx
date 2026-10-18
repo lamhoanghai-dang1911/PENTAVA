@@ -4,6 +4,7 @@ import type { TaskCardProps } from "@/src/features/tasks/types/task-card";
 import { checkinService } from "@/src/services/checkinService";
 import { toAndroidSafeUri } from "@/src/services/fileUri";
 import { Ionicons } from "@expo/vector-icons";
+import * as Haptics from "expo-haptics";
 import { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -127,6 +128,12 @@ export function TaskCard({
                 "Nhiệm vụ chưa có thông tin tiến độ.",
             );
             return;
+        }
+
+        try {
+            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        } catch {
+            // ignore
         }
 
         // Gọi API completeTask()
