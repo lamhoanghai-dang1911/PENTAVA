@@ -402,6 +402,66 @@ Rules:
 - Google OAuth client IDs remain environment variables prefixed with `EXPO_PUBLIC_`; never put Google client secrets in the mobile app.
 - Preserve the existing confirmation-modal sequence: successful login or OAuth only navigates after the user confirms the notification.
 
+## Quy chuẩn Clean Code & Tối ưu hiệu năng (Clean Code & Optimization Guidelines)
+
+Tài liệu này dành cho thành viên thực hiện nhiệm vụ Clean Code & Refactor. Mục tiêu: **Tối ưu hóa hiệu năng, giảm giật lag, chia nhỏ module dễ bảo trì mà KHÔNG làm thay đổi bất kỳ hành vi hay tính năng nào đang chạy.**
+
+### 1. Nguyên tắc vàng khi Clean Code (Golden Rules)
+- **TUYỆT ĐỐI KHÔNG VIẾT THÊM TÍNH NĂNG MỚI:** Không sửa flow API, không tự ý đổi logic nghiệp vụ, không đổi tên public routes hoặc storage keys.
+- **THIN ROUTE RULE:** Thư mục `app/` chỉ chứa thin wrapper (dưới 50 dòng) để phục vụ Expo Router điều hướng. Toàn bộ UI, state, modal, styles chuyển về `src/features/<feature>/`.
+- **KIẾN TRÚC 4 TẦNG FEATURE:**
+  ```text
+  src/features/<feature>/
+    components/      # UI components thuần, nhận data qua props, bọc React.memo
+    hooks/           # Custom hook quản lý state, effects, API calls và SWR cache
+    types/           # TypeScript interfaces, props và data models riêng
+    utils/           # Pure functions, formatters, hằng số cấu hình
+  ```
+- **BẢO TOÀN SWR & CACHE PERSISTENCE:** Các logic đọc cache `AsyncStorage` theo `userId` (ví dụ `@pentava/daily-status:{userId}:{goalId}`) bắt buộc giữ nguyên thứ tự: Đọc cache hiển thị 0ms -> Gọi API background cập nhật state và cache.
+
+### 2. Kỹ thuật loại bỏ Giật Lag & Tối ưu Re-render (Anti-Lag & Performance)
+- **Memoization đúng cách:**
+  - Bọc tất cả component lá hoặc item trong danh sách bằng `React.memo`.
+  - Bọc tất cả hàm callback truyền qua props (`onPress`, `onToggle`, ...) bằng `useCallback`.
+  - Bọc các phép biến đổi dữ liệu mảng nặng (`filter`, `map`, `sort`) hoặc object style tính toán bằng `useMemo`.
+- **Tối ưu List / ScrollView:**
+  - Với danh sách dài, dùng `FlatList` thay vì map trực tiếp trong `ScrollView`.
+  - Tránh truyền anonymous function `renderItem={() => ...}` hoặc `keyExtractor={(item) => ...}` trực tiếp trong JSX; hãy khai báo hàm riêng hoặc bọc `useCallback`.
+  - Cấu hình FlatList tối ưu: `windowSize={5}`, `maxToRenderPerBatch={5}`, `initialNumToRender={5}`, `removeClippedSubviews={true}` trên Android.
+- **Tối ưu Hình ảnh & Lottie:**
+  - Dùng `expo-image` (`contentFit="contain"`, `cachePolicy="memory-disk"`) thay thế `Image` của `react-native`.
+  - Với `lottie-react-native`, luôn bật `renderMode="HARDWARE"` và `hardwareAccelerationAndroid`. Kết hợp `useFocusEffect` để tắt loop khi màn hình mất focus (`autoPlay={isFocused}`, `loop={isFocused}`).
+- **Phân tách StyleSheet khổng lồ:**
+  - Tránh các file style tập trung hàng trăm dòng (>500 dòng). Tách style theo từng component con để tránh gom bộ nhớ và dễ sửa giao diện cục bộ.
+
+### 3. Quy trình an toàn trước & sau khi Clean (Safety Checklist)
+1. **Trước khi sửa:** Đọc kỹ luồng dữ liệu, các props truyền vào, các hook đang lắng nghe event.
+2. **Trong khi tách:** Tách từng file nhỏ một, không refactor 10 file cùng một lúc.
+3. **Sau khi tách:**
+   - Chạy `npx eslint <cac-file-vua-sua>`
+   - Chạy `npx tsc --noEmit` xác nhận 0 lỗi TypeScript
+   - Mở app chạy thực tế kiểm tra xem chức năng và vị trí UI có bị ảnh hưởng không.
+
+---
+
+## Danh mục các Màn hình & File cần Clean Code (Refactoring Backlog)
+
+Dưới đây là danh sách các file đang quá cồng kềnh, chứa lẫn lộn logic hoặc làm chậm ứng dụng, xếp theo độ ưu tiên:
+
+| Độ ưu tiên | File cần xử lý | Số dòng | Vấn đề hiện tại | Hướng dẫn Clean an toàn |
+| :--- | :--- | :--- | :--- | :--- |
+| 🔴 **Cao nhất** | `src/features/tasks/custom-roadmap-screen.tsx` | ~1,844 dòng | File nguyên khối cực kỳ lớn, chứa toàn bộ state lộ trình, render node, modal, tính toán tuần và tương tác kéo thả. | Tách hook `use-custom-roadmap.ts`; tách các component con `roadmap-header.tsx`, `roadmap-node.tsx`, `roadmap-timeline.tsx`, `roadmap-modals.tsx`. |
+| 🔴 **Cao nhất** | `src/features/assessment/components/assessment-report-view.tsx` | ~818 dòng | Trộn lẫn biểu đồ chart, radar, tính điểm và toàn bộ view report. | Tách các cụm chart thành component độc lập (`assessment-radar-chart.tsx`, `assessment-score-card.tsx`). |
+| 🔴 **Cao nhất** | `src/features/home/home-screen.styles.ts` & `home-screen.tsx` | ~742 & 616 dòng | `home-screen.styles.ts` quá dài; `home-screen.tsx` ôm nhiều modal inline và logic phụ (NoGoalModal, StreakFreezeModal). | Chia nhỏ style vào từng component con tương ứng; tách modal phụ thành hook/component quản lý riêng. |
+| 🔴 **Cao nhất** | `src/components/home/shop-sheet.tsx` | ~706 dòng | Bottom sheet mua đồ quá dài, trộn lẫn tab lọc, danh mục item và animation mua hàng. | Chuyển về đúng module `src/features/shop/` hoặc tách thành `shop-item-card.tsx`, `shop-category-tabs.tsx`. |
+| 🟡 **Ưu tiên 2** | `app/social-profile.tsx` | ~646 dòng | Vi phạm quy tắc Thin Route; viết thẳng toàn bộ logic và JSX trang cá nhân mạng xã hội trong `app/`. | Tạo `src/features/community/social-profile-screen.tsx` (và hook `use-social-profile.ts`); để `app/social-profile.tsx` chỉ làm thin wrapper. |
+| 🟡 **Ưu tiên 2** | `src/features/tasks/components/task-card.tsx` | ~594 dòng | Thẻ nhiệm vụ chứa quá nhiều animation con, popup swap task inline, modal checkin. | Tách popup swap task thành component riêng; tối ưu memoization để khi hoàn thành 1 task không render lại 4 task còn lại. |
+| 🟡 **Ưu tiên 2** | `app/goal-assessment.tsx` | ~517 dòng | Vi phạm Thin Route; toàn bộ logic đánh giá mục tiêu nằm trong thư mục route. | Chuyển logic và JSX về `src/features/assessment/assessment-screen.tsx`. |
+| 🟡 **Ưu tiên 2** | `src/features/tasks/hooks/use-daily-tasks.ts` | ~500 dòng | Hook quá ôm đồm: vừa gọi API, quản lý SWR cache, swap candidates, confirm modal. | Tách các hàm thuần toán sang `task-utils.ts`, chia nhỏ logic swap sang sub-hook `use-task-swap.ts`. |
+| 🟡 **Ưu tiên 2** | `app/daily-tasks.tsx` | ~494 dòng | File route chứa cả danh sách task và modal, chưa tối ưu thin entry point. | Chuyển view sang `src/features/tasks/daily-tasks-screen.tsx`, route chỉ giữ vai trò composition. |
+| 🟢 **Ưu tiên 3** | `src/features/cinema/cinema.styles.ts` & `journey-clip-modal.tsx` | ~699 & 470 dòng | Stylesheet lớn; modal xem clip video `expo-video` cần memoize để tránh giật lag khi cuộn video. | Tách player card thành component riêng, tối ưu memory leak khi unmount video player. |
+| 🟢 **Ưu tiên 3** | `app/login.tsx` & `app/social-post.tsx` | ~380 & 362 dòng | Đang chứa UI phức tạp trong route `app/`. | Chuyển về `src/features/auth/` và `src/features/community/`. |
+
 ## Validation
 
 Lệnh thường dùng:
